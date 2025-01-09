@@ -57,9 +57,10 @@ static void setnameval(lua_State *L, const char *name, int val) {
 
 #ifndef EXTERNMEMCHECK
 /* full memory check */
-#define HEADER (sizeof(L_Umaxalign)) /* ensures maximum alignment for HEADER   \
-                                      */
-#define MARKSIZE 16                  /* size of marks after each block */
+#define HEADER                                                                 \
+  (sizeof(L_Umaxalign)) /* ensures maximum alignment for HEADER                \
+                         */
+#define MARKSIZE 16     /* size of marks after each block */
 #define blockhead(b) (cast(char *, b) - HEADER)
 #define setsize(newblock, size) (*cast(size_t *, newblock) = size)
 #define checkblocksize(b, size) (size == (*cast(size_t *, blockhead(b))))
@@ -997,41 +998,43 @@ static int auxgsub(lua_State *L) {
 
 /* }====================================================== */
 
-static const struct luaL_Reg tests_funcs[] = {{"checkmemory", lua_checkmemory},
-                                              {"closestate", closestate},
-                                              {"d2s", d2s},
-                                              {"doonnewstack", doonnewstack},
-                                              {"doremote", doremote},
-                                              {"gccolor", get_gccolor},
-                                              {"gcstate", gcstate},
-                                              {"getref", getref},
-                                              {"gsub", auxgsub},
-                                              {"hash", hash_query},
-                                              {"int2fb", int2fb_aux},
-                                              {"limits", get_limits},
-                                              {"listcode", listcode},
-                                              {"listk", listk},
-                                              {"listlocals", listlocals},
-                                              {"loadlib", loadlib},
-                                              {"log2", log2_aux},
-                                              {"newstate", newstate},
-                                              {"newuserdata", newuserdata},
-                                              {"num2int", num2int},
-                                              {"pushuserdata", pushuserdata},
-                                              {"querystr", string_query},
-                                              {"querytab", table_query},
-                                              {"ref", tref},
-                                              {"resume", coresume},
-                                              {"s2d", s2d},
-                                              {"setyhook", setyhook},
-                                              {"stacklevel", stacklevel},
-                                              {"testC", testC},
-                                              {"totalmem", mem_query},
-                                              {"trick", settrick},
-                                              {"udataval", udataval},
-                                              {"unref", unref},
-                                              {"upvalue", upvalue},
-                                              {NULL, NULL}};
+static const struct luaL_Reg tests_funcs[] = {
+    {"checkmemory", lua_checkmemory},
+    {"closestate", closestate},
+    {"d2s", d2s},
+    {"doonnewstack", doonnewstack},
+    {"doremote", doremote},
+    {"gccolor", get_gccolor},
+    {"gcstate", gcstate},
+    {"getref", getref},
+    {"gsub", auxgsub},
+    {"hash", hash_query},
+    {"int2fb", int2fb_aux},
+    {"limits", get_limits},
+    {"listcode", listcode},
+    {"listk", listk},
+    {"listlocals", listlocals},
+    {"loadlib", loadlib},
+    {"log2", log2_aux},
+    {"newstate", newstate},
+    {"newuserdata", newuserdata},
+    {"num2int", num2int},
+    {"pushuserdata", pushuserdata},
+    {"querystr", string_query},
+    {"querytab", table_query},
+    {"ref", tref},
+    {"resume", coresume},
+    {"s2d", s2d},
+    {"setyhook", setyhook},
+    {"stacklevel", stacklevel},
+    {"testC", testC},
+    {"totalmem", mem_query},
+    {"trick", settrick},
+    {"udataval", udataval},
+    {"unref", unref},
+    {"upvalue", upvalue},
+    {NULL, NULL},
+};
 
 int luaB_opentests(lua_State *L) {
   void *ud;
