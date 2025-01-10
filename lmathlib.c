@@ -3,8 +3,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define LUA_LIB
-
 #include "lua.h"
 
 #include "lauxlib.h"

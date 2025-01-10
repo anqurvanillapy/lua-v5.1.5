@@ -1,7 +1,5 @@
 /* Initialization of libraries for lua.c. */
 
-#define LUA_LIB
-
 #include "lua.h"
 
 #include "lauxlib.h"

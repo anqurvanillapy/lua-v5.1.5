@@ -10,8 +10,6 @@
 ** Any function declared here could be written as an application function.
 */
 
-#define LUA_LIB
-
 #include "lua.h"
 
 #include "lauxlib.h"
@@ -254,70 +252,6 @@ LUALIB_API void luaI_openlib(lua_State *L, const char *libname,
   lua_pop(L, nup); /* remove upvalues */
 }
 
-/*
-** {======================================================
-** getn-setn: size for arrays
-** =======================================================
-*/
-
-#if defined(LUA_COMPAT_GETN)
-
-static int checkint(lua_State *L, int topop) {
-  int n = (lua_type(L, -1) == LUA_TNUMBER) ? lua_tointeger(L, -1) : -1;
-  lua_pop(L, topop);
-  return n;
-}
-
-static void getsizes(lua_State *L) {
-  lua_getfield(L, LUA_REGISTRYINDEX, "LUA_SIZES");
-  if (lua_isnil(L, -1)) { /* no `size' table? */
-    lua_pop(L, 1);        /* remove nil */
-    lua_newtable(L);      /* create it */
-    lua_pushvalue(L, -1); /* `size' will be its own metatable */
-    lua_setmetatable(L, -2);
-    lua_pushliteral(L, "kv");
-    lua_setfield(L, -2, "__mode"); /* metatable(N).__mode = "kv" */
-    lua_pushvalue(L, -1);
-    lua_setfield(L, LUA_REGISTRYINDEX, "LUA_SIZES"); /* store in register */
-  }
-}
-
-LUALIB_API void luaL_setn(lua_State *L, int t, int n) {
-  t = abs_index(L, t);
-  lua_pushliteral(L, "n");
-  lua_rawget(L, t);
-  if (checkint(L, 1) >= 0) { /* is there a numeric field `n'? */
-    lua_pushliteral(L, "n"); /* use it */
-    lua_pushinteger(L, n);
-    lua_rawset(L, t);
-  } else { /* use `sizes' */
-    getsizes(L);
-    lua_pushvalue(L, t);
-    lua_pushinteger(L, n);
-    lua_rawset(L, -3); /* sizes[t] = n */
-    lua_pop(L, 1);     /* remove `sizes' */
-  }
-}
-
-LUALIB_API int luaL_getn(lua_State *L, int t) {
-  int n;
-  t = abs_index(L, t);
-  lua_pushliteral(L, "n"); /* try t.n */
-  lua_rawget(L, t);
-  if ((n = checkint(L, 1)) >= 0)
-    return n;
-  getsizes(L); /* else try sizes[t] */
-  lua_pushvalue(L, t);
-  lua_rawget(L, -2);
-  if ((n = checkint(L, 2)) >= 0)
-    return n;
-  return (int)lua_objlen(L, t);
-}
-
-#endif
-
-/* }====================================================== */
-
 LUALIB_API const char *luaL_gsub(lua_State *L, const char *s, const char *p,
                                  const char *r) {
   const char *wild;
@@ -488,14 +422,14 @@ LUALIB_API void luaL_unref(lua_State *L, int t, int ref) {
 ** =======================================================
 */
 
-typedef struct LoadF {
+typedef struct FileStream {
   int extraline;
   FILE *f;
   char buff[LUAL_BUFFERSIZE];
-} LoadF;
+} FileStream;
 
-static const char *getF(lua_State *L, void *ud, size_t *size) {
-  LoadF *lf = (LoadF *)ud;
+static const char *fileReader(lua_State *L, void *ud, size_t *size) {
+  FileStream *lf = ud;
   (void)L;
   if (lf->extraline) {
     lf->extraline = 0;
@@ -518,7 +452,7 @@ static int errfile(lua_State *L, const char *what, int fnameindex) {
 }
 
 LUALIB_API int luaL_loadfile(lua_State *L, const char *filename) {
-  LoadF lf;
+  FileStream lf;
   int status, readstatus;
   int c;
   int fnameindex = lua_gettop(L) + 1; /* index of filename on the stack */
@@ -537,7 +471,7 @@ LUALIB_API int luaL_loadfile(lua_State *L, const char *filename) {
   if (c == '#') { /* Unix exec. file? */
     lf.extraline = 1;
     while ((c = getc(lf.f)) != EOF && c != '\n') {
-      ; /* skip first line */
+      /* skip first line */
     }
     if (c == '\n') {
       c = getc(lf.f);
@@ -548,14 +482,13 @@ LUALIB_API int luaL_loadfile(lua_State *L, const char *filename) {
     if (lf.f == NULL) {
       return errfile(L, "reopen", fnameindex);
     }
-    /* skip eventual `#!...' */
     while ((c = getc(lf.f)) != EOF && c != LUA_SIGNATURE[0]) {
-      ;
+      /* skip eventual `#!...' */
     }
     lf.extraline = 0;
   }
   ungetc(c, lf.f);
-  status = lua_load(L, getF, &lf, lua_tostring(L, -1));
+  status = lua_load(L, fileReader, &lf, lua_tostring(L, -1));
   readstatus = ferror(lf.f);
   if (filename) {
     fclose(lf.f); /* close file (even in case of errors) */

@@ -365,10 +365,8 @@ static void close_func(LexState *ls) {
   lua_assert(luaG_checkcode(f));
   lua_assert(fs->bl == NULL);
   ls->fs = fs->prev;
-  /* last token read was anchored in defunct function; must reanchor it */
-  if (fs) {
-    anchor_token(ls);
-  }
+  /* last token read was anchored in defunct function; must re-anchor it */
+  anchor_token(ls);
   L->top -= 2; /* remove table and prototype from the stack */
 }
 

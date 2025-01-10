@@ -2,8 +2,6 @@
 
 #include <stddef.h>
 
-#define LUA_LIB
-
 #include "lua.h"
 
 #include "lauxlib.h"

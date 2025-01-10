@@ -143,13 +143,6 @@
 #define LUAI_GCMUL 200 /* GC runs 'twice the speed' of memory allocation */
 
 /*
-@@ LUA_COMPAT_GETN controls compatibility with old getn behavior.
-** CHANGE it (define it) if you want exact compatibility with the
-** behavior of setn/getn in Lua 5.0.
-*/
-#undef LUA_COMPAT_GETN
-
-/*
 @@ LUA_COMPAT_LOADLIB controls compatibility about global loadlib.
 ** CHANGE it to undefined as soon as you do not need a global 'loadlib'
 ** function (the function is still available as 'package.loadlib').

@@ -52,6 +52,8 @@ void luaD_seterrorobj(lua_State *L, int errcode, StkId oldtop) {
     setobjs2s(L, oldtop, L->top - 1); /* error message on current top */
     break;
   }
+  default:
+    break;
   }
   L->top = oldtop + 1;
 }
@@ -462,7 +464,7 @@ int luaD_pcall(lua_State *L, Pfunc func, void *u, ptrdiff_t old_top,
 /*
 ** Execute a protected parser.
 */
-struct SParser { /* data to `f_parser' */
+struct SParser {
   ZIO *z;
   Mbuffer buff; /* buffer to be used by the scanner */
   const char *name;
@@ -470,9 +472,9 @@ struct SParser { /* data to `f_parser' */
 
 static void f_parser(lua_State *L, void *ud) {
   int i;
-  Proto *tf;
+  Proto *tf; // "the function"
   Closure *cl;
-  struct SParser *p = cast(struct SParser *, ud);
+  struct SParser *p = ud;
   int c = luaZ_lookahead(p->z);
   luaC_checkGC(L);
   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
