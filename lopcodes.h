@@ -1,11 +1,6 @@
-/*
-** $Id: lopcodes.h,v 1.125.1.1 2007/12/27 13:02:25 roberto Exp $
-** Opcodes for Lua virtual machine
-** See Copyright Notice in lua.h
-*/
+/* Opcodes for Lua virtual machine. */
 
-#ifndef lopcodes_h
-#define lopcodes_h
+#pragma once
 
 #include "llimits.h"
 
@@ -255,5 +250,3 @@ LUAI_DATA const char *const luaP_opnames[NUM_OPCODES + 1]; /* opcode names */
 
 /* number of list items to accumulate before a SETLIST instruction */
 #define LFIELDS_PER_FLUSH 50
-
-#endif

@@ -1,8 +1,4 @@
-/*
-** $Id: ldebug.c,v 2.29.1.6 2008/05/08 16:56:26 roberto Exp $
-** Debug Interface
-** See Copyright Notice in lua.h
-*/
+/* Debug Interface. */
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -14,14 +10,13 @@
 #include "lua.h"
 
 #include "lapi.h"
-#include "lcode.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
+#include "lgc.h"
 #include "lobject.h"
 #include "lopcodes.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lvm.h"

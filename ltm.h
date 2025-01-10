@@ -1,11 +1,6 @@
-/*
-** $Id: ltm.h,v 2.6.1.1 2007/12/27 13:02:25 roberto Exp $
-** Tag methods
-** See Copyright Notice in lua.h
-*/
+/* Tag methods. */
 
-#ifndef ltm_h
-#define ltm_h
+#pragma once
 
 #include "lobject.h"
 
@@ -47,5 +42,3 @@ LUAI_FUNC const TValue *luaT_gettm(Table *events, TMS event, TString *ename);
 LUAI_FUNC const TValue *luaT_gettmbyobj(lua_State *L, const TValue *o,
                                         TMS event);
 LUAI_FUNC void luaT_init(lua_State *L);
-
-#endif

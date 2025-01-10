@@ -1,11 +1,6 @@
-/*
-** $Id: lstate.h,v 2.24.1.2 2008/01/03 15:20:39 roberto Exp $
-** Global State
-** See Copyright Notice in lua.h
-*/
+/* Global State. */
 
-#ifndef lstate_h
-#define lstate_h
+#pragma once
 
 #include "lua.h"
 
@@ -148,5 +143,3 @@ union GCObject {
 
 LUAI_FUNC lua_State *luaE_newthread(lua_State *L);
 LUAI_FUNC void luaE_freethread(lua_State *L, lua_State *L1);
-
-#endif

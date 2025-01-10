@@ -1,11 +1,6 @@
-/*
-** $Id: lundump.h,v 1.37.1.1 2007/12/27 13:02:25 roberto Exp $
-** load precompiled Lua chunks
-** See Copyright Notice in lua.h
-*/
+/* Load precompiled Lua chunks. */
 
-#ifndef lundump_h
-#define lundump_h
+#pragma once
 
 #include "lobject.h"
 #include "lzio.h"
@@ -34,5 +29,3 @@ LUAI_FUNC void luaU_print(const Proto *f, int full);
 
 /* size of header of binary files */
 #define LUAC_HEADERSIZE 12
-
-#endif

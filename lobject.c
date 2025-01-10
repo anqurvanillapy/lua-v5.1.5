@@ -1,8 +1,4 @@
-/*
-** $Id: lobject.c,v 2.22.1.1 2007/12/27 13:02:25 roberto Exp $
-** Some generic functions over Lua objects
-** See Copyright Notice in lua.h
-*/
+/* Some generic functions over Lua objects. */
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -16,7 +12,6 @@
 #include "lua.h"
 
 #include "ldo.h"
-#include "lmem.h"
 #include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"

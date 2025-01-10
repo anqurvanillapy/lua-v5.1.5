@@ -1,11 +1,6 @@
-/*
-** $Id: lvm.h,v 2.5.1.1 2007/12/27 13:02:25 roberto Exp $
-** Lua virtual machine
-** See Copyright Notice in lua.h
-*/
+/* Lua virtual machine. */
 
-#ifndef lvm_h
-#define lvm_h
+#pragma once
 
 #include "ldo.h"
 #include "lobject.h"
@@ -28,5 +23,3 @@ LUAI_FUNC void luaV_settable(lua_State *L, const TValue *t, TValue *key,
                              StkId val);
 LUAI_FUNC void luaV_execute(lua_State *L, int nexeccalls);
 LUAI_FUNC void luaV_concat(lua_State *L, int total, int last);
-
-#endif

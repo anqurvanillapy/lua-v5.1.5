@@ -1,8 +1,3 @@
-/*
-** $Id: lopcodes.c,v 1.37.1.1 2007/12/27 13:02:25 roberto Exp $
-** See Copyright Notice in lua.h
-*/
-
 #define lopcodes_c
 #define LUA_CORE
 
@@ -17,7 +12,8 @@ const char *const luaP_opnames[NUM_OPCODES + 1] = {
     "UNM",      "NOT",       "LEN",      "CONCAT",   "JMP",      "EQ",
     "LT",       "LE",        "TEST",     "TESTSET",  "CALL",     "TAILCALL",
     "RETURN",   "FORLOOP",   "FORPREP",  "TFORLOOP", "SETLIST",  "CLOSE",
-    "CLOSURE",  "VARARG",    NULL};
+    "CLOSURE",  "VARARG",    NULL,
+};
 
 #define opmode(t, a, b, c, m)                                                  \
   (((t) << 7) | ((a) << 6) | ((b) << 4) | ((c) << 2) | (m))
@@ -99,4 +95,5 @@ const lu_byte luaP_opmodes[NUM_OPCODES] = {
     opmode(0, 1, OpArgU, OpArgN, iABx) /* OP_CLOSURE */
     ,
     opmode(0, 1, OpArgU, OpArgN, iABC) /* OP_VARARG */
+    ,
 };

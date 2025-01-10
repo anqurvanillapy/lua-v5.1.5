@@ -1,11 +1,6 @@
-/*
-** $Id: lauxlib.h,v 1.88.1.1 2007/12/27 13:02:25 roberto Exp $
-** Auxiliary functions for building Lua libraries
-** See Copyright Notice in lua.h
-*/
+/* Auxiliary functions for building Lua libraries. */
 
-#ifndef lauxlib_h
-#define lauxlib_h
+#pragma once
 
 #include <stddef.h>
 #include <stdio.h>
@@ -153,5 +148,3 @@ LUALIB_API void(luaL_pushresult)(luaL_Buffer *B);
 #define lua_getref(L, ref) lua_rawgeti(L, LUA_REGISTRYINDEX, (ref))
 
 #define luaL_reg luaL_Reg
-
-#endif

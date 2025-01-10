@@ -1,11 +1,6 @@
-/*
-** $Id: lgc.h,v 2.15.1.1 2007/12/27 13:02:25 roberto Exp $
-** Garbage Collector
-** See Copyright Notice in lua.h
-*/
+/* Garbage Collector. */
 
-#ifndef lgc_h
-#define lgc_h
+#pragma once
 
 #include "lobject.h"
 
@@ -109,5 +104,3 @@ LUAI_FUNC void luaC_link(lua_State *L, GCObject *o, lu_byte tt);
 LUAI_FUNC void luaC_linkupval(lua_State *L, UpVal *uv);
 LUAI_FUNC void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v);
 LUAI_FUNC void luaC_barrierback(lua_State *L, Table *t);
-
-#endif

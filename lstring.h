@@ -1,11 +1,6 @@
-/*
-** $Id: lstring.h,v 1.43.1.1 2007/12/27 13:02:25 roberto Exp $
-** String table (keep all strings handled by Lua)
-** See Copyright Notice in lua.h
-*/
+/* String table (keep all strings handled by Lua). */
 
-#ifndef lstring_h
-#define lstring_h
+#pragma once
 
 #include "lgc.h"
 #include "lobject.h"
@@ -24,5 +19,3 @@
 LUAI_FUNC void luaS_resize(lua_State *L, int newsize);
 LUAI_FUNC Udata *luaS_newudata(lua_State *L, size_t s, Table *e);
 LUAI_FUNC TString *luaS_newlstr(lua_State *L, const char *str, size_t l);
-
-#endif

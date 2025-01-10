@@ -1,8 +1,4 @@
-/*
-** $Id: ltablib.c,v 1.38.1.3 2008/02/14 16:46:58 roberto Exp $
-** Library for Table Manipulation
-** See Copyright Notice in lua.h
-*/
+/* Library for Table Manipulation. */
 
 #include <stddef.h>
 
@@ -265,7 +261,8 @@ static const luaL_Reg tab_funcs[] = {
     {"concat", tconcat}, {"foreach", foreach}, {"foreachi", foreachi},
     {"getn", getn},      {"maxn", maxn},       {"insert", tinsert},
     {"remove", tremove}, {"setn", setn},       {"sort", sort},
-    {NULL, NULL}};
+    {NULL, NULL},
+};
 
 LUALIB_API int luaopen_table(lua_State *L) {
   luaL_register(L, LUA_TABLIBNAME, tab_funcs);

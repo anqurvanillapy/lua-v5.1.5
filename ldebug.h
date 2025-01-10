@@ -1,11 +1,6 @@
-/*
-** $Id: ldebug.h,v 2.3.1.1 2007/12/27 13:02:25 roberto Exp $
-** Auxiliary functions from Debug Interface module
-** See Copyright Notice in lua.h
-*/
+/* Auxiliary functions from Debug Interface module. */
 
-#ifndef ldebug_h
-#define ldebug_h
+#pragma once
 
 #include "lstate.h"
 
@@ -25,5 +20,3 @@ LUAI_FUNC void luaG_runerror(lua_State *L, const char *fmt, ...);
 LUAI_FUNC void luaG_errormsg(lua_State *L);
 LUAI_FUNC int luaG_checkcode(const Proto *pt);
 LUAI_FUNC int luaG_checkopenop(Instruction i);
-
-#endif

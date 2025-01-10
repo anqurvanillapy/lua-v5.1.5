@@ -1,8 +1,4 @@
-/*
-** $Id: ltable.c,v 2.32.1.2 2007/12/28 15:32:23 roberto Exp $
-** Lua tables (hash)
-** See Copyright Notice in lua.h
-*/
+/* Lua tables (hash). */
 
 /*
 ** Implementation of tables (aka arrays, objects, or hash tables).
@@ -17,7 +13,6 @@
 ** Hence even when the load factor reaches 100%, performance remains good.
 */
 
-#include <math.h>
 #include <string.h>
 
 #define ltable_c
@@ -26,7 +21,6 @@
 #include "lua.h"
 
 #include "ldebug.h"
-#include "ldo.h"
 #include "lgc.h"
 #include "lmem.h"
 #include "lobject.h"

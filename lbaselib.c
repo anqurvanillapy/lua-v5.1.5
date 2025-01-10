@@ -1,13 +1,8 @@
-/*
-** $Id: lbaselib.c,v 1.191.1.6 2008/02/14 16:46:22 roberto Exp $
-** Basic library
-** See Copyright Notice in lua.h
-*/
+/* Basic library. */
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define lbaselib_c
 #define LUA_LIB

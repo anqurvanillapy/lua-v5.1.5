@@ -1,11 +1,6 @@
-/*
-** $Id: llimits.h,v 1.69.1.1 2007/12/27 13:02:25 roberto Exp $
-** Limits, basic types, and some other `installation-dependent' definitions
-** See Copyright Notice in lua.h
-*/
+/* Limits, basic types, and some other 'installation-dependent' definitions. */
 
-#ifndef llimits_h
-#define llimits_h
+#pragma once
 
 #include <limits.h>
 #include <stddef.h>
@@ -105,6 +100,4 @@ typedef lu_int32 Instruction;
 #define condhardstacktests(x) ((void)0)
 #else
 #define condhardstacktests(x) x
-#endif
-
 #endif
