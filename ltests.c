@@ -17,7 +17,6 @@
 
 #include "lapi.h"
 #include "lauxlib.h"
-#include "lcode.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
@@ -186,17 +185,9 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
 
 static void checktable(global_State *g, Table *h) {
   int i;
-  int weakkey = 0;
-  int weakvalue = 0;
-  const TValue *mode;
   GCObject *hgc = obj2gco(h);
   if (h->metatable)
     checkobjref(g, hgc, h->metatable);
-  mode = gfasttm(g, h->metatable, TM_MODE);
-  if (mode && ttisstring(mode)) { /* is there a weak mode? */
-    weakkey = (strchr(svalue(mode), 'k') != NULL);
-    weakvalue = (strchr(svalue(mode), 'v') != NULL);
-  }
   i = h->sizearray;
   while (i--)
     checkvalref(g, hgc, &h->array[i]);
@@ -635,7 +626,7 @@ static int newuserdata(lua_State *L) {
 }
 
 static int pushuserdata(lua_State *L) {
-  lua_pushlightuserdata(L, cast(void *, luaL_checkint(L, 1)));
+  lua_pushlightuserdata(L, cast(void *, luaL_checkinteger(L, 1)));
   return 1;
 }
 
