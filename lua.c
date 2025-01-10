@@ -12,6 +12,61 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
+/*
+** {==================================================================
+** Stand-alone configuration
+** ===================================================================
+*/
+
+/*
+@@ lua_stdin_is_tty detects whether the standard input is a 'tty' (that
+@* is, whether we're running lua interactively).
+** CHANGE it if you have a better definition for non-POSIX/non-Windows
+** systems.
+*/
+#include <unistd.h>
+#define lua_stdin_is_tty() isatty(0)
+
+/*
+@@ LUA_PROMPT is the default prompt used by stand-alone Lua.
+@@ LUA_PROMPT2 is the default continuation prompt used by stand-alone Lua.
+** CHANGE them if you want different prompts. (You can also change the
+** prompts dynamically, assigning to globals _PROMPT/_PROMPT2.)
+*/
+#define LUA_PROMPT "> "
+#define LUA_PROMPT2 ">> "
+
+/*
+@@ LUA_PROGNAME is the default name for the stand-alone Lua program.
+** CHANGE it if your stand-alone interpreter has a different name and
+** your system is not able to detect that name automatically.
+*/
+#define LUA_PROGNAME "lua"
+
+/*
+@@ LUA_MAXINPUT is the maximum length for an input line in the
+@* stand-alone interpreter.
+** CHANGE it if you need longer lines.
+*/
+#define LUA_MAXINPUT 512
+
+/*
+@@ lua_readline defines how to show a prompt and then read a line from
+@* the standard input.
+@@ lua_saveline defines how to "save" a read line in a "history".
+@@ lua_freeline defines how to free a line read by lua_readline.
+** CHANGE them if you want to improve this functionality (e.g., by using
+** GNU readline and history facilities).
+*/
+#include <readline/history.h>
+#define lua_readline(L, b, p) ((void)L, ((b) = readline(p)) != NULL)
+#define lua_saveline(L, idx)                                                   \
+  if (lua_strlen(L, idx) > 0)          /* non-empty line? */                   \
+    add_history(lua_tostring(L, idx)); /* add it to history */
+#define lua_freeline(L, b) ((void)L, free(b))
+
+/* }================================================================== */
+
 static lua_State *globalL = NULL;
 
 static const char *progname = LUA_PROGNAME;

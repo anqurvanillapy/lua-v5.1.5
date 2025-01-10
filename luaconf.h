@@ -91,23 +91,8 @@
 @@ LUA_API is a mark for all core API functions.
 @@ LUALIB_API is a mark for all standard library functions.
 ** CHANGE them if you need to define those functions in some special way.
-** For instance, if you want to create one Windows DLL with the core and
-** the libraries, you may want to use the following definition (define
-** LUA_BUILD_AS_DLL to get it).
 */
-#if defined(LUA_BUILD_AS_DLL)
-
-#if defined(LUA_CORE) || defined(LUA_LIB)
-#define LUA_API __declspec(dllexport)
-#else
-#define LUA_API __declspec(dllimport)
-#endif
-
-#else
-
 #define LUA_API extern
-
-#endif
 
 /* more often than not the libs go together with the core */
 #define LUALIB_API LUA_API
@@ -121,19 +106,8 @@
 ** (versions 3.2 and later) mark them as "hidden" to optimize access
 ** when Lua is compiled as a shared library.
 */
-#if defined(luaall_c)
-#define LUAI_FUNC static
-#define LUAI_DATA /* empty */
-
-#elif defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 302) &&       \
-    defined(__ELF__)
-#define LUAI_FUNC __attribute__((visibility("hidden"))) extern
-#define LUAI_DATA LUAI_FUNC
-
-#else
 #define LUAI_FUNC extern
 #define LUAI_DATA extern
-#endif
 
 /*
 @@ LUA_QL describes how error messages quote program elements.
@@ -148,87 +122,6 @@
 ** CHANGE it if you want a different size.
 */
 #define LUA_IDSIZE 60
-
-/*
-** {==================================================================
-** Stand-alone configuration
-** ===================================================================
-*/
-
-#if defined(lua_c) || defined(luaall_c)
-
-/*
-@@ lua_stdin_is_tty detects whether the standard input is a 'tty' (that
-@* is, whether we're running lua interactively).
-** CHANGE it if you have a better definition for non-POSIX/non-Windows
-** systems.
-*/
-#if defined(LUA_USE_ISATTY)
-#include <unistd.h>
-#define lua_stdin_is_tty() isatty(0)
-#else
-#define lua_stdin_is_tty() 1 /* assume stdin is a tty */
-#endif
-
-/*
-@@ LUA_PROMPT is the default prompt used by stand-alone Lua.
-@@ LUA_PROMPT2 is the default continuation prompt used by stand-alone Lua.
-** CHANGE them if you want different prompts. (You can also change the
-** prompts dynamically, assigning to globals _PROMPT/_PROMPT2.)
-*/
-#define LUA_PROMPT "> "
-#define LUA_PROMPT2 ">> "
-
-/*
-@@ LUA_PROGNAME is the default name for the stand-alone Lua program.
-** CHANGE it if your stand-alone interpreter has a different name and
-** your system is not able to detect that name automatically.
-*/
-#define LUA_PROGNAME "lua"
-
-/*
-@@ LUA_MAXINPUT is the maximum length for an input line in the
-@* stand-alone interpreter.
-** CHANGE it if you need longer lines.
-*/
-#define LUA_MAXINPUT 512
-
-/*
-@@ lua_readline defines how to show a prompt and then read a line from
-@* the standard input.
-@@ lua_saveline defines how to "save" a read line in a "history".
-@@ lua_freeline defines how to free a line read by lua_readline.
-** CHANGE them if you want to improve this functionality (e.g., by using
-** GNU readline and history facilities).
-*/
-#if defined(LUA_USE_READLINE)
-#include <readline/history.h>
-#include <readline/readline.h>
-#include <stdio.h>
-#define lua_readline(L, b, p) ((void)L, ((b) = readline(p)) != NULL)
-#define lua_saveline(L, idx)                                                   \
-  if (lua_strlen(L, idx) > 0)          /* non-empty line? */                   \
-    add_history(lua_tostring(L, idx)); /* add it to history */
-#define lua_freeline(L, b) ((void)L, free(b))
-#else
-#define lua_readline(L, b, p)                                                  \
-  ((void)L, fputs(p, stdout), fflush(stdout), /* show prompt */                \
-   fgets(b, LUA_MAXINPUT, stdin) != NULL)     /* get line */
-#define lua_saveline(L, idx)                                                   \
-  {                                                                            \
-    (void)L;                                                                   \
-    (void)idx;                                                                 \
-  }
-#define lua_freeline(L, b)                                                     \
-  {                                                                            \
-    (void)L;                                                                   \
-    (void)b;                                                                   \
-  }
-#endif
-
-#endif
-
-/* }================================================================== */
 
 /*
 @@ LUAI_GCPAUSE defines the default pause between garbage-collector cycles
@@ -518,38 +411,6 @@
 ** CHANGE it if you need more captures. This limit is arbitrary.
 */
 #define LUA_MAXCAPTURES 32
-
-/*
-@@ lua_tmpnam is the function that the OS library uses to create a
-@* temporary name.
-@@ LUA_TMPNAMBUFSIZE is the maximum size of a name created by lua_tmpnam.
-** CHANGE them if you have an alternative to tmpnam (which is considered
-** insecure) or if you want the original tmpnam anyway.  By default, Lua
-** uses tmpnam except when POSIX is available, where it uses mkstemp.
-*/
-#if defined(loslib_c) || defined(luaall_c)
-
-#if defined(LUA_USE_MKSTEMP)
-#include <unistd.h>
-#define LUA_TMPNAMBUFSIZE 32
-#define lua_tmpnam(b, e)                                                       \
-  {                                                                            \
-    strcpy(b, "/tmp/lua_XXXXXX");                                              \
-    e = mkstemp(b);                                                            \
-    if (e != -1)                                                               \
-      close(e);                                                                \
-    e = (e == -1);                                                             \
-  }
-
-#else
-#define LUA_TMPNAMBUFSIZE L_tmpnam
-#define lua_tmpnam(b, e)                                                       \
-  {                                                                            \
-    e = (tmpnam(b) == NULL);                                                   \
-  }
-#endif
-
-#endif
 
 /*
 @@ lua_popen spawns a new process connected to the current one through

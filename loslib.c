@@ -6,13 +6,31 @@
 #include <string.h>
 #include <time.h>
 
-#define loslib_c
 #define LUA_LIB
 
 #include "lua.h"
 
 #include "lauxlib.h"
 #include "lualib.h"
+
+/*
+@@ lua_tmpnam is the function that the OS library uses to create a
+@* temporary name.
+@@ LUA_TMPNAMBUFSIZE is the maximum size of a name created by lua_tmpnam.
+** CHANGE them if you have an alternative to tmpnam (which is considered
+** insecure) or if you want the original tmpnam anyway.  By default, Lua
+** uses tmpnam except when POSIX is available, where it uses mkstemp.
+*/
+#include <unistd.h>
+#define LUA_TMPNAMBUFSIZE 32
+#define lua_tmpnam(b, e)                                                       \
+  {                                                                            \
+    strcpy(b, "/tmp/lua_XXXXXX");                                              \
+    e = mkstemp(b);                                                            \
+    if (e != -1)                                                               \
+      close(e);                                                                \
+    e = (e == -1);                                                             \
+  }
 
 static int os_pushresult(lua_State *L, int i, const char *filename) {
   int en = errno; /* calls to Lua API may change this value */
