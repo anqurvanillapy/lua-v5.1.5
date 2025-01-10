@@ -128,8 +128,9 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   lua_State *L;
   global_State *g;
   void *l = (*f)(ud, NULL, 0, state_size(LG));
-  if (l == NULL)
+  if (l == NULL) {
     return NULL;
+  }
   L = tostate(l);
   g = &((LG *)L)->g;
   L->next = NULL;
@@ -162,14 +163,16 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   g->gcpause = LUAI_GCPAUSE;
   g->gcstepmul = LUAI_GCMUL;
   g->gcdept = 0;
-  for (i = 0; i < NUM_TAGS; i++)
+  for (i = 0; i < NUM_TAGS; i++) {
     g->mt[i] = NULL;
+  }
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != 0) {
     /* memory allocation error: free partial state */
     close_state(L);
     L = NULL;
-  } else
+  } else {
     luai_userstateopen(L);
+  }
   return L;
 }
 

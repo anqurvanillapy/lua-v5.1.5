@@ -51,10 +51,11 @@ static void PrintString(const TString *ts) {
       printf("\\v");
       break;
     default:
-      if (isprint((unsigned char)c))
+      if (isprint((unsigned char)c)) {
         putchar(c);
-      else
+      } else {
         printf("\\%03u", (unsigned char)c);
+      }
     }
   }
   putchar('"');
@@ -94,30 +95,35 @@ static void PrintCode(const Proto *f) {
     int sbx = GETARG_sBx(i);
     int line = getline(f, pc);
     printf("\t%d\t", pc + 1);
-    if (line > 0)
+    if (line > 0) {
       printf("[%d]\t", line);
-    else
+    } else {
       printf("[-]\t");
+    }
     printf("%-9s\t", luaP_opnames[o]);
     switch (getOpMode(o)) {
     case iABC:
       printf("%d", a);
-      if (getBMode(o) != OpArgN)
+      if (getBMode(o) != OpArgN) {
         printf(" %d", ISK(b) ? (-1 - INDEXK(b)) : b);
-      if (getCMode(o) != OpArgN)
+      }
+      if (getCMode(o) != OpArgN) {
         printf(" %d", ISK(c) ? (-1 - INDEXK(c)) : c);
+      }
       break;
     case iABx:
-      if (getBMode(o) == OpArgK)
+      if (getBMode(o) == OpArgK) {
         printf("%d %d", a, -1 - bx);
-      else
+      } else {
         printf("%d %d", a, bx);
+      }
       break;
     case iAsBx:
-      if (o == OP_JMP)
+      if (o == OP_JMP) {
         printf("%d", sbx);
-      else
+      } else {
         printf("%d %d", a, sbx);
+      }
       break;
     }
     switch (o) {
@@ -151,15 +157,17 @@ static void PrintCode(const Proto *f) {
     case OP_LE:
       if (ISK(b) || ISK(c)) {
         printf("\t; ");
-        if (ISK(b))
+        if (ISK(b)) {
           PrintConstant(f, INDEXK(b));
-        else
+        } else {
           printf("-");
+        }
         printf(" ");
-        if (ISK(c))
+        if (ISK(c)) {
           PrintConstant(f, INDEXK(c));
-        else
+        } else {
           printf("-");
+        }
       }
       break;
     case OP_JMP:
@@ -171,10 +179,11 @@ static void PrintCode(const Proto *f) {
       printf("\t; %p", VOID(f->p[bx]));
       break;
     case OP_SETLIST:
-      if (c == 0)
+      if (c == 0) {
         printf("\t; %d", (int)code[++pc]);
-      else
+      } else {
         printf("\t; %d", c);
+      }
       break;
     default:
       break;
@@ -188,12 +197,13 @@ static void PrintCode(const Proto *f) {
 
 static void PrintHeader(const Proto *f) {
   const char *s = getstr(f->source);
-  if (*s == '@' || *s == '=')
+  if (*s == '@' || *s == '=') {
     s++;
-  else if (*s == LUA_SIGNATURE[0])
+  } else if (*s == LUA_SIGNATURE[0]) {
     s = "(bstring)";
-  else
+  } else {
     s = "(string)";
+  }
   printf("\n%s <%s:%d,%d> (%d instruction%s, %d bytes at %p)\n",
          (f->linedefined == 0) ? "main" : "function", s, f->linedefined,
          f->lastlinedefined, S(f->sizecode), f->sizecode * Sizeof(Instruction),
@@ -227,8 +237,9 @@ static void PrintLocals(const Proto *f) {
 static void PrintUpvalues(const Proto *f) {
   int i, n = f->sizeupvalues;
   printf("upvalues (%d) for %p:\n", n, VOID(f));
-  if (f->upvalues == NULL)
+  if (f->upvalues == NULL) {
     return;
+  }
   for (i = 0; i < n; i++) {
     printf("\t%d\t%s\n", i, getstr(f->upvalues[i]));
   }
@@ -243,6 +254,7 @@ void PrintFunction(const Proto *f, int full) {
     PrintLocals(f);
     PrintUpvalues(f);
   }
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     PrintFunction(f->p[i], full);
+  }
 }

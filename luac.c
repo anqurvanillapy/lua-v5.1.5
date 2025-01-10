@@ -41,10 +41,11 @@ static void cannot(const char *what) {
 }
 
 static void usage(const char *message) {
-  if (*message == '-')
+  if (*message == '-') {
     fprintf(stderr, "%s: unrecognized option " LUA_QS "\n", progname, message);
-  else
+  } else {
     fprintf(stderr, "%s: %s\n", progname, message);
+  }
   fprintf(stderr,
           "usage: %s [options] [filenames].\n"
           "Available options are:\n"
@@ -65,36 +66,41 @@ static void usage(const char *message) {
 static int doargs(int argc, char *argv[]) {
   int i;
   int version = 0;
-  if (argv[0] != NULL && *argv[0] != 0)
+  if (argv[0] != NULL && *argv[0] != 0) {
     progname = argv[0];
+  }
   for (i = 1; i < argc; i++) {
-    if (*argv[i] != '-') /* end of options; keep it */
+    if (*argv[i] != '-') { /* end of options; keep it */
       break;
-    else if (IS("--")) /* end of options; skip it */
+    } else if (IS("--")) /* end of options; skip it */
     {
       ++i;
-      if (version)
+      if (version) {
         ++version;
+      }
       break;
-    } else if (IS("-")) /* end of options; use stdin */
+    } else if (IS("-")) { /* end of options; use stdin */
       break;
-    else if (IS("-l")) /* list */
+    } else if (IS("-l")) { /* list */
       ++listing;
-    else if (IS("-o")) /* output file */
+    } else if (IS("-o")) /* output file */
     {
       output = argv[++i];
-      if (output == NULL || *output == 0)
+      if (output == NULL || *output == 0) {
         usage(LUA_QL("-o") " needs argument");
-      if (IS("-"))
+      }
+      if (IS("-")) {
         output = NULL;
-    } else if (IS("-p")) /* parse only */
+      }
+    } else if (IS("-p")) { /* parse only */
       dumping = 0;
-    else if (IS("-s")) /* strip debug information */
+    } else if (IS("-s")) { /* strip debug information */
       stripping = 1;
-    else if (IS("-v")) /* show version */
+    } else if (IS("-v")) { /* show version */
       ++version;
-    else /* unknown option */
+    } else { /* unknown option */
       usage(argv[i]);
+    }
   }
   if (i == argc && (listing || !dumping)) {
     dumping = 0;
@@ -102,8 +108,9 @@ static int doargs(int argc, char *argv[]) {
   }
   if (version) {
     printf("%s  %s\n", LUA_RELEASE, LUA_COPYRIGHT);
-    if (version == argc - 1)
+    if (version == argc - 1) {
       exit(EXIT_SUCCESS);
+    }
   }
   return i;
 }
@@ -111,9 +118,9 @@ static int doargs(int argc, char *argv[]) {
 #define toproto(L, i) (clvalue(L->top + (i))->l.p)
 
 static const Proto *combine(lua_State *L, int n) {
-  if (n == 1)
+  if (n == 1) {
     return toproto(L, -1);
-  else {
+  } else {
     int i, pc;
     Proto *f = luaF_newproto(L);
     setptvalue2s(L, L->top, f);
@@ -152,27 +159,33 @@ static int pmain(lua_State *L) {
   char **argv = s->argv;
   const Proto *f;
   int i;
-  if (!lua_checkstack(L, argc))
+  if (!lua_checkstack(L, argc)) {
     fatal("too many input files");
+  }
   for (i = 0; i < argc; i++) {
     const char *filename = IS("-") ? NULL : argv[i];
-    if (luaL_loadfile(L, filename) != 0)
+    if (luaL_loadfile(L, filename) != 0) {
       fatal(lua_tostring(L, -1));
+    }
   }
   f = combine(L, argc);
-  if (listing)
+  if (listing) {
     luaU_print(f, listing > 1);
+  }
   if (dumping) {
     FILE *D = (output == NULL) ? stdout : fopen(output, "wb");
-    if (D == NULL)
+    if (D == NULL) {
       cannot("open");
+    }
     lua_lock(L);
     luaU_dump(L, f, writer, D, stripping);
     lua_unlock(L);
-    if (ferror(D))
+    if (ferror(D)) {
       cannot("write");
-    if (fclose(D))
+    }
+    if (fclose(D)) {
       cannot("close");
+    }
   }
   return 0;
 }
@@ -183,15 +196,18 @@ int main(int argc, char *argv[]) {
   int i = doargs(argc, argv);
   argc -= i;
   argv += i;
-  if (argc <= 0)
+  if (argc <= 0) {
     usage("no input files given");
+  }
   L = lua_open();
-  if (L == NULL)
+  if (L == NULL) {
     fatal("not enough memory for state");
+  }
   s.argc = argc;
   s.argv = argv;
-  if (lua_cpcall(L, pmain, &s) != 0)
+  if (lua_cpcall(L, pmain, &s) != 0) {
     fatal(lua_tostring(L, -1));
+  }
   lua_close(L);
   return EXIT_SUCCESS;
 }

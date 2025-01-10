@@ -21,12 +21,12 @@ typedef struct Memcontrol {
   unsigned long memlimit;
 } Memcontrol;
 
-LUAI_DATA Memcontrol memcontrol;
+extern Memcontrol memcontrol;
 
 /*
 ** generic variable for debug tricks
 */
-LUAI_DATA int Trick;
+extern int Trick;
 
 void *debug_realloc(void *ud, void *block, size_t osize, size_t nsize);
 
@@ -36,6 +36,7 @@ void *debug_realloc(void *ud, void *block, size_t osize, size_t nsize);
 
 typedef struct CallInfo *pCallInfo;
 
+typedef struct lua_State lua_State;
 int lua_checkmemory(lua_State *L);
 int lua_checkpc(lua_State *L, pCallInfo ci);
 

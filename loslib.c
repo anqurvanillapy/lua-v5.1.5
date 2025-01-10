@@ -47,8 +47,9 @@ static int os_tmpname(lua_State *L) {
   char buff[LUA_TMPNAMBUFSIZE];
   int err;
   lua_tmpnam(buff, err);
-  if (err)
+  if (err) {
     return luaL_error(L, "unable to generate a unique filename");
+  }
   lua_pushstring(L, buff);
   return 1;
 }
@@ -77,8 +78,9 @@ static void setfield(lua_State *L, const char *key, int value) {
 }
 
 static void setboolfield(lua_State *L, const char *key, int value) {
-  if (value < 0) /* undefined? */
-    return;      /* does not set field */
+  if (value < 0) { /* undefined? */
+    return;        /* does not set field */
+  }
   lua_pushboolean(L, value);
   lua_setfield(L, -2, key);
 }
@@ -94,11 +96,12 @@ static int getboolfield(lua_State *L, const char *key) {
 static int getfield(lua_State *L, const char *key, int d) {
   int res;
   lua_getfield(L, -1, key);
-  if (lua_isnumber(L, -1))
+  if (lua_isnumber(L, -1)) {
     res = (int)lua_tointeger(L, -1);
-  else {
-    if (d < 0)
+  } else {
+    if (d < 0) {
       return luaL_error(L, "field " LUA_QS " missing in date table", key);
+    }
     res = d;
   }
   lua_pop(L, 1);
@@ -112,11 +115,12 @@ static int os_date(lua_State *L) {
   if (*s == '!') { /* UTC? */
     stm = gmtime(&t);
     s++; /* skip `!' */
-  } else
+  } else {
     stm = localtime(&t);
-  if (stm == NULL) /* invalid date? */
+  }
+  if (stm == NULL) { /* invalid date? */
     lua_pushnil(L);
-  else if (strcmp(s, "*t") == 0) {
+  } else if (strcmp(s, "*t") == 0) {
     lua_createtable(L, 0, 9); /* 9 = number of fields */
     setfield(L, "sec", stm->tm_sec);
     setfield(L, "min", stm->tm_min);
@@ -134,9 +138,9 @@ static int os_date(lua_State *L) {
     cc[2] = '\0';
     luaL_buffinit(L, &b);
     for (; *s; s++) {
-      if (*s != '%' || *(s + 1) == '\0') /* no conversion specifier? */
+      if (*s != '%' || *(s + 1) == '\0') { /* no conversion specifier? */
         luaL_addchar(&b, *s);
-      else {
+      } else {
         size_t reslen;
         char buff[200]; /* should be big enough for any conversion result */
         cc[1] = *(++s);
@@ -151,9 +155,9 @@ static int os_date(lua_State *L) {
 
 static int os_time(lua_State *L) {
   time_t t;
-  if (lua_isnoneornil(L, 1)) /* called without args? */
-    t = time(NULL);          /* get current time */
-  else {
+  if (lua_isnoneornil(L, 1)) { /* called without args? */
+    t = time(NULL);            /* get current time */
+  } else {
     struct tm ts;
     luaL_checktype(L, 1, LUA_TTABLE);
     lua_settop(L, 1); /* make sure table is at the top */
@@ -166,10 +170,11 @@ static int os_time(lua_State *L) {
     ts.tm_isdst = getboolfield(L, "isdst");
     t = mktime(&ts);
   }
-  if (t == (time_t)(-1))
+  if (t == (time_t)(-1)) {
     lua_pushnil(L);
-  else
+  } else {
     lua_pushnumber(L, (lua_Number)t);
+  }
   return 1;
 }
 
