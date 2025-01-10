@@ -10,7 +10,6 @@
 ** Any function declared here could be written as an application function.
 */
 
-#define lauxlib_c
 #define LUA_LIB
 
 #include "lua.h"

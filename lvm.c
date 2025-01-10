@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define lvm_c
 #define LUA_CORE
 
 #include "lua.h"

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define lbaselib_c
 #define LUA_LIB
 
 #include "lua.h"

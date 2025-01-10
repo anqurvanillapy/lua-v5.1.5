@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ldo_c
 #define LUA_CORE
 
 #include "lua.h"

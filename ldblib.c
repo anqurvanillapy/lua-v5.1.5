@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define ldblib_c
 #define LUA_LIB
 
 #include "lua.h"

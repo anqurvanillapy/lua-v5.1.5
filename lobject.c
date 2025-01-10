@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define lobject_c
 #define LUA_CORE
 
 #include "lua.h"

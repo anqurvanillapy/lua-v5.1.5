@@ -1,6 +1,5 @@
 /* Initialization of libraries for lua.c. */
 
-#define linit_c
 #define LUA_LIB
 
 #include "lua.h"

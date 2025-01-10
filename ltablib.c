@@ -2,7 +2,6 @@
 
 #include <stddef.h>
 
-#define ltablib_c
 #define LUA_LIB
 
 #include "lua.h"

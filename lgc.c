@@ -2,7 +2,6 @@
 
 #include <string.h>
 
-#define lgc_c
 #define LUA_CORE
 
 #include "lua.h"
