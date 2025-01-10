@@ -5,12 +5,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define lua_c
-
 #include "lua.h"
 
 #include "lauxlib.h"
 #include "lualib.h"
+
+#ifdef LUA_INTERNAL_TESTING
+#define luaL_newstate() lua_newstate(debug_realloc, &memcontrol)
+#define luaL_openlibs(L)                                                       \
+  {                                                                            \
+    (luaL_openlibs)(L);                                                        \
+    luaB_opentests(L);                                                         \
+  }
+#endif
 
 /*
 ** {==================================================================

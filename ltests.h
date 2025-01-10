@@ -2,6 +2,8 @@
 
 #pragma once
 
+#define LUA_INTERNAL_TESTING
+
 #include <stdlib.h>
 
 #define LUA_DEBUG
@@ -30,10 +32,6 @@ extern int Trick;
 
 void *debug_realloc(void *ud, void *block, size_t osize, size_t nsize);
 
-#ifdef lua_c
-#define luaL_newstate() lua_newstate(debug_realloc, &memcontrol)
-#endif
-
 typedef struct CallInfo *pCallInfo;
 
 typedef struct lua_State lua_State;
@@ -60,14 +58,6 @@ struct L_EXTRA {
 #define lua_unlock(l) lua_assert(--(*getlock(l)->plock) == 0)
 
 int luaB_opentests(lua_State *L);
-
-#ifdef lua_c
-#define luaL_openlibs(L)                                                       \
-  {                                                                            \
-    (luaL_openlibs)(L);                                                        \
-    luaB_opentests(L);                                                         \
-  }
-#endif
 
 /* real main will be defined at `ltests.c' */
 int l_main(int argc, char *argv[]);
