@@ -4,23 +4,14 @@
 
 # == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
-# Your platform. See PLATS for possible values.
-PLAT= macosx
-
 CC= gcc
-CFLAGS= -O2 -Wall $(MYCFLAGS) -DLUA_USER_H='"ltests.h"'
+CFLAGS= -O2 -Wall -DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
 AR= ar rcu
 RANLIB= ranlib
 RM= rm -f
-LIBS= -lm $(MYLIBS)
-
-MYCFLAGS=
-MYLDFLAGS=
-MYLIBS=
+LIBS= -lm -lreadline
 
 # == END OF USER SETTINGS. NO NEED TO CHANGE ANYTHING BELOW THIS LINE =========
-
-PLATS= aix ansi bsd freebsd generic linux macosx mingw posix solaris
 
 LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
@@ -39,13 +30,14 @@ ALL_O= $(CORE_O) $(LIB_O) $(LUA_O) $(LUAC_O)
 ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T)
 ALL_A= $(LUA_A)
 
-default: $(PLAT)
-
 all:	$(ALL_T)
+.PHONY: all
 
 o:	$(ALL_O)
+.PHONY: o
 
 a:	$(ALL_A)
+.PHONY: a
 
 $(LUA_A): $(CORE_O) $(LIB_O)
 	$(AR) $@ $(CORE_O) $(LIB_O)	# DLL needs all object files
@@ -59,64 +51,19 @@ $(LUAC_T): $(LUAC_O) $(LUA_A)
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O)
+.PHONY: clean
 
 depend:
 	@$(CC) $(CFLAGS) -MM l*.c print.c
+.PHONY: depend
 
 echo:
-	@echo "PLAT = $(PLAT)"
 	@echo "CC = $(CC)"
 	@echo "CFLAGS = $(CFLAGS)"
 	@echo "AR = $(AR)"
 	@echo "RANLIB = $(RANLIB)"
 	@echo "RM = $(RM)"
-	@echo "MYCFLAGS = $(MYCFLAGS)"
-	@echo "MYLDFLAGS = $(MYLDFLAGS)"
-	@echo "MYLIBS = $(MYLIBS)"
-
-# convenience targets for popular platforms
-
-none:
-	@echo "Please choose a platform:"
-	@echo "   $(PLATS)"
-
-aix:
-	$(MAKE) all CC="xlc" CFLAGS="-O2 -DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-ldl" MYLDFLAGS="-brtl -bexpall"
-
-ansi:
-	$(MAKE) all MYCFLAGS=-DLUA_ANSI
-
-bsd:
-	$(MAKE) all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E"
-
-freebsd:
-	$(MAKE) all MYCFLAGS="-DLUA_USE_LINUX" MYLIBS="-Wl,-E -lreadline"
-
-generic:
-	$(MAKE) all MYCFLAGS=
-
-linux:
-	$(MAKE) all MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-Wl,-E -ldl -lreadline -lhistory -lncurses"
-
-macosx:
-	$(MAKE) all MYCFLAGS=-DLUA_USE_LINUX MYLIBS="-lreadline"
-# use this on Mac OS X 10.3-
-#	$(MAKE) all MYCFLAGS=-DLUA_USE_MACOSX
-
-mingw:
-	$(MAKE) "LUA_A=lua51.dll" "LUA_T=lua.exe" \
-	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
-	"MYCFLAGS=-DLUA_BUILD_AS_DLL" "MYLIBS=" "MYLDFLAGS=-s" lua.exe
-	$(MAKE) "LUAC_T=luac.exe" luac.exe
-
-posix:
-	$(MAKE) all MYCFLAGS=-DLUA_USE_POSIX
-
-solaris:
-	$(MAKE) all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-ldl"
-
-# list targets that do not create files (but not all makes understand .PHONY)
-.PHONY: all $(PLATS) default o a clean depend echo none
+.PHONY: echo
 
 # DO NOT DELETE
 
