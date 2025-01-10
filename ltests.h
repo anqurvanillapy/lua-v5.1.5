@@ -60,7 +60,7 @@ struct L_EXTRA {
 int luaB_opentests(lua_State *L);
 
 /* real main will be defined at `ltests.c' */
-int l_main(int argc, char *argv[]);
+int l_main(int argc, const char *argv[]);
 #define main l_main
 
 /* change some sizes to give some bugs a chance */

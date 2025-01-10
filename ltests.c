@@ -1029,7 +1029,7 @@ int luaB_opentests(lua_State *L) {
 }
 
 #undef main
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
   int ret;
   char *limit = getenv("MEMLIMIT");
   if (limit)

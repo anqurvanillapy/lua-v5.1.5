@@ -171,7 +171,7 @@ static void print_version(void) {
   l_message(NULL, LUA_RELEASE "  " LUA_COPYRIGHT);
 }
 
-static int getargs(lua_State *L, char **argv, int n) {
+static int getargs(lua_State *L, const char **argv, int n) {
   int narg;
   int i;
   int argc = 0;
@@ -228,7 +228,7 @@ static int incomplete(lua_State *L, int status) {
       return 1;
     }
   }
-  return 0; /* else... */
+  return 0;
 }
 
 static int pushline(lua_State *L, int firstline) {
@@ -300,7 +300,7 @@ static void dotty(lua_State *L) {
   progname = oldprogname;
 }
 
-static int handle_script(lua_State *L, char **argv, int n) {
+static int handleScript(lua_State *L, const char **argv, int n) {
   int status;
   const char *fname;
   int narg = getargs(L, argv, n); /* collect arguments */
@@ -321,12 +321,13 @@ static int handle_script(lua_State *L, char **argv, int n) {
 
 /* check that argument has no extra characters at the end */
 #define notail(x)                                                              \
-  {                                                                            \
-    if ((x)[2] != '\0')                                                        \
+  do {                                                                         \
+    if ((x)[2] != '\0') {                                                      \
       return -1;                                                               \
-  }
+    }                                                                          \
+  } while (0)
 
-static int collectargs(char **argv, int *pi, int *pv, int *pe) {
+static int collectargs(const char **argv, int *pi, int *pv, int *pe) {
   int i;
   for (i = 1; argv[i] != NULL; i++) {
     if (argv[i][0] != '-') { /* not an option? */
@@ -362,7 +363,7 @@ static int collectargs(char **argv, int *pi, int *pv, int *pe) {
   return 0;
 }
 
-static int runargs(lua_State *L, char **argv, int n) {
+static int runargs(lua_State *L, const char **argv, int n) {
   int i;
   for (i = 1; i < n; i++) {
     if (argv[i] == NULL) {
@@ -402,23 +403,23 @@ static int runargs(lua_State *L, char **argv, int n) {
 static int handle_luainit(lua_State *L) {
   const char *init = getenv(LUA_INIT);
   if (init == NULL) {
-    return 0; /* status OK */
-  } else if (init[0] == '@') {
-    return dofile(L, init + 1);
-  } else {
-    return dostring(L, init, "=" LUA_INIT);
+    return 0;
   }
+  if (init[0] == '@') {
+    return dofile(L, init + 1);
+  }
+  return dostring(L, init, "=" LUA_INIT);
 }
 
-struct Smain {
+struct Interpreter {
   int argc;
-  char **argv;
+  const char **argv;
   int status;
 };
 
-static int pmain(lua_State *L) {
-  struct Smain *s = (struct Smain *)lua_touserdata(L, 1);
-  char **argv = s->argv;
+static int Interpreter_main(lua_State *L) {
+  struct Interpreter *s = (struct Interpreter *)lua_touserdata(L, 1);
+  const char **argv = s->argv;
   int script;
   int has_i = 0, has_v = 0, has_e = 0;
   globalL = L;
@@ -446,7 +447,7 @@ static int pmain(lua_State *L) {
     return 0;
   }
   if (script) {
-    s->status = handle_script(L, argv, script);
+    s->status = handleScript(L, argv, script);
   }
   if (s->status != 0) {
     return 0;
@@ -464,17 +465,17 @@ static int pmain(lua_State *L) {
   return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char *argv[]) {
   int status;
-  struct Smain s;
+  struct Interpreter s;
   lua_State *L = lua_open(); /* create state */
-  if (L == NULL) {
+  if (!L) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;
   }
   s.argc = argc;
   s.argv = argv;
-  status = lua_cpcall(L, &pmain, &s);
+  status = lua_cpcall(L, Interpreter_main, &s);
   report(L, status);
   lua_close(L);
   return (status || s.status) ? EXIT_FAILURE : EXIT_SUCCESS;

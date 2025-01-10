@@ -63,7 +63,7 @@ static void usage(const char *message) {
 
 #define IS(s) (strcmp(argv[i], s) == 0)
 
-static int doargs(int argc, char *argv[]) {
+static int doargs(int argc, const char *argv[]) {
   int i;
   int version = 0;
   if (argv[0] != NULL && *argv[0] != 0) {
@@ -72,8 +72,7 @@ static int doargs(int argc, char *argv[]) {
   for (i = 1; i < argc; i++) {
     if (*argv[i] != '-') { /* end of options; keep it */
       break;
-    } else if (IS("--")) /* end of options; skip it */
-    {
+    } else if (IS("--")) { /* end of options; skip it */
       ++i;
       if (version) {
         ++version;
@@ -83,8 +82,7 @@ static int doargs(int argc, char *argv[]) {
       break;
     } else if (IS("-l")) { /* list */
       ++listing;
-    } else if (IS("-o")) /* output file */
-    {
+    } else if (IS("-o")) { /* output file */
       output = argv[++i];
       if (output == NULL || *output == 0) {
         usage(LUA_QL("-o") " needs argument");
@@ -148,15 +146,15 @@ static int writer(lua_State *L, const void *p, size_t size, void *u) {
   return (fwrite(p, size, 1, (FILE *)u) != 1) && (size != 0);
 }
 
-struct Smain {
+struct Compiler {
   int argc;
-  char **argv;
+  const char **argv;
 };
 
-static int pmain(lua_State *L) {
-  struct Smain *s = (struct Smain *)lua_touserdata(L, 1);
+static int Compiler_main(lua_State *L) {
+  struct Compiler *s = (struct Compiler *)lua_touserdata(L, 1);
   int argc = s->argc;
-  char **argv = s->argv;
+  const char **argv = s->argv;
   const Proto *f;
   int i;
   if (!lua_checkstack(L, argc)) {
@@ -190,9 +188,9 @@ static int pmain(lua_State *L) {
   return 0;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, const char *argv[]) {
   lua_State *L;
-  struct Smain s;
+  struct Compiler s;
   int i = doargs(argc, argv);
   argc -= i;
   argv += i;
@@ -205,7 +203,7 @@ int main(int argc, char *argv[]) {
   }
   s.argc = argc;
   s.argv = argv;
-  if (lua_cpcall(L, pmain, &s) != 0) {
+  if (lua_cpcall(L, Compiler_main, &s) != 0) {
     fatal(lua_tostring(L, -1));
   }
   lua_close(L);

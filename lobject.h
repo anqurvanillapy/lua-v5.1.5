@@ -104,82 +104,82 @@ typedef struct lua_TValue {
 #define setnilvalue(obj) ((obj)->tt = LUA_TNIL)
 
 #define setnvalue(obj, x)                                                      \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.n = (x);                                                        \
     i_o->tt = LUA_TNUMBER;                                                     \
-  }
+  } while (0)
 
 #define setpvalue(obj, x)                                                      \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.p = (x);                                                        \
     i_o->tt = LUA_TLIGHTUSERDATA;                                              \
-  }
+  } while (0)
 
 #define setbvalue(obj, x)                                                      \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.b = (x);                                                        \
     i_o->tt = LUA_TBOOLEAN;                                                    \
-  }
+  } while (0)
 
 #define setsvalue(L, obj, x)                                                   \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TSTRING;                                                     \
     checkliveness(G(L), i_o);                                                  \
-  }
+  } while (0)
 
 #define setuvalue(L, obj, x)                                                   \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TUSERDATA;                                                   \
     checkliveness(G(L), i_o);                                                  \
-  }
+  } while (0)
 
 #define setthvalue(L, obj, x)                                                  \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TTHREAD;                                                     \
     checkliveness(G(L), i_o);                                                  \
-  }
+  } while (0)
 
 #define setclvalue(L, obj, x)                                                  \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TFUNCTION;                                                   \
     checkliveness(G(L), i_o);                                                  \
-  }
+  } while (0)
 
 #define sethvalue(L, obj, x)                                                   \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TTABLE;                                                      \
     checkliveness(G(L), i_o);                                                  \
-  }
+  } while (0)
 
 #define setptvalue(L, obj, x)                                                  \
-  {                                                                            \
+  do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TPROTO;                                                      \
     checkliveness(G(L), i_o);                                                  \
-  }
+  } while (0)
 
 #define setobj(L, obj1, obj2)                                                  \
-  {                                                                            \
+  do {                                                                         \
     const TValue *o2 = (obj2);                                                 \
     TValue *o1 = (obj1);                                                       \
     o1->value = o2->value;                                                     \
     o1->tt = o2->tt;                                                           \
     checkliveness(G(L), o1);                                                   \
-  }
+  } while (0)
 
 /*
 ** different types of sets, according to destination
