@@ -5,7 +5,9 @@
 # == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
 CC= gcc
-CFLAGS= -O2 -Wall -DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
+CFLAGS= -g -O2 \
+	-Werror -Wall -Wextra -Wpedantic \
+	-DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
 AR= ar rcu
 RANLIB= ranlib
 RM= rm -f

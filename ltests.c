@@ -931,7 +931,10 @@ static int testC(lua_State *L) {
 ** =======================================================
 */
 
-static void yieldf(lua_State *L, lua_Debug *ar) { lua_yield(L, 0); }
+static void yieldf(lua_State *L, lua_Debug *ar) {
+  (void)ar;
+  lua_yield(L, 0);
+}
 
 static int setyhook(lua_State *L) {
   if (lua_isnoneornil(L, 1))
