@@ -11,28 +11,10 @@
 ** ===================================================================
 */
 
-/*
-@@ LUA_ANSI controls the use of non-ansi features.
-** CHANGE it (define it) if you want Lua to avoid the use of any
-** non-ansi feature or library.
-*/
-#if defined(__STRICT_ANSI__)
-#define LUA_ANSI
-#endif
-
-#if !defined(LUA_ANSI) && defined(_WIN32)
-#define LUA_WIN
-#endif
-
 #if defined(LUA_USE_LINUX)
 #define LUA_USE_POSIX
 #define LUA_USE_DLOPEN   /* needs an extra library: -ldl */
 #define LUA_USE_READLINE /* needs some extra libraries */
-#endif
-
-#if defined(LUA_USE_MACOSX)
-#define LUA_USE_POSIX
-#define LUA_DL_DYLD /* does not need extra library */
 #endif
 
 /*
@@ -44,7 +26,6 @@
 #define LUA_USE_MKSTEMP
 #define LUA_USE_ISATTY
 #define LUA_USE_POPEN
-#define LUA_USE_ULONGJMP
 #endif
 
 /*
@@ -67,19 +48,6 @@
 ** hierarchy or if you want to install your libraries in
 ** non-conventional directories.
 */
-#if defined(_WIN32)
-/*
-** In Windows, any exclamation mark ('!') in the path is replaced by the
-** path of the directory of the executable file of the current process.
-*/
-#define LUA_LDIR "!\\lua\\"
-#define LUA_CDIR "!\\"
-#define LUA_PATH_DEFAULT                                                       \
-  ".\\?.lua;" LUA_LDIR "?.lua;" LUA_LDIR "?\\init.lua;" LUA_CDIR               \
-  "?.lua;" LUA_CDIR "?\\init.lua"
-#define LUA_CPATH_DEFAULT ".\\?.dll;" LUA_CDIR "?.dll;" LUA_CDIR "loadall.dll"
-
-#else
 #define LUA_ROOT "/usr/local/"
 #define LUA_LDIR LUA_ROOT "share/lua/5.1/"
 #define LUA_CDIR LUA_ROOT "lib/lua/5.1/"
@@ -87,18 +55,13 @@
   "./?.lua;" LUA_LDIR "?.lua;" LUA_LDIR "?/init.lua;" LUA_CDIR                 \
   "?.lua;" LUA_CDIR "?/init.lua"
 #define LUA_CPATH_DEFAULT "./?.so;" LUA_CDIR "?.so;" LUA_CDIR "loadall.so"
-#endif
 
 /*
 @@ LUA_DIRSEP is the directory separator (for submodules).
 ** CHANGE it if your machine does not use "/" as the directory separator
 ** and is not Windows. (On Windows Lua automatically uses "\".)
 */
-#if defined(_WIN32)
-#define LUA_DIRSEP "\\"
-#else
 #define LUA_DIRSEP "/"
-#endif
 
 /*
 @@ LUA_PATHSEP is the character that separates templates in a path.
@@ -203,10 +166,6 @@
 #if defined(LUA_USE_ISATTY)
 #include <unistd.h>
 #define lua_stdin_is_tty() isatty(0)
-#elif defined(LUA_WIN)
-#include <io.h>
-#include <stdio.h>
-#define lua_stdin_is_tty() _isatty(_fileno(stdin))
 #else
 #define lua_stdin_is_tty() 1 /* assume stdin is a tty */
 #endif
@@ -517,41 +476,8 @@
 ** system. In Pentium machines, a naive typecast from double to int
 ** in C is extremely slow, so any alternative is worth trying.
 */
-
-/* On a Pentium, resort to a trick */
-#if defined(LUA_NUMBER_DOUBLE) && !defined(LUA_ANSI) && !defined(__SSE2__) &&  \
-    (defined(__i386) || defined(_M_IX86) || defined(__i386__))
-
-/* On a Microsoft compiler, use assembler */
-#if defined(_MSC_VER)
-
-#define lua_number2int(i, d) __asm fld d __asm fistp i
-#define lua_number2integer(i, n) lua_number2int(i, n)
-
-/* the next trick should work on any Pentium, but sometimes clashes
-   with a DirectX idiosyncrasy */
-#else
-
-union luai_Cast {
-  double l_d;
-  long l_l;
-};
-#define lua_number2int(i, d)                                                   \
-  {                                                                            \
-    volatile union luai_Cast u;                                                \
-    u.l_d = (d) + 6755399441055744.0;                                          \
-    (i) = u.l_l;                                                               \
-  }
-#define lua_number2integer(i, n) lua_number2int(i, n)
-
-#endif
-
-/* this option always works, but may be slow */
-#else
 #define lua_number2int(i, d) ((i) = (int)(d))
 #define lua_number2integer(i, d) ((i) = (lua_Integer)(d))
-
-#endif
 
 /* }================================================================== */
 
@@ -576,38 +502,15 @@ union luai_Cast {
 ** longjmp/setjmp. By default, Lua handles errors with exceptions when
 ** compiling as C++ code, with _longjmp/_setjmp when asked to use them,
 ** and with longjmp/setjmp otherwise.
+**
+** In Unix, _longjmp/_setjmp is more efficient.
 */
-#if defined(__cplusplus)
-/* C++ exceptions */
-#define LUAI_THROW(L, c) throw(c)
-#define LUAI_TRY(L, c, a)                                                      \
-  try {                                                                        \
-    a                                                                          \
-  } catch (...) {                                                              \
-    if ((c)->status == 0)                                                      \
-      (c)->status = -1;                                                        \
-  }
-#define luai_jmpbuf int /* dummy variable */
-
-#elif defined(LUA_USE_ULONGJMP)
-/* in Unix, try _longjmp/_setjmp (more efficient) */
 #define LUAI_THROW(L, c) _longjmp((c)->b, 1)
 #define LUAI_TRY(L, c, a)                                                      \
   if (_setjmp((c)->b) == 0) {                                                  \
     a                                                                          \
   }
 #define luai_jmpbuf jmp_buf
-
-#else
-/* default handling with long jumps */
-#define LUAI_THROW(L, c) longjmp((c)->b, 1)
-#define LUAI_TRY(L, c, a)                                                      \
-  if (setjmp((c)->b) == 0) {                                                   \
-    a                                                                          \
-  }
-#define luai_jmpbuf jmp_buf
-
-#endif
 
 /*
 @@ LUA_MAXCAPTURES is the maximum number of captures that a pattern
@@ -658,11 +561,6 @@ union luai_Cast {
 #define lua_popen(L, c, m) ((void)L, fflush(NULL), popen(c, m))
 #define lua_pclose(L, file) ((void)L, (pclose(file) != -1))
 
-#elif defined(LUA_WIN)
-
-#define lua_popen(L, c, m) ((void)L, _popen(c, m))
-#define lua_pclose(L, file) ((void)L, (_pclose(file) != -1))
-
 #else
 
 #define lua_popen(L, c, m)                                                     \
@@ -684,14 +582,9 @@ union luai_Cast {
 ** also add -DLUA_USE_DLOPEN.)
 ** If you do not want any kind of dynamic library, undefine all these
 ** options.
-** By default, _WIN32 gets LUA_DL_DLL and MAC OS X gets LUA_DL_DYLD.
 */
 #if defined(LUA_USE_DLOPEN)
 #define LUA_DL_DLOPEN
-#endif
-
-#if defined(LUA_WIN)
-#define LUA_DL_DLL
 #endif
 
 /*

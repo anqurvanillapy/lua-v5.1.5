@@ -908,14 +908,7 @@ static int testC(lua_State *L) {
     }
 #endif
     else if EQ ("throw") {
-#if defined(__cplusplus)
-      static struct X {
-        int x;
-      } x;
-      throw x;
-#else
       luaL_error(L1, "C++");
-#endif
       break;
     } else
       luaL_error(L, "unknown instruction %s", buff);
