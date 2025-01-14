@@ -258,7 +258,7 @@ static int read_line(lua_State *L, FILE *f) {
     size_t l;
     char *p = luaL_prepbuffer(&b);
     if (fgets(p, LUAL_BUFFER_SIZE, f) == NULL) { /* eof? */
-      luaL_pushresult(&b);                      /* close buffer */
+      luaL_pushresult(&b);                       /* close buffer */
       return (lua_objlen(L, -1) > 0); /* check whether read something */
     }
     l = strlen(p);

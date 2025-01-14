@@ -3,8 +3,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lapi.h"
@@ -69,7 +67,7 @@ static TValue *index2adr(lua_State *L, int idx) {
 
 static Table *getcurrenv(lua_State *L) {
   if (L->ci == L->baseCI) { /* no enclosing function? */
-    return hvalue(gt(L));    /* use global table as environment */
+    return hvalue(gt(L));   /* use global table as environment */
   } else {
     Closure *func = curr_func(L);
     return func->c.env;
@@ -979,7 +977,7 @@ static const char *aux_upvalue(StkId fi, int n, TValue **val) {
     return "";
   } else {
     Proto *p = f->l.p;
-    if (!(1 <= n && n <= p->sizeupvalues)) {
+    if (!(1 <= n && n <= p->sizeUpvalues)) {
       return NULL;
     }
     *val = f->l.upvals[n - 1]->v;

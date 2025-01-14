@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lapi.h"
@@ -172,7 +170,8 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
   return r;
 }
 
-#define checkobjref(g, f, t) lua_assert(testobjref(g, f, LuaObjectToGCObject(t)))
+#define checkobjref(g, f, t)                                                   \
+  lua_assert(testobjref(g, f, LuaObjectToGCObject(t)))
 
 #define checkvalref(g, f, t)                                                   \
   lua_assert(!iscollectable(t) || ((ttype(t) == (t)->value.gc->gch.tt) &&      \
@@ -206,21 +205,21 @@ static void checkproto(global_State *g, Proto *f) {
   GCObject *fgc = LuaObjectToGCObject(f);
   if (f->source)
     checkobjref(g, fgc, f->source);
-  for (i = 0; i < f->sizek; i++) {
+  for (i = 0; i < f->kSize; i++) {
     if (ttisstring(f->k + i))
       checkobjref(g, fgc, rawtsvalue(f->k + i));
   }
-  for (i = 0; i < f->sizeupvalues; i++) {
+  for (i = 0; i < f->sizeUpvalues; i++) {
     if (f->upvalues[i])
       checkobjref(g, fgc, f->upvalues[i]);
   }
-  for (i = 0; i < f->sizep; i++) {
+  for (i = 0; i < f->pSize; i++) {
     if (f->p[i])
       checkobjref(g, fgc, f->p[i]);
   }
-  for (i = 0; i < f->sizelocvars; i++) {
-    if (f->locvars[i].varname)
-      checkobjref(g, fgc, f->locvars[i].varname);
+  for (i = 0; i < f->locVarsSize; i++) {
+    if (f->locVars[i].varname)
+      checkobjref(g, fgc, f->locVars[i].varname);
   }
 }
 
@@ -321,9 +320,9 @@ int lua_checkpc(lua_State *L, pCallInfo ci) {
   else {
     Proto *p = ci_func(ci)->l.p;
     if (ci < L->ci)
-      return p->code <= ci->savedpc && ci->savedpc <= p->code + p->sizecode;
+      return p->code <= ci->savedpc && ci->savedpc <= p->code + p->codeSize;
     else
-      return p->code <= L->savedPC && L->savedPC <= p->code + p->sizecode;
+      return p->code <= L->savedPC && L->savedPC <= p->code + p->codeSize;
   }
 }
 
@@ -341,7 +340,8 @@ int lua_checkmemory(lua_State *L) {
   for (uv = g->uvhead.u.l.next; uv != &g->uvhead; uv = uv->u.l.next) {
     lua_assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
     lua_assert(uv->v != &uv->u.value); /* must be open */
-    lua_assert(!isblack(LuaObjectToGCObject(uv))); /* open upvalues are never black */
+    lua_assert(
+        !isblack(LuaObjectToGCObject(uv))); /* open upvalues are never black */
     checkvalref(g, LuaObjectToGCObject(uv), uv->v);
   }
   return 0;
@@ -398,7 +398,7 @@ static int listcode(lua_State *L) {
   lua_newtable(L);
   setnameval(L, "maxstack", p->maxstacksize);
   setnameval(L, "numparams", p->numparams);
-  for (pc = 0; pc < p->sizecode; pc++) {
+  for (pc = 0; pc < p->codeSize; pc++) {
     char buff[100];
     lua_pushinteger(L, pc + 1);
     lua_pushstring(L, buildop(p, pc, buff));
@@ -413,8 +413,8 @@ static int listk(lua_State *L) {
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
   p = clvalue(obj_at(L, 1))->l.p;
-  lua_createtable(L, p->sizek, 0);
-  for (i = 0; i < p->sizek; i++) {
+  lua_createtable(L, p->kSize, 0);
+  for (i = 0; i < p->kSize; i++) {
     luaA_pushobject(L, p->k + i);
     lua_rawseti(L, -2, i + 1);
   }

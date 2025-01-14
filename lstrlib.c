@@ -698,8 +698,8 @@ static int str_gsub(lua_State *L) {
   MatchState ms;
   luaL_Buffer b;
   luaL_argcheck(L,
-                tr == LUA_TYPE_NUMBER || tr == LUA_TYPE_STRING || tr == LUA_TYPE_FUNCTION ||
-                    tr == LUA_TYPE_TABLE,
+                tr == LUA_TYPE_NUMBER || tr == LUA_TYPE_STRING ||
+                    tr == LUA_TYPE_FUNCTION || tr == LUA_TYPE_TABLE,
                 3, "string/function/table expected");
   luaL_buffinit(L, &b);
   ms.L = L;

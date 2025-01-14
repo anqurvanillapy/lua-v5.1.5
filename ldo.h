@@ -7,7 +7,7 @@
 #include "lzio.h"
 
 #define luaD_checkstack(L, n)                                                  \
-  if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(TValue))     \
+  if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(TValue))      \
     luaD_growstack(L, n);                                                      \
   else                                                                         \
     condhardstacktests(luaD_reallocstack(L, L->stackSize - EXTRA_STACK - 1));

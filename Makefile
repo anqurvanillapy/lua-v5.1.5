@@ -4,8 +4,9 @@
 
 # == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
-CC= gcc
-CFLAGS= -g -O2 \
+# FIXME(anqur): I have to use this to suppress IDE warnings, forgive me.
+CC= /opt/homebrew/opt/llvm/bin/clang
+CFLAGS= -std=c23 -g -O2 \
 	-Werror -Wall -Wextra -Wpedantic \
 	-DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
 AR= ar rcu
@@ -17,7 +18,7 @@ LIBS= -lm -lreadline
 
 LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
-	lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o  \
+	lobject.o lopcodes.o lua_parser.o lstate.o lstring.o ltable.o ltm.o  \
 	lundump.o lvm.o lzio.o ltests.o
 LIB_O=	lauxlib.o lbaselib.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o \
 	lstrlib.o loadlib.o linit.o
@@ -67,7 +68,7 @@ echo:
 	@echo "RM = $(RM)"
 .PHONY: echo
 
-# DO NOT DELETE
+# Use `make depend` to generate the following targets.
 
 lapi.o: lapi.c lua.h luaconf.h ltests.h lapi.h lobject.h llimits.h \
   ldebug.h lstate.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lstring.h \
@@ -75,15 +76,15 @@ lapi.o: lapi.c lua.h luaconf.h ltests.h lapi.h lobject.h llimits.h \
 lauxlib.o: lauxlib.c lua.h luaconf.h ltests.h lauxlib.h
 lbaselib.o: lbaselib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 lcode.o: lcode.c lua.h luaconf.h ltests.h lcode.h llex.h lobject.h \
-  llimits.h lzio.h lmem.h lopcodes.h lparser.h ldebug.h lstate.h ltm.h \
-  lgc.h ltable.h
+  llimits.h lzio.h lmem.h lopcodes.h lua_parser.h ldebug.h lstate.h \
+  ltm.h lgc.h ltable.h
 ldblib.o: ldblib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 ldebug.o: ldebug.c lua.h luaconf.h ltests.h lapi.h lobject.h llimits.h \
   ldebug.h lstate.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lopcodes.h \
   ltable.h lvm.h
 ldo.o: ldo.c lua.h luaconf.h ltests.h ldebug.h lstate.h lobject.h \
-  llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lopcodes.h lparser.h \
-  lstring.h ltable.h lundump.h lvm.h
+  llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lopcodes.h lstring.h \
+  ltable.h lua_parser.h lundump.h lvm.h
 ldump.o: ldump.c lua.h luaconf.h ltests.h lobject.h llimits.h lstate.h \
   ltm.h lzio.h lmem.h lundump.h
 lfunc.o: lfunc.c lua.h luaconf.h ltests.h lfunc.h lobject.h llimits.h \
@@ -93,7 +94,8 @@ lgc.o: lgc.c lua.h luaconf.h ltests.h ldo.h lobject.h llimits.h lstate.h \
 linit.o: linit.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 liolib.o: liolib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 llex.o: llex.c lua.h luaconf.h ltests.h ldo.h lobject.h llimits.h \
-  lstate.h ltm.h lzio.h lmem.h llex.h lparser.h lstring.h lgc.h ltable.h
+  lstate.h ltm.h lzio.h lmem.h llex.h lstring.h lgc.h ltable.h \
+  lua_parser.h
 lmathlib.o: lmathlib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 lmem.o: lmem.c lua.h luaconf.h ltests.h ldebug.h lstate.h lobject.h \
   llimits.h ltm.h lzio.h lmem.h ldo.h
@@ -102,9 +104,6 @@ lobject.o: lobject.c lua.h luaconf.h ltests.h ldo.h lobject.h llimits.h \
   lstate.h ltm.h lzio.h lmem.h lstring.h lgc.h lvm.h
 lopcodes.o: lopcodes.c lopcodes.h llimits.h lua.h luaconf.h ltests.h
 loslib.o: loslib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
-lparser.o: lparser.c lua.h luaconf.h ltests.h lcode.h llex.h lobject.h \
-  llimits.h lzio.h lmem.h lopcodes.h lparser.h ldebug.h lstate.h ltm.h \
-  ldo.h lfunc.h lstring.h lgc.h ltable.h
 lstate.o: lstate.c lua.h luaconf.h ltests.h ldebug.h lstate.h lobject.h \
   llimits.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h llex.h lstring.h \
   ltable.h
@@ -120,6 +119,9 @@ ltests.o: ltests.c lua.h luaconf.h ltests.h lapi.h lobject.h llimits.h \
 ltm.o: ltm.c lua.h luaconf.h ltests.h lobject.h llimits.h lstate.h ltm.h \
   lzio.h lmem.h lstring.h lgc.h ltable.h
 lua.o: lua.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
+lua_parser.o: lua_parser.c lua.h luaconf.h ltests.h lcode.h llex.h \
+  lobject.h llimits.h lzio.h lmem.h lopcodes.h lua_parser.h ldebug.h \
+  lstate.h ltm.h ldo.h lfunc.h lstring.h lgc.h ltable.h
 luac.o: luac.c lauxlib.h lua.h luaconf.h ltests.h ldo.h lobject.h \
   llimits.h lstate.h ltm.h lzio.h lmem.h lfunc.h lopcodes.h lstring.h \
   lgc.h lundump.h
@@ -132,5 +134,3 @@ lzio.o: lzio.c lua.h luaconf.h ltests.h llimits.h lmem.h lstate.h \
   lobject.h ltm.h lzio.h
 print.o: print.c ldebug.h lstate.h lua.h luaconf.h ltests.h lobject.h \
   llimits.h ltm.h lzio.h lmem.h lopcodes.h lundump.h
-
-# (end of Makefile)

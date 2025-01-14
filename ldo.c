@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "ldebug.h"
@@ -15,11 +13,11 @@
 #include "lmem.h"
 #include "lobject.h"
 #include "lopcodes.h"
-#include "lparser.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
+#include "lua_parser.h"
 #include "lundump.h"
 #include "lvm.h"
 #include "lzio.h"
@@ -240,7 +238,7 @@ static StkId tryfuncTM(lua_State *L, StkId func) {
 }
 
 #define inc_ci(L)                                                              \
-  ((L->ci == L->endCI)                                                        \
+  ((L->ci == L->endCI)                                                         \
        ? growCI(L)                                                             \
        : (condhardstacktests(luaD_reallocCI(L, L->ciSize)), ++L->ci))
 
@@ -355,7 +353,8 @@ void luaD_call(lua_State *L, StkId func, int nResults) {
   if (++L->nestedCCallNum >= LUAI_MAX_C_CALLS) {
     if (L->nestedCCallNum == LUAI_MAX_C_CALLS) {
       luaG_runerror(L, "C stack overflow");
-    } else if (L->nestedCCallNum >= (LUAI_MAX_C_CALLS + (LUAI_MAX_C_CALLS >> 3))) {
+    } else if (L->nestedCCallNum >=
+               (LUAI_MAX_C_CALLS + (LUAI_MAX_C_CALLS >> 3))) {
       luaD_throw(L, LUA_ERRERR); /* error while handing stack error */
     }
   }

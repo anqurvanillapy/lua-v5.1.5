@@ -6,7 +6,6 @@
 #include <string.h>
 
 #define luac_c
-#define LUA_CORE
 
 #include "lauxlib.h"
 #include "lua.h"
@@ -127,9 +126,9 @@ static const Proto *combine(lua_State *L, int n) {
     f->maxstacksize = 1;
     pc = 2 * n + 1;
     f->code = luaM_newvector(L, pc, Instruction);
-    f->sizecode = pc;
+    f->codeSize = pc;
     f->p = luaM_newvector(L, n, Proto *);
-    f->sizep = n;
+    f->pSize = n;
     pc = 0;
     for (i = 0; i < n; i++) {
       f->p[i] = toproto(L, i - n - 1);

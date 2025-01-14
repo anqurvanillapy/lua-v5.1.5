@@ -2,8 +2,6 @@
 
 #include <stdlib.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lcode.h"
@@ -13,8 +11,8 @@
 #include "lmem.h"
 #include "lobject.h"
 #include "lopcodes.h"
-#include "lparser.h"
 #include "ltable.h"
+#include "lua_parser.h"
 
 #define hasjumps(e) ((e)->t != (e)->f)
 
@@ -215,15 +213,15 @@ static int addk(FuncState *fs, TValue *k, TValue *v) {
   lua_State *L = fs->L;
   TValue *idx = luaH_set(L, fs->h, k);
   Proto *f = fs->f;
-  int oldsize = f->sizek;
+  int oldsize = f->kSize;
   if (ttisnumber(idx)) {
     lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(nvalue(idx))], v));
     return cast_int(nvalue(idx));
   } else { /* constant not found; create a new entry */
     setnvalue(idx, cast_num(fs->nk));
-    luaM_growvector(L, f->k, fs->nk, f->sizek, TValue, MAXARG_Bx,
+    luaM_growvector(L, f->k, fs->nk, f->kSize, TValue, MAXARG_Bx,
                     "constant table overflow");
-    while (oldsize < f->sizek) {
+    while (oldsize < f->kSize) {
       setnilvalue(&f->k[oldsize++]);
     }
     setobj(L, &f->k[fs->nk], v);
@@ -819,20 +817,20 @@ void luaK_posfix(FuncState *fs, BinOpr op, expdesc *e1, expdesc *e2) {
 }
 
 void luaK_fixline(FuncState *fs, int line) {
-  fs->f->lineinfo[fs->pc - 1] = line;
+  fs->f->lineInfo[fs->pc - 1] = line;
 }
 
 static int luaK_code(FuncState *fs, Instruction i, int line) {
   Proto *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
-  luaM_growvector(fs->L, f->code, fs->pc, f->sizecode, Instruction, MAX_INT,
+  luaM_growvector(fs->L, f->code, fs->pc, f->codeSize, Instruction, MAX_INT,
                   "code size overflow");
   f->code[fs->pc] = i;
   /* save corresponding line information */
-  luaM_growvector(fs->L, f->lineinfo, fs->pc, f->sizelineinfo, int, MAX_INT,
+  luaM_growvector(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int, MAX_INT,
                   "code size overflow");
-  f->lineinfo[fs->pc] = line;
+  f->lineInfo[fs->pc] = line;
   return fs->pc++;
 }
 

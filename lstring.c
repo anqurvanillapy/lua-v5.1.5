@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lmem.h"

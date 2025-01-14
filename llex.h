@@ -53,9 +53,6 @@ enum RESERVED {
 /* number of reserved words */
 #define NUM_RESERVED (cast(int, TK_WHILE - FIRST_RESERVED + 1))
 
-/* array with token `names' */
-LUAI_DATA const char *const luaX_tokens[];
-
 typedef union {
   lua_Number r;
   TString *ts;

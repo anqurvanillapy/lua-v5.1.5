@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "ldebug.h"
@@ -80,7 +78,7 @@ static TString *LoadString(LoadState *S) {
 static void LoadCode(LoadState *S, Proto *f) {
   int n = LoadInt(S);
   f->code = luaM_newvector(S->L, n, Instruction);
-  f->sizecode = n;
+  f->codeSize = n;
   LoadVector(S, f->code, n, sizeof(Instruction));
 }
 
@@ -90,7 +88,7 @@ static void LoadConstants(LoadState *S, Proto *f) {
   int i, n;
   n = LoadInt(S);
   f->k = luaM_newvector(S->L, n, TValue);
-  f->sizek = n;
+  f->kSize = n;
   for (i = 0; i < n; i++) {
     setnilvalue(&f->k[i]);
   }
@@ -117,7 +115,7 @@ static void LoadConstants(LoadState *S, Proto *f) {
   }
   n = LoadInt(S);
   f->p = luaM_newvector(S->L, n, Proto *);
-  f->sizep = n;
+  f->pSize = n;
   for (i = 0; i < n; i++) {
     f->p[i] = NULL;
   }
@@ -129,23 +127,23 @@ static void LoadConstants(LoadState *S, Proto *f) {
 static void LoadDebug(LoadState *S, Proto *f) {
   int i, n;
   n = LoadInt(S);
-  f->lineinfo = luaM_newvector(S->L, n, int);
-  f->sizelineinfo = n;
-  LoadVector(S, f->lineinfo, n, sizeof(int));
+  f->lineInfo = luaM_newvector(S->L, n, int);
+  f->lineInfoSize = n;
+  LoadVector(S, f->lineInfo, n, sizeof(int));
   n = LoadInt(S);
-  f->locvars = luaM_newvector(S->L, n, LocVar);
-  f->sizelocvars = n;
+  f->locVars = luaM_newvector(S->L, n, LocVar);
+  f->locVarsSize = n;
   for (i = 0; i < n; i++) {
-    f->locvars[i].varname = NULL;
+    f->locVars[i].varname = NULL;
   }
   for (i = 0; i < n; i++) {
-    f->locvars[i].varname = LoadString(S);
-    f->locvars[i].startpc = LoadInt(S);
-    f->locvars[i].endpc = LoadInt(S);
+    f->locVars[i].varname = LoadString(S);
+    f->locVars[i].startPC = LoadInt(S);
+    f->locVars[i].endPC = LoadInt(S);
   }
   n = LoadInt(S);
   f->upvalues = luaM_newvector(S->L, n, TString *);
-  f->sizeupvalues = n;
+  f->sizeUpvalues = n;
   for (i = 0; i < n; i++) {
     f->upvalues[i] = NULL;
   }

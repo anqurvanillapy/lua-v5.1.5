@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lapi.h"
@@ -155,9 +153,9 @@ static void collectvalidlines(lua_State *L, Closure *f) {
     setnilvalue(L->top);
   } else {
     Table *t = luaH_new(L, 0, 0);
-    int *lineinfo = f->l.p->lineinfo;
+    int *lineinfo = f->l.p->lineInfo;
     int i;
-    for (i = 0; i < f->l.p->sizelineinfo; i++)
+    for (i = 0; i < f->l.p->lineInfoSize; i++)
       setbvalue(luaH_setnum(L, t, lineinfo[i]), 1);
     sethvalue(L, L->top, t);
   }
@@ -247,7 +245,7 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
     }                                                                          \
   } while (0)
 
-#define checkjump(pt, pc) check(0 <= pc && pc < pt->sizecode)
+#define checkjump(pt, pc) check(0 <= pc && pc < pt->codeSize)
 
 #define checkreg(pt, reg) check((reg) < (pt)->maxstacksize)
 
@@ -255,10 +253,10 @@ static int precheck(const Proto *pt) {
   check(pt->maxstacksize <= MAXSTACK);
   check(pt->numparams + (pt->is_vararg & VARARG_HASARG) <= pt->maxstacksize);
   check(!(pt->is_vararg & VARARG_NEEDSARG) || (pt->is_vararg & VARARG_HASARG));
-  check(pt->sizeupvalues <= pt->nups);
-  check(pt->sizelineinfo == pt->sizecode || pt->sizelineinfo == 0);
-  check(pt->sizecode > 0 &&
-        GET_OPCODE(pt->code[pt->sizecode - 1]) == OP_RETURN);
+  check(pt->sizeUpvalues <= pt->nups);
+  check(pt->lineInfoSize == pt->codeSize || pt->lineInfoSize == 0);
+  check(pt->codeSize > 0 &&
+        GET_OPCODE(pt->code[pt->codeSize - 1]) == OP_RETURN);
   return 1;
 }
 
@@ -289,7 +287,7 @@ static int checkArgMode(const Proto *pt, int r, enum OpArgMask mode) {
     checkreg(pt, r);
     break;
   case OpArgK:
-    check(ISK(r) ? INDEXK(r) < pt->sizek : r < pt->maxstacksize);
+    check(ISK(r) ? INDEXK(r) < pt->kSize : r < pt->maxstacksize);
     break;
   }
   return 1;
@@ -299,7 +297,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
   int pc;
   int last; /* stores position of last instruction that changed `reg' */
   last =
-      pt->sizecode - 1; /* points to final return (a `neutral' instruction) */
+      pt->codeSize - 1; /* points to final return (a `neutral' instruction) */
   check(precheck(pt));
   for (pc = 0; pc < lastpc; pc++) {
     Instruction i = pt->code[pc];
@@ -320,7 +318,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
     case iABx: {
       b = GETARG_Bx(i);
       if (getBMode(op) == OpArgK) {
-        check(b < pt->sizek);
+        check(b < pt->kSize);
       }
       break;
     }
@@ -328,7 +326,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
       b = GETARG_sBx(i);
       if (getBMode(op) == OpArgR) {
         int dest = pc + 1 + b;
-        check(0 <= dest && dest < pt->sizecode);
+        check(0 <= dest && dest < pt->codeSize);
         if (dest > 0) {
           int j;
           /* check that it does not jump to a setlist count; this
@@ -355,13 +353,13 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
       }
     }
     if (testTMode(op)) {
-      check(pc + 2 < pt->sizecode); /* check skip */
+      check(pc + 2 < pt->codeSize); /* check skip */
       check(GET_OPCODE(pt->code[pc + 1]) == OP_JMP);
     }
     switch (op) {
     case OP_LOADBOOL: {
       if (c == 1) {                   /* does it jump? */
-        check(pc + 2 < pt->sizecode); /* check its jump */
+        check(pc + 2 < pt->codeSize); /* check its jump */
         check(GET_OPCODE(pt->code[pc + 1]) != OP_SETLIST ||
               GETARG_C(pt->code[pc + 1]) != 0);
       }
@@ -443,15 +441,15 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
       }
       if (c == 0) {
         pc++;
-        check(pc < pt->sizecode - 1);
+        check(pc < pt->codeSize - 1);
       }
       break;
     }
     case OP_CLOSURE: {
       int nup, j;
-      check(b < pt->sizep);
+      check(b < pt->pSize);
       nup = pt->p[b]->nups;
-      check(pc + nup < pt->sizecode);
+      check(pc + nup < pt->codeSize);
       for (j = 1; j <= nup; j++) {
         OpCode op1 = GET_OPCODE(pt->code[pc + j]);
         check(op1 == OP_GETUPVAL || op1 == OP_MOVE);
@@ -485,7 +483,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
 /* }====================================================== */
 
 int luaG_checkcode(const Proto *pt) {
-  return (symbexec(pt, pt->sizecode, NO_REG) != 0);
+  return (symbexec(pt, pt->codeSize, NO_REG) != 0);
 }
 
 static const char *kname(Proto *p, int c) {

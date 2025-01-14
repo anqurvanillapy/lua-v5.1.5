@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #define luac_c
-#define LUA_CORE
 
 #include "ldebug.h"
 #include "lobject.h"
@@ -84,7 +83,7 @@ static void PrintConstant(const Proto *f, int i) {
 
 static void PrintCode(const Proto *f) {
   const Instruction *code = f->code;
-  int pc, n = f->sizecode;
+  int pc, n = f->codeSize;
   for (pc = 0; pc < n; pc++) {
     Instruction i = code[pc];
     OpCode o = GET_OPCODE(i);
@@ -133,7 +132,7 @@ static void PrintCode(const Proto *f) {
       break;
     case OP_GETUPVAL:
     case OP_SETUPVAL:
-      printf("\t; %s", (f->sizeupvalues > 0) ? getstr(f->upvalues[b]) : "-");
+      printf("\t; %s", (f->sizeUpvalues > 0) ? getstr(f->upvalues[b]) : "-");
       break;
     case OP_GETGLOBAL:
     case OP_SETGLOBAL:
@@ -206,17 +205,17 @@ static void PrintHeader(const Proto *f) {
   }
   printf("\n%s <%s:%d,%d> (%d instruction%s, %d bytes at %p)\n",
          (f->linedefined == 0) ? "main" : "function", s, f->linedefined,
-         f->lastlinedefined, S(f->sizecode), f->sizecode * Sizeof(Instruction),
+         f->lastlinedefined, S(f->codeSize), f->codeSize * Sizeof(Instruction),
          VOID(f));
   printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->numparams,
          f->is_vararg ? "+" : "", SS(f->numparams), S(f->maxstacksize),
          S(f->nups));
-  printf("%d local%s, %d constant%s, %d function%s\n", S(f->sizelocvars),
-         S(f->sizek), S(f->sizep));
+  printf("%d local%s, %d constant%s, %d function%s\n", S(f->locVarsSize),
+         S(f->kSize), S(f->pSize));
 }
 
 static void PrintConstants(const Proto *f) {
-  int i, n = f->sizek;
+  int i, n = f->kSize;
   printf("constants (%d) for %p:\n", n, VOID(f));
   for (i = 0; i < n; i++) {
     printf("\t%d\t", i + 1);
@@ -226,16 +225,16 @@ static void PrintConstants(const Proto *f) {
 }
 
 static void PrintLocals(const Proto *f) {
-  int i, n = f->sizelocvars;
+  int i, n = f->locVarsSize;
   printf("locals (%d) for %p:\n", n, VOID(f));
   for (i = 0; i < n; i++) {
-    printf("\t%d\t%s\t%d\t%d\n", i, getstr(f->locvars[i].varname),
-           f->locvars[i].startpc + 1, f->locvars[i].endpc + 1);
+    printf("\t%d\t%s\t%d\t%d\n", i, getstr(f->locVars[i].varname),
+           f->locVars[i].startPC + 1, f->locVars[i].endPC + 1);
   }
 }
 
 static void PrintUpvalues(const Proto *f) {
-  int i, n = f->sizeupvalues;
+  int i, n = f->sizeUpvalues;
   printf("upvalues (%d) for %p:\n", n, VOID(f));
   if (f->upvalues == NULL) {
     return;
@@ -246,7 +245,7 @@ static void PrintUpvalues(const Proto *f) {
 }
 
 void PrintFunction(const Proto *f, int full) {
-  int i, n = f->sizep;
+  int i, n = f->pSize;
   PrintHeader(f);
   PrintCode(f);
   if (full) {

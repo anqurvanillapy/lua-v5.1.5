@@ -2,8 +2,6 @@
 
 #include <stddef.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lobject.h"
@@ -54,12 +52,12 @@ static void DumpString(const TString *s, DumpState *D) {
   }
 }
 
-#define DumpCode(f, D) DumpVector(f->code, f->sizecode, sizeof(Instruction), D)
+#define DumpCode(f, D) DumpVector(f->code, f->codeSize, sizeof(Instruction), D)
 
 static void DumpFunction(const Proto *f, const TString *p, DumpState *D);
 
 static void DumpConstants(const Proto *f, DumpState *D) {
-  int i, n = f->sizek;
+  int i, n = f->kSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
     const TValue *o = &f->k[i];
@@ -81,7 +79,7 @@ static void DumpConstants(const Proto *f, DumpState *D) {
       break;
     }
   }
-  n = f->sizep;
+  n = f->pSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
     DumpFunction(f->p[i], f->source, D);
@@ -90,16 +88,16 @@ static void DumpConstants(const Proto *f, DumpState *D) {
 
 static void DumpDebug(const Proto *f, DumpState *D) {
   int i, n;
-  n = (D->strip) ? 0 : f->sizelineinfo;
-  DumpVector(f->lineinfo, n, sizeof(int), D);
-  n = (D->strip) ? 0 : f->sizelocvars;
+  n = (D->strip) ? 0 : f->lineInfoSize;
+  DumpVector(f->lineInfo, n, sizeof(int), D);
+  n = (D->strip) ? 0 : f->locVarsSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
-    DumpString(f->locvars[i].varname, D);
-    DumpInt(f->locvars[i].startpc, D);
-    DumpInt(f->locvars[i].endpc, D);
+    DumpString(f->locVars[i].varname, D);
+    DumpInt(f->locVars[i].startPC, D);
+    DumpInt(f->locVars[i].endPC, D);
   }
-  n = (D->strip) ? 0 : f->sizeupvalues;
+  n = (D->strip) ? 0 : f->sizeUpvalues;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
     DumpString(f->upvalues[i], D);

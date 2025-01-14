@@ -1,4 +1,4 @@
-#define LUA_CORE
+
 
 #include "lopcodes.h"
 

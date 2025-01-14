@@ -110,7 +110,7 @@ typedef struct luaL_Buffer {
 } luaL_Buffer;
 
 #define luaL_addchar(B, c)                                                     \
-  ((void)((B)->p < ((B)->buffer + LUAL_BUFFER_SIZE) || luaL_prepbuffer(B)),     \
+  ((void)((B)->p < ((B)->buffer + LUAL_BUFFER_SIZE) || luaL_prepbuffer(B)),    \
    (*(B)->p++ = (char)(c)))
 
 /* compatibility only */

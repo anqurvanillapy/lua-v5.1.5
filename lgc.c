@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "ldo.h"
@@ -46,8 +44,8 @@
 
 #define markobject(g, t)                                                       \
   {                                                                            \
-    if (iswhite(LuaObjectToGCObject(t)))                                                   \
-      reallymarkobject(g, LuaObjectToGCObject(t));                                         \
+    if (iswhite(LuaObjectToGCObject(t)))                                       \
+      reallymarkobject(g, LuaObjectToGCObject(t));                             \
   }
 
 #define setthreshold(g) (g->GCthreshold = (g->estimate / 100) * g->gcpause)
@@ -162,7 +160,7 @@ static int traversetable(global_State *g, Table *h) {
       h->marked &= ~(KEYWEAK | VALUEWEAK); /* clear bits */
       h->marked |=
           cast_byte((weakkey << KEYWEAKBIT) | (weakvalue << VALUEWEAKBIT));
-      h->gclist = g->weak;  /* must be cleared after GC, ... */
+      h->gclist = g->weak;              /* must be cleared after GC, ... */
       g->weak = LuaObjectToGCObject(h); /* ... so put in the appropriate list */
     }
   }
@@ -200,20 +198,20 @@ static void traverseproto(global_State *g, Proto *f) {
   if (f->source) {
     stringmark(f->source);
   }
-  for (i = 0; i < f->sizek; i++) /* mark literals */
+  for (i = 0; i < f->kSize; i++) /* mark literals */
     markvalue(g, &f->k[i]);
-  for (i = 0; i < f->sizeupvalues; i++) { /* mark upvalue names */
+  for (i = 0; i < f->sizeUpvalues; i++) { /* mark upvalue names */
     if (f->upvalues[i]) {
       stringmark(f->upvalues[i]);
     }
   }
-  for (i = 0; i < f->sizep; i++) { /* mark nested protos */
+  for (i = 0; i < f->pSize; i++) { /* mark nested protos */
     if (f->p[i])
       markobject(g, f->p[i]);
   }
-  for (i = 0; i < f->sizelocvars; i++) { /* mark local-variable names */
-    if (f->locvars[i].varname) {
-      stringmark(f->locvars[i].varname);
+  for (i = 0; i < f->locVarsSize; i++) { /* mark local-variable names */
+    if (f->locVars[i].varname) {
+      stringmark(f->locVars[i].varname);
     }
   }
 }
@@ -235,9 +233,9 @@ static void traverseclosure(global_State *g, Closure *cl) {
 
 static void checkstacksizes(lua_State *L, StkId max) {
   int ci_used = cast_int(L->ci - L->baseCI); /* number of `ci' in use */
-  int s_used = cast_int(max - L->stack);      /* part of stack in use */
+  int s_used = cast_int(max - L->stack);     /* part of stack in use */
   if (L->ciSize > LUAI_MAXCALLS) {           /* handling overflow? */
-    return;                                   /* do not touch the stacks */
+    return;                                  /* do not touch the stacks */
   }
   if (4 * ci_used < L->ciSize && 2 * BASIC_CI_SIZE < L->ciSize) {
     luaD_reallocCI(L, L->ciSize / 2); /* still big enough... */
@@ -308,10 +306,10 @@ static l_mem propagatemark(global_State *g) {
     Proto *p = gco2p(o);
     g->gray = p->gclist;
     traverseproto(g, p);
-    return sizeof(Proto) + sizeof(Instruction) * p->sizecode +
-           sizeof(Proto *) * p->sizep + sizeof(TValue) * p->sizek +
-           sizeof(int) * p->sizelineinfo + sizeof(LocVar) * p->sizelocvars +
-           sizeof(TString *) * p->sizeupvalues;
+    return sizeof(Proto) + sizeof(Instruction) * p->codeSize +
+           sizeof(Proto *) * p->pSize + sizeof(TValue) * p->kSize +
+           sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
+           sizeof(TString *) * p->sizeUpvalues;
   }
   default:
     lua_assert(0);

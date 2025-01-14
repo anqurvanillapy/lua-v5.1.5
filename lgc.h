@@ -73,25 +73,25 @@
 
 #define luaC_barrier(L, p, v)                                                  \
   {                                                                            \
-    if (valiswhite(v) && isblack(LuaObjectToGCObject(p)))                                  \
-      luaC_barrierf(L, LuaObjectToGCObject(p), gcvalue(v));                                \
+    if (valiswhite(v) && isblack(LuaObjectToGCObject(p)))                      \
+      luaC_barrierf(L, LuaObjectToGCObject(p), gcvalue(v));                    \
   }
 
 #define luaC_barriert(L, t, v)                                                 \
   {                                                                            \
-    if (valiswhite(v) && isblack(LuaObjectToGCObject(t)))                                  \
+    if (valiswhite(v) && isblack(LuaObjectToGCObject(t)))                      \
       luaC_barrierback(L, t);                                                  \
   }
 
 #define luaC_objbarrier(L, p, o)                                               \
   {                                                                            \
-    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(p)))                            \
-      luaC_barrierf(L, LuaObjectToGCObject(p), LuaObjectToGCObject(o));                                \
+    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(p)))    \
+      luaC_barrierf(L, LuaObjectToGCObject(p), LuaObjectToGCObject(o));        \
   }
 
 #define luaC_objbarriert(L, t, o)                                              \
   {                                                                            \
-    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(t)))                            \
+    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(t)))    \
       luaC_barrierback(L, t);                                                  \
   }
 

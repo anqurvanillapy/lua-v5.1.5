@@ -2,8 +2,6 @@
 
 #include <stddef.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "ldebug.h"

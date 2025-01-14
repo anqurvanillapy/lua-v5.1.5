@@ -339,7 +339,6 @@
 /*
 @@ The luai_num* macros define the primitive operations over numbers.
 */
-#if defined(LUA_CORE)
 #include <math.h>
 #define luai_numadd(a, b) ((a) + (b))
 #define luai_numsub(a, b) ((a) - (b))
@@ -352,7 +351,6 @@
 #define luai_numlt(a, b) ((a) < (b))
 #define luai_numle(a, b) ((a) <= (b))
 #define luai_numisnan(a) (!luai_numeq((a), (a)))
-#endif
 
 /*
 @@ lua_number2int is a macro to convert lua_Number to int.

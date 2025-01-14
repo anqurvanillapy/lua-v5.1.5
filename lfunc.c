@@ -2,8 +2,6 @@
 
 #include <stddef.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "lfunc.h"
@@ -28,7 +26,7 @@ Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
   c->l.env = e;
   c->l.nupvalues = cast_byte(nelems);
   while (nelems--) {
-    c->l.upvals[nelems] = NULL;
+    c->l.upvals[nelems] = nullptr;
   }
   return c;
 }
@@ -46,9 +44,9 @@ UpVal *luaF_findupval(lua_State *L, StkId level) {
   GCObject **pp = &L->openUpval;
   UpVal *p;
   UpVal *uv;
-  while (*pp != NULL && (p = ngcotouv(*pp))->v >= level) {
+  while (*pp != nullptr && (p = ngcotouv(*pp))->v >= level) {
     lua_assert(p->v != &p->u.value);
-    if (p->v == level) {           /* found a corresponding upvalue? */
+    if (p->v == level) { /* found a corresponding upvalue? */
       if (isdead(g, LuaObjectToGCObject(p))) { /* is it dead? */
         changewhite(LuaObjectToGCObject(p));   /* ressurect it */
       }
@@ -86,7 +84,7 @@ void luaF_freeupval(lua_State *L, UpVal *uv) {
 void luaF_close(lua_State *L, StkId level) {
   UpVal *uv;
   global_State *g = G(L);
-  while (L->openUpval != NULL && (uv = ngcotouv(L->openUpval))->v >= level) {
+  while (L->openUpval != nullptr && (uv = ngcotouv(L->openUpval))->v >= level) {
     GCObject *o = LuaObjectToGCObject(uv);
     lua_assert(!isblack(o) && uv->v != &uv->u.value);
     L->openUpval = uv->next; /* remove from `open' list */
@@ -104,35 +102,35 @@ void luaF_close(lua_State *L, StkId level) {
 Proto *luaF_newproto(lua_State *L) {
   Proto *f = luaM_new(L, Proto);
   luaC_link(L, LuaObjectToGCObject(f), LUA_TPROTO);
-  f->k = NULL;
-  f->sizek = 0;
-  f->p = NULL;
-  f->sizep = 0;
-  f->code = NULL;
-  f->sizecode = 0;
-  f->sizelineinfo = 0;
-  f->sizeupvalues = 0;
+  f->k = nullptr;
+  f->kSize = 0;
+  f->p = nullptr;
+  f->pSize = 0;
+  f->code = nullptr;
+  f->codeSize = 0;
+  f->lineInfoSize = 0;
+  f->sizeUpvalues = 0;
   f->nups = 0;
-  f->upvalues = NULL;
+  f->upvalues = nullptr;
   f->numparams = 0;
-  f->is_vararg = 0;
+  f->is_vararg = false;
   f->maxstacksize = 0;
-  f->lineinfo = NULL;
-  f->sizelocvars = 0;
-  f->locvars = NULL;
+  f->lineInfo = nullptr;
+  f->locVarsSize = 0;
+  f->locVars = nullptr;
   f->linedefined = 0;
   f->lastlinedefined = 0;
-  f->source = NULL;
+  f->source = nullptr;
   return f;
 }
 
 void luaF_freeproto(lua_State *L, Proto *f) {
-  luaM_freearray(L, f->code, f->sizecode, Instruction);
-  luaM_freearray(L, f->p, f->sizep, Proto *);
-  luaM_freearray(L, f->k, f->sizek, TValue);
-  luaM_freearray(L, f->lineinfo, f->sizelineinfo, int);
-  luaM_freearray(L, f->locvars, f->sizelocvars, struct LocVar);
-  luaM_freearray(L, f->upvalues, f->sizeupvalues, TString *);
+  luaM_freearray(L, f->code, f->codeSize, Instruction);
+  luaM_freearray(L, f->p, f->pSize, Proto *);
+  luaM_freearray(L, f->k, f->kSize, TValue);
+  luaM_freearray(L, f->lineInfo, f->lineInfoSize, int);
+  luaM_freearray(L, f->locVars, f->locVarsSize, struct LocVar);
+  luaM_freearray(L, f->upvalues, f->sizeUpvalues, TString *);
   luaM_free(L, f);
 }
 
@@ -143,18 +141,18 @@ void luaF_freeclosure(lua_State *L, Closure *c) {
 }
 
 /*
-** Look for n-th local variable at line `line' in function `func'.
-** Returns NULL if not found.
+** Look for n-th local variable at line `line` in function `func`.
+** Returns nullptr if not found.
 */
 const char *luaF_getlocalname(const Proto *f, int local_number, int pc) {
   int i;
-  for (i = 0; i < f->sizelocvars && f->locvars[i].startpc <= pc; i++) {
-    if (pc < f->locvars[i].endpc) { /* is variable active? */
+  for (i = 0; i < f->locVarsSize && f->locVars[i].startPC <= pc; i++) {
+    if (pc < f->locVars[i].endPC) { /* is variable active? */
       local_number--;
       if (local_number == 0) {
-        return getstr(f->locvars[i].varname);
+        return getstr(f->locVars[i].varname);
       }
     }
   }
-  return NULL; /* not found */
+  return nullptr; /* not found */
 }

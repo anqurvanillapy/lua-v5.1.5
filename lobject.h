@@ -107,28 +107,28 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.n = (x);                                                        \
-    i_o->tt = LUA_TYPE_NUMBER;                                                     \
+    i_o->tt = LUA_TYPE_NUMBER;                                                 \
   } while (0)
 
 #define setpvalue(obj, x)                                                      \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.p = (x);                                                        \
-    i_o->tt = LUA_TYPE_LIGHTUSERDATA;                                              \
+    i_o->tt = LUA_TYPE_LIGHTUSERDATA;                                          \
   } while (0)
 
 #define setbvalue(obj, x)                                                      \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.b = (x);                                                        \
-    i_o->tt = LUA_TYPE_BOOLEAN;                                                    \
+    i_o->tt = LUA_TYPE_BOOLEAN;                                                \
   } while (0)
 
 #define setsvalue(L, obj, x)                                                   \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TYPE_STRING;                                                     \
+    i_o->tt = LUA_TYPE_STRING;                                                 \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -136,7 +136,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TYPE_USERDATA;                                                   \
+    i_o->tt = LUA_TYPE_USERDATA;                                               \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -144,7 +144,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TYPE_THREAD;                                                     \
+    i_o->tt = LUA_TYPE_THREAD;                                                 \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -152,7 +152,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TYPE_FUNCTION;                                                   \
+    i_o->tt = LUA_TYPE_FUNCTION;                                               \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -160,7 +160,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TYPE_TABLE;                                                      \
+    i_o->tt = LUA_TYPE_TABLE;                                                  \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -232,27 +232,38 @@ typedef union Udata {
   } uv;
 } Udata;
 
-/*
-** Function Prototypes
-*/
+// Function prototype. A script file is also a function.
 typedef struct Proto {
   CommonHeader;
-  TValue *k; /* constants used by the function */
+
+  // Constant table.
+  TValue *k;
+  int kSize;
+
   Instruction *code;
-  struct Proto **p;       /* functions defined inside the function */
-  int *lineinfo;          /* map from opcodes to source lines */
-  struct LocVar *locvars; /* information about local variables */
-  TString **upvalues;     /* upvalue names */
+  int codeSize;
+
+  // Functions defined inside this function.
+  struct Proto **p;
+  int pSize;
+
+  // An int-to-int map from opcodes to source lines.
+  int *lineInfo;
+  int lineInfoSize;
+
+  struct LocVar *locVars;
+  int locVarsSize;
+
+  // Upvalue names.
+  TString **upvalues;
+  int sizeUpvalues;
+
   TString *source;
-  int sizeupvalues;
-  int sizek; /* size of `k' */
-  int sizecode;
-  int sizelineinfo;
-  int sizep; /* size of `p' */
-  int sizelocvars;
+
   int linedefined;
   int lastlinedefined;
   GCObject *gclist;
+
   lu_byte nups; /* number of upvalues */
   lu_byte numparams;
   lu_byte is_vararg;
@@ -266,29 +277,26 @@ typedef struct Proto {
 
 typedef struct LocVar {
   TString *varname;
-  int startpc; /* first point where variable is active */
-  int endpc;   /* first point where variable is dead */
+  // first point where variable is active.
+  int startPC;
+  // first point where variable is dead.
+  int endPC;
 } LocVar;
-
-/*
-** Upvalues
-*/
 
 typedef struct UpVal {
   CommonHeader;
-  TValue *v; /* points to stack or to its own value */
+  // Points to stack or to its own value.
+  TValue *v;
   union {
-    TValue value; /* the value (when closed) */
-    struct {      /* double linked list (when open) */
+    // The value (when closed).
+    TValue value;
+    // Double linked list (when open).
+    struct {
       struct UpVal *prev;
       struct UpVal *next;
     } l;
   } u;
 } UpVal;
-
-/*
-** Closures
-*/
 
 #define ClosureHeader                                                          \
   CommonHeader;                                                                \

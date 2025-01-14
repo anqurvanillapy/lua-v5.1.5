@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LUA_CORE
-
 #include "lua.h"
 
 #include "ldo.h"
