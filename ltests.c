@@ -133,7 +133,7 @@ void *debug_realloc(void *ud, void *block, size_t oldsize, size_t size) {
 */
 
 static int testobjref1(global_State *g, GCObject *f, GCObject *t) {
-  if (isdead(g, t))
+  if (IS_DEAD(g, t))
     return 0;
   if (g->gcstate == GCSpropagate)
     return !isblack(f) || !iswhite(t);
@@ -151,10 +151,10 @@ static void printobj(global_State *g, GCObject *o) {
   if (p == NULL)
     i = -1;
   printf("%d:%s(%p)-%c(%02X)", i, luaT_typenames[o->gch.tt], (void *)o,
-         isdead(g, o) ? 'd'
-         : isblack(o) ? 'b'
-         : iswhite(o) ? 'w'
-                      : 'g',
+         IS_DEAD(g, o) ? 'd'
+         : isblack(o)  ? 'b'
+         : iswhite(o)  ? 'w'
+                       : 'g',
          o->gch.marked);
 }
 
@@ -174,8 +174,8 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
   lua_assert(testobjref(g, f, LuaObjectToGCObject(t)))
 
 #define checkvalref(g, f, t)                                                   \
-  lua_assert(!iscollectable(t) || ((GET_TYPE(t) == (t)->value.gc->gch.tt) &&   \
-                                   testobjref(g, f, GC_VALUE(t))))
+  lua_assert(!IS_COLLECTABLE(t) || ((GET_TYPE(t) == (t)->value.gc->gch.tt) &&  \
+                                    testobjref(g, f, GC_VALUE(t))))
 
 static void checktable(global_State *g, Table *h) {
   int i;
@@ -247,13 +247,13 @@ static void checkstack(global_State *g, lua_State *L1) {
   StkId o;
   CallInfo *ci;
   GCObject *uvo;
-  lua_assert(!isdead(g, LuaObjectToGCObject(L1)));
+  lua_assert(!IS_DEAD(g, LuaObjectToGCObject(L1)));
   for (uvo = L1->openUpval; uvo != NULL; uvo = uvo->gch.next) {
     UpVal *uv = gco2uv(uvo);
     lua_assert(uv->v != &uv->u.value); /* must be open */
     lua_assert(!isblack(uvo));         /* open upvalues cannot be black */
   }
-  CHECK_LIVENESS(g, gt(L1));
+  DEBUG_CHECK_LIVENESS(g, gt(L1));
   if (L1->baseCI) {
     for (ci = L1->baseCI; ci <= L1->ci; ci++) {
       lua_assert(ci->top <= L1->stackLast);
@@ -263,13 +263,13 @@ static void checkstack(global_State *g, lua_State *L1) {
     lua_assert(L1->ciSize == 0);
   if (L1->stack) {
     for (o = L1->stack; o < L1->top; o++)
-      CHECK_LIVENESS(g, o);
+      DEBUG_CHECK_LIVENESS(g, o);
   } else
     lua_assert(L1->stackSize == 0);
 }
 
 static void checkobject(global_State *g, GCObject *o) {
-  if (isdead(g, o))
+  if (IS_DEAD(g, o))
   /*    lua_assert(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep);*/
   {
     if (!(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep))
@@ -473,7 +473,7 @@ static int get_gccolor(lua_State *L) {
   TValue *o;
   luaL_checkany(L, 1);
   o = obj_at(L, 1);
-  if (!iscollectable(o))
+  if (!IS_COLLECTABLE(o))
     lua_pushstring(L, "no collectable");
   else
     lua_pushstring(L, iswhite(GC_VALUE(o))   ? "white"

@@ -150,14 +150,14 @@ static void info_tailcall(lua_Debug *ar) {
 
 static void collectvalidlines(lua_State *L, Closure *f) {
   if (f == NULL || f->c.isC) {
-    setnilvalue(L->top);
+    SET_NIL(L->top);
   } else {
     Table *t = luaH_new(L, 0, 0);
     int *lineinfo = f->l.p->lineInfo;
     int i;
     for (i = 0; i < f->l.p->lineInfoSize; i++)
-      setbvalue(luaH_setnum(L, t, lineinfo[i]), 1);
-    sethvalue(L, L->top, t);
+      SET_BOOL(luaH_setnum(L, t, lineinfo[i]), 1);
+    SET_TABLE(L, L->top, t);
   }
   incr_top(L);
 }
@@ -220,9 +220,9 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
   status = auxgetinfo(L, what, ar, f, ci);
   if (strchr(what, 'f')) {
     if (f == NULL) {
-      setnilvalue(L->top);
+      SET_NIL(L->top);
     } else
-      setclvalue(L, L->top, f);
+      SET_CLOSURE(L, L->top, f);
     incr_top(L);
   }
   if (strchr(what, 'L')) {
@@ -243,7 +243,7 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
     if (!(x)) {                                                                \
       return 0;                                                                \
     }                                                                          \
-  } while (0)
+  } while (false)
 
 #define checkjump(pt, pc) check(0 <= pc && pc < pt->codeSize)
 

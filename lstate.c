@@ -40,7 +40,7 @@ static void stack_init(lua_State *L1, lua_State *L) {
   L1->stackLast = L1->stack + (L1->stackSize - EXTRA_STACK) - 1;
   /* initialize first ci */
   L1->ci->func = L1->top;
-  setnilvalue(L1->top++); /* `function' entry for this `ci' */
+  SET_NIL(L1->top++); /* `function' entry for this `ci' */
   L1->base = L1->ci->base = L1->top;
   L1->ci->top = L1->top + LUA_MIN_STACK;
 }
@@ -56,8 +56,8 @@ static void freestack(lua_State *L, lua_State *L1) {
 static void f_luaopen(lua_State *L, void *) {
   global_State *g = G(L);
   stack_init(L, L);                             /* init stack */
-  sethvalue(L, gt(L), luaH_new(L, 0, 2));       /* table of globals */
-  sethvalue(L, registry(L), luaH_new(L, 0, 2)); /* registry */
+  SET_TABLE(L, gt(L), luaH_new(L, 0, 2));       /* table of globals */
+  SET_TABLE(L, registry(L), luaH_new(L, 0, 2)); /* registry */
   luaS_resize(L, MINSTRTABSIZE); /* initial size of string table */
   luaT_init(L);
   luaX_init(L);
@@ -82,7 +82,7 @@ static void preinit_state(lua_State *L, global_State *g) {
   L->baseCI = L->ci = NULL;
   L->savedPC = NULL;
   L->errFunc = 0;
-  setnilvalue(gt(L));
+  SET_NIL(gt(L));
 }
 
 static void close_state(lua_State *L) {
@@ -145,7 +145,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   g->strt.size = 0;
   g->strt.nuse = 0;
   g->strt.hash = NULL;
-  setnilvalue(registry(L));
+  SET_NIL(registry(L));
   luaZ_initbuffer(L, &g->buff);
   g->panic = NULL;
   g->gcstate = GCSpause;

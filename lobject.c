@@ -79,7 +79,7 @@ int luaO_rawequalObj(const TValue *t1, const TValue *t2) {
     case LUA_TYPE_PTR:
       return PTR_VALUE(t1) == PTR_VALUE(t2);
     default:
-      lua_assert(iscollectable(t1));
+      lua_assert(IS_COLLECTABLE(t1));
       return GC_VALUE(t1) == GC_VALUE(t2);
     }
   }
@@ -139,12 +139,12 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
       break;
     }
     case 'd': {
-      setnvalue(L->top, cast_num(va_arg(argp, int)));
+      SET_NUMBER(L->top, cast_num(va_arg(argp, int)));
       incr_top(L);
       break;
     }
     case 'f': {
-      setnvalue(L->top, cast_num(va_arg(argp, l_uacNumber)));
+      SET_NUMBER(L->top, cast_num(va_arg(argp, l_uacNumber)));
       incr_top(L);
       break;
     }

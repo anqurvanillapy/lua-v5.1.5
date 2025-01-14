@@ -29,7 +29,7 @@
 #define test2bits(x, b1, b2) testbits(x, (bit2mask(b1, b2)))
 
 /*
-** Layout for bit use in `marked' field:
+** Layout for the bit use in 'marked' field:
 ** bit 0 - object is white (type 0)
 ** bit 1 - object is white (type 1)
 ** bit 2 - object is black
@@ -55,12 +55,12 @@
 #define isgray(x) (!isblack(x) && !iswhite(x))
 
 #define otherwhite(g) (g->currentwhite ^ WHITEBITS)
-#define isdead(g, v) ((v)->gch.marked & otherwhite(g) & WHITEBITS)
+#define IS_DEAD(g, v) ((v)->gch.marked & otherwhite(g) & WHITEBITS)
 
 #define changewhite(x) ((x)->gch.marked ^= WHITEBITS)
 #define gray2black(x) l_setbit((x)->gch.marked, BLACKBIT)
 
-#define valiswhite(x) (iscollectable(x) && iswhite(GC_VALUE(x)))
+#define valiswhite(x) (IS_COLLECTABLE(x) && iswhite(GC_VALUE(x)))
 
 #define luaC_white(g) cast(lu_byte, (g)->currentwhite &WHITEBITS)
 

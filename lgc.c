@@ -37,8 +37,8 @@
 
 #define markvalue(g, o)                                                        \
   {                                                                            \
-    CHECK_CONSISTENCY(o);                                                      \
-    if (iscollectable(o) && iswhite(GC_VALUE(o)))                              \
+    DEBUG_CHECK_CONSISTENCY(o);                                                \
+    if (IS_COLLECTABLE(o) && iswhite(GC_VALUE(o)))                             \
       reallymarkobject(g, GC_VALUE(o));                                        \
   }
 
@@ -52,13 +52,13 @@
 
 static void removeentry(Node *n) {
   lua_assert(IS_TYPE_NIL(gval(n)));
-  if (iscollectable(gkey(n))) {
+  if (IS_COLLECTABLE(gkey(n))) {
     setttype(gkey(n), LUA_TYPE_DEAD); /* dead key; remove it */
   }
 }
 
 static void reallymarkobject(global_State *g, GCObject *o) {
-  lua_assert(iswhite(o) && !isdead(g, o));
+  lua_assert(iswhite(o) && !IS_DEAD(g, o));
   white2gray(o);
   switch (o->gch.tt) {
   case LUA_TYPE_STRING: {
@@ -262,7 +262,7 @@ static void traversestack(global_State *g, lua_State *l) {
   for (o = l->stack; o < l->top; o++)
     markvalue(g, o);
   for (; o <= lim; o++) {
-    setnilvalue(o);
+    SET_NIL(o);
   }
   checkstacksizes(l, lim);
 }
@@ -333,7 +333,7 @@ static size_t propagateall(global_State *g) {
 ** being finalized, keep them in keys, but not in values
 */
 static int iscleared(const TValue *o, int iskey) {
-  if (!iscollectable(o)) {
+  if (!IS_COLLECTABLE(o)) {
     return 0;
   }
   if (IS_TYPE_STRING(o)) {
@@ -358,7 +358,7 @@ static void cleartable(GCObject *l) {
       while (i--) {
         TValue *o = &h->array[i];
         if (iscleared(o, 0)) { /* value was collected? */
-          setnilvalue(o);      /* remove value */
+          SET_NIL(o);          /* remove value */
         }
       }
     }
@@ -367,8 +367,8 @@ static void cleartable(GCObject *l) {
       Node *n = gnode(h, i);
       if (!IS_TYPE_NIL(gval(n)) && /* non-empty entry? */
           (iscleared(key2tval(n), 1) || iscleared(gval(n), 0))) {
-        setnilvalue(gval(n)); /* remove value ... */
-        removeentry(n);       /* remove entry from table */
+        SET_NIL(gval(n)); /* remove value ... */
+        removeentry(n);   /* remove entry from table */
       }
     }
     l = h->gclist;
@@ -420,11 +420,11 @@ static GCObject **sweeplist(lua_State *L, GCObject **p, lu_mem count) {
       sweepwholelist(L, &gco2th(curr)->openUpval);
     }
     if ((curr->gch.marked ^ WHITEBITS) & deadmask) { /* not dead? */
-      lua_assert(!isdead(g, curr) || testbit(curr->gch.marked, FIXEDBIT));
+      lua_assert(!IS_DEAD(g, curr) || testbit(curr->gch.marked, FIXEDBIT));
       makewhite(g, curr); /* make it white (for next cycle) */
       p = &curr->gch.next;
     } else { /* must erase `curr' */
-      lua_assert(isdead(g, curr) || deadmask == bitmask(SFIXEDBIT));
+      lua_assert(IS_DEAD(g, curr) || deadmask == bitmask(SFIXEDBIT));
       *p = curr->gch.next;
       if (curr == g->rootgc) {      /* is the first element of the list? */
         g->rootgc = curr->gch.next; /* adjust first */
@@ -470,7 +470,7 @@ static void GCTM(lua_State *L) {
     L->allowHook = 0; /* stop debug hooks during GC tag method */
     g->GCthreshold = 2 * g->totalbytes; /* avoid GC steps */
     setobj2s(L, L->top, tm);
-    setuvalue(L, L->top + 1, udata);
+    SET_USERDATA(L, L->top + 1, udata);
     L->top += 2;
     luaD_call(L, L->top - 2, 0);
     L->allowHook = oldah;  /* restore hooks */
@@ -668,7 +668,7 @@ void luaC_fullgc(lua_State *L) {
 
 void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v) {
   global_State *g = G(L);
-  lua_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
+  lua_assert(isblack(o) && iswhite(v) && !IS_DEAD(g, v) && !IS_DEAD(g, o));
   lua_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
   lua_assert(GET_TYPE(&o->gch) != LUA_TYPE_TABLE);
   /* must keep invariant? */
@@ -682,7 +682,7 @@ void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v) {
 void luaC_barrierback(lua_State *L, Table *t) {
   global_State *g = G(L);
   GCObject *o = LuaObjectToGCObject(t);
-  lua_assert(isblack(o) && !isdead(g, o));
+  lua_assert(isblack(o) && !IS_DEAD(g, o));
   lua_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
   black2gray(o); /* make table gray (again) */
   t->gclist = g->grayagain;

@@ -90,20 +90,20 @@ static void LoadConstants(LoadState *S, Proto *f) {
   f->k = luaM_newvector(S->L, n, TValue);
   f->kSize = n;
   for (i = 0; i < n; i++) {
-    setnilvalue(&f->k[i]);
+    SET_NIL(&f->k[i]);
   }
   for (i = 0; i < n; i++) {
     TValue *o = &f->k[i];
     int t = LoadChar(S);
     switch (t) {
     case LUA_TYPE_NIL:
-      setnilvalue(o);
+      SET_NIL(o);
       break;
     case LUA_TYPE_BOOLEAN:
-      setbvalue(o, LoadChar(S) != 0);
+      SET_BOOL(o, LoadChar(S) != 0);
       break;
     case LUA_TYPE_NUMBER:
-      setnvalue(o, LoadNumber(S));
+      SET_NUMBER(o, LoadNumber(S));
       break;
     case LUA_TYPE_STRING:
       setsvalue2n(S->L, o, LoadString(S));

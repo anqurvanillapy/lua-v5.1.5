@@ -325,7 +325,7 @@ static int handleScript(lua_State *L, const char **argv, int n) {
     if ((x)[2] != '\0') {                                                      \
       return -1;                                                               \
     }                                                                          \
-  } while (0)
+  } while (false)
 
 static int collectargs(const char **argv, int *pi, int *pv, int *pe) {
   int i;

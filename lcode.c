@@ -218,13 +218,13 @@ static int addk(FuncState *fs, TValue *k, TValue *v) {
     lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(NUMBER_VALUE(idx))], v));
     return cast_int(NUMBER_VALUE(idx));
   } else { /* constant not found; create a new entry */
-    setnvalue(idx, cast_num(fs->nk));
+    SET_NUMBER(idx, cast_num(fs->nk));
     luaM_growvector(L, f->k, fs->nk, f->kSize, TValue, MAXARG_Bx,
                     "constant table overflow");
     while (oldsize < f->kSize) {
-      setnilvalue(&f->k[oldsize++]);
+      SET_NIL(&f->k[oldsize++]);
     }
-    setobj(L, &f->k[fs->nk], v);
+    SET_OBJECT(L, &f->k[fs->nk], v);
     luaC_barrier(L, f, v);
     return fs->nk++;
   }
@@ -232,27 +232,27 @@ static int addk(FuncState *fs, TValue *k, TValue *v) {
 
 int luaK_stringK(FuncState *fs, TString *s) {
   TValue o;
-  setsvalue(fs->L, &o, s);
+  SET_STRING(fs->L, &o, s);
   return addk(fs, &o, &o);
 }
 
 int luaK_numberK(FuncState *fs, lua_Number r) {
   TValue o;
-  setnvalue(&o, r);
+  SET_NUMBER(&o, r);
   return addk(fs, &o, &o);
 }
 
 static int boolK(FuncState *fs, int b) {
   TValue o;
-  setbvalue(&o, b);
+  SET_BOOL(&o, b);
   return addk(fs, &o, &o);
 }
 
 static int nilK(FuncState *fs) {
   TValue k, v;
-  setnilvalue(&v);
+  SET_NIL(&v);
   /* cannot use nil as key; instead use table itself to represent nil */
-  sethvalue(fs->L, &k, fs->h);
+  SET_TABLE(fs->L, &k, fs->h);
   return addk(fs, &k, &v);
 }
 

@@ -57,10 +57,11 @@ typedef struct TValue {
 #define IS_TYPE_PTR(o) ((o)->tt == LUA_TYPE_PTR)
 
 #define IS_FALSE(o) (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && !BOOL_VALUE(o)))
+#define IS_COLLECTABLE(o) (GET_TYPE(o) >= LUA_TYPE_STRING)
 
 /* Macros to access values */
 #define GET_TYPE(o) ((o)->tt)
-#define GC_VALUE(o) CHECK_EXPR(iscollectable(o), (o)->value.gc)
+#define GC_VALUE(o) CHECK_EXPR(IS_COLLECTABLE(o), (o)->value.gc)
 #define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->value.p)
 #define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->value.n)
 #define RAW_STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->value.gc->ts)
@@ -72,119 +73,114 @@ typedef struct TValue {
 #define BOOL_VALUE(o) CHECK_EXPR(IS_TYPE_BOOLEAN(o), (o)->value.b)
 #define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->value.gc->th)
 
-/*
-** for internal debug only
-*/
-#define CHECK_CONSISTENCY(obj)                                                 \
-  lua_assert(!iscollectable(obj) || (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
-#define CHECK_LIVENESS(g, obj)                                                 \
-  lua_assert(!iscollectable(obj) ||                                            \
+#define DEBUG_CHECK_CONSISTENCY(obj)                                           \
+  lua_assert(!IS_COLLECTABLE(obj) || (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
+#define DEBUG_CHECK_LIVENESS(g, obj)                                           \
+  lua_assert(!IS_COLLECTABLE(obj) ||                                           \
              ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                    \
-              !isdead(g, (obj)->value.gc)))
+              !IS_DEAD(g, (obj)->value.gc)))
 
 /* Macros to set values */
-#define setnilvalue(obj) ((obj)->tt = LUA_TYPE_NIL)
+#define SET_NIL(obj) ((obj)->tt = LUA_TYPE_NIL)
 
-#define setnvalue(obj, x)                                                      \
+#define SET_NUMBER(obj, x)                                                     \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.n = (x);                                                        \
     i_o->tt = LUA_TYPE_NUMBER;                                                 \
-  } while (0)
+  } while (false)
 
-#define setpvalue(obj, x)                                                      \
+#define SET_PTR(obj, x)                                                        \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.p = (x);                                                        \
     i_o->tt = LUA_TYPE_PTR;                                                    \
-  } while (0)
+  } while (false)
 
-#define setbvalue(obj, x)                                                      \
+#define SET_BOOL(obj, x)                                                       \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.b = (x);                                                        \
     i_o->tt = LUA_TYPE_BOOLEAN;                                                \
-  } while (0)
+  } while (false)
 
-#define setsvalue(L, obj, x)                                                   \
+#define SET_STRING(L, obj, x)                                                  \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
-    i_o->value.gc = cast(GCObject *, (x));                                     \
+    i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_STRING;                                                 \
-    CHECK_LIVENESS(G(L), i_o);                                                 \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
+  } while (false)
 
-#define setuvalue(L, obj, x)                                                   \
+#define SET_USERDATA(L, obj, x)                                                \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
-    i_o->value.gc = cast(GCObject *, (x));                                     \
+    i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_USERDATA;                                               \
-    CHECK_LIVENESS(G(L), i_o);                                                 \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
+  } while (false)
 
-#define setthvalue(L, obj, x)                                                  \
+#define SET_THREAD(L, obj, x)                                                  \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
-    i_o->value.gc = cast(GCObject *, (x));                                     \
+    i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_THREAD;                                                 \
-    CHECK_LIVENESS(G(L), i_o);                                                 \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
+  } while (false)
 
-#define setclvalue(L, obj, x)                                                  \
+#define SET_CLOSURE(L, obj, x)                                                 \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
-    i_o->value.gc = cast(GCObject *, (x));                                     \
+    i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_FUNCTION;                                               \
-    CHECK_LIVENESS(G(L), i_o);                                                 \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
+  } while (false)
 
-#define sethvalue(L, obj, x)                                                   \
+#define SET_TABLE(L, obj, x)                                                   \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
-    i_o->value.gc = cast(GCObject *, (x));                                     \
+    i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_TABLE;                                                  \
-    CHECK_LIVENESS(G(L), i_o);                                                 \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
+  } while (false)
 
-#define setptvalue(L, obj, x)                                                  \
+#define SET_PROTO(L, obj, x)                                                   \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_PROTO;                                                  \
-    CHECK_LIVENESS(G(L), i_o);                                                 \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
+  } while (false)
 
-#define setobj(L, obj1, obj2)                                                  \
+#define SET_OBJECT(L, obj1, obj2)                                              \
   do {                                                                         \
     const TValue *o2 = (obj2);                                                 \
     TValue *o1 = (obj1);                                                       \
     o1->value = o2->value;                                                     \
     o1->tt = o2->tt;                                                           \
-    CHECK_LIVENESS(G(L), o1);                                                  \
-  } while (0)
+    DEBUG_CHECK_LIVENESS(G(L), o1);                                            \
+  } while (false)
 
 /*
 ** different types of sets, according to destination
 */
 
 /* from stack to (same) stack */
-#define setobjs2s setobj
+#define setobjs2s SET_OBJECT
 /* to stack (not from same stack) */
-#define setobj2s setobj
-#define setsvalue2s setsvalue
-#define sethvalue2s sethvalue
-#define setptvalue2s setptvalue
+#define setobj2s SET_OBJECT
+#define setsvalue2s SET_STRING
+#define sethvalue2s SET_TABLE
+#define setptvalue2s SET_PROTO
 /* from table to same table */
-#define setobjt2t setobj
+#define setobjt2t SET_OBJECT
 /* to table */
-#define setobj2t setobj
+#define setobj2t SET_OBJECT
 /* to new object */
-#define setobj2n setobj
-#define setsvalue2n setsvalue
+#define setobj2n SET_OBJECT
+#define setsvalue2n SET_STRING
 
 #define setttype(obj, tt) (GET_TYPE(obj) = (tt))
-
-#define iscollectable(o) (GET_TYPE(o) >= LUA_TYPE_STRING)
 
 typedef TValue *StkId; /* index to stack elements */
 

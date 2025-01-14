@@ -191,7 +191,7 @@ static StkId adjust_varargs(lua_State *L, Proto *p, int actual) {
   Table *htab = NULL;
   StkId base, fixed;
   for (; actual < nfixargs; ++actual) {
-    setnilvalue(L->top++);
+    SET_NIL(L->top++);
   }
 
   // Compatible with old-style variadic arguments.
@@ -204,7 +204,7 @@ static StkId adjust_varargs(lua_State *L, Proto *p, int actual) {
     for (i = 0; i < nvar; i++)   /* put extra arguments into `arg' table */
       setobj2n(L, luaH_setnum(L, htab, i + 1), L->top - nvar + i);
     /* store counter in field `n' */
-    setnvalue(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
+    SET_NUMBER(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
   }
 
   /* move fixed parameters to final position */
@@ -212,11 +212,11 @@ static StkId adjust_varargs(lua_State *L, Proto *p, int actual) {
   base = L->top;           /* final position of first argument */
   for (i = 0; i < nfixargs; i++) {
     setobjs2s(L, L->top++, fixed + i);
-    setnilvalue(fixed + i);
+    SET_NIL(fixed + i);
   }
   /* add `arg' parameter */
   if (htab) {
-    sethvalue(L, L->top++, htab);
+    SET_TABLE(L, L->top++, htab);
     lua_assert(iswhite(LuaObjectToGCObject(htab)));
   }
   return base;
@@ -277,7 +277,7 @@ int luaD_precall(lua_State *L, StkId func, int nresults) {
     ci->tailcalls = 0;
     ci->nresults = nresults;
     for (st = L->top; st < ci->top; st++) {
-      setnilvalue(st);
+      SET_NIL(st);
     }
     L->top = ci->top;
     if (L->hookMask & LUA_MASKCALL) {
@@ -338,7 +338,7 @@ int luaD_poscall(lua_State *L, StkId firstResult) {
   for (i = wanted; i != 0 && firstResult < L->top; i--)
     setobjs2s(L, res++, firstResult++);
   while (i-- > 0) {
-    setnilvalue(res++);
+    SET_NIL(res++);
   }
   L->top = res;
   return (wanted - LUA_MULTRET); /* 0 iff wanted == LUA_MULTRET */
@@ -484,7 +484,7 @@ static void f_parser(lua_State *L, void *ud) {
   for (i = 0; i < tf->upvalueNum; i++) { /* initialize eventual upvalues */
     cl->l.upvalues[i] = luaF_newupval(L);
   }
-  setclvalue(L, L->top, cl);
+  SET_CLOSURE(L, L->top, cl);
   incr_top(L);
 }
 

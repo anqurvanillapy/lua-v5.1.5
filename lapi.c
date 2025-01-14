@@ -46,7 +46,7 @@ static TValue *index2adr(lua_State *L, int idx) {
       return registry(L);
     case LUA_ENVIRONINDEX: {
       Closure *func = curr_func(L);
-      sethvalue(L, &L->env, func->c.env);
+      SET_TABLE(L, &L->env, func->c.env);
       return &L->env;
     }
     case LUA_GLOBALSINDEX:
@@ -124,7 +124,7 @@ LUA_API lua_State *lua_newthread(lua_State *L) {
   lua_lock(L);
   luaC_checkGC(L);
   L1 = luaE_newthread(L);
-  setthvalue(L, L->top, L1);
+  SET_THREAD(L, L->top, L1);
   api_incr_top(L);
   lua_unlock(L);
   luai_userstatethread(L, L1);
@@ -142,7 +142,7 @@ LUA_API void lua_settop(lua_State *L, int idx) {
   if (idx >= 0) {
     api_check(L, idx <= L->stackLast - L->base);
     while (L->top < L->base + idx) {
-      setnilvalue(L->top++);
+      SET_NIL(L->top++);
     }
     L->top = L->base + idx;
   } else {
@@ -191,7 +191,7 @@ LUA_API void lua_replace(lua_State *L, int idx) {
     func->c.env = TABLE_VALUE(L->top - 1);
     luaC_barrier(L, func, L->top - 1);
   } else {
-    setobj(L, o, L->top - 1);
+    SET_OBJECT(L, o, L->top - 1);
     if (idx < LUA_GLOBALSINDEX) /* function upvalue? */
       luaC_barrier(L, curr_func(L), L->top - 1);
   }
@@ -387,21 +387,21 @@ LUA_API const void *lua_topointer(lua_State *L, int idx) {
 
 LUA_API void lua_pushnil(lua_State *L) {
   lua_lock(L);
-  setnilvalue(L->top);
+  SET_NIL(L->top);
   api_incr_top(L);
   lua_unlock(L);
 }
 
 LUA_API void lua_pushnumber(lua_State *L, lua_Number n) {
   lua_lock(L);
-  setnvalue(L->top, n);
+  SET_NUMBER(L->top, n);
   api_incr_top(L);
   lua_unlock(L);
 }
 
 LUA_API void lua_pushinteger(lua_State *L, lua_Integer n) {
   lua_lock(L);
-  setnvalue(L->top, cast_num(n));
+  SET_NUMBER(L->top, cast_num(n));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -454,7 +454,7 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
   L->top -= n;
   while (n--)
     setobj2n(L, &cl->c.upvalue[n], L->top + n);
-  setclvalue(L, L->top, cl);
+  SET_CLOSURE(L, L->top, cl);
   lua_assert(iswhite(LuaObjectToGCObject(cl)));
   api_incr_top(L);
   lua_unlock(L);
@@ -462,21 +462,21 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
 
 LUA_API void lua_pushboolean(lua_State *L, int b) {
   lua_lock(L);
-  setbvalue(L->top, (b != 0)); /* ensure that true is 1 */
+  SET_BOOL(L->top, (b != 0)); /* ensure that true is 1 */
   api_incr_top(L);
   lua_unlock(L);
 }
 
 LUA_API void lua_pushlightuserdata(lua_State *L, void *p) {
   lua_lock(L);
-  setpvalue(L->top, p);
+  SET_PTR(L->top, p);
   api_incr_top(L);
   lua_unlock(L);
 }
 
 LUA_API int lua_pushthread(lua_State *L) {
   lua_lock(L);
-  setthvalue(L, L->top, L);
+  SET_THREAD(L, L->top, L);
   api_incr_top(L);
   lua_unlock(L);
   return (G(L)->mainthread == L);
@@ -501,7 +501,7 @@ LUA_API void lua_getfield(lua_State *L, int idx, const char *k) {
   lua_lock(L);
   t = index2adr(L, idx);
   api_checkvalidindex(L, t);
-  setsvalue(L, &key, luaS_new(L, k));
+  SET_STRING(L, &key, luaS_new(L, k));
   luaV_gettable(L, t, &key, L->top);
   api_incr_top(L);
   lua_unlock(L);
@@ -529,7 +529,7 @@ LUA_API void lua_rawgeti(lua_State *L, int idx, int n) {
 LUA_API void lua_createtable(lua_State *L, int narray, int nrec) {
   lua_lock(L);
   luaC_checkGC(L);
-  sethvalue(L, L->top, luaH_new(L, narray, nrec));
+  SET_TABLE(L, L->top, luaH_new(L, narray, nrec));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -554,7 +554,7 @@ LUA_API int lua_getmetatable(lua_State *L, int objindex) {
   if (mt == NULL) {
     res = 0;
   } else {
-    sethvalue(L, L->top, mt);
+    SET_TABLE(L, L->top, mt);
     api_incr_top(L);
     res = 1;
   }
@@ -569,16 +569,16 @@ LUA_API void lua_getfenv(lua_State *L, int idx) {
   api_checkvalidindex(L, o);
   switch (GET_TYPE(o)) {
   case LUA_TYPE_FUNCTION:
-    sethvalue(L, L->top, CLOSURE_VALUE(o)->c.env);
+    SET_TABLE(L, L->top, CLOSURE_VALUE(o)->c.env);
     break;
   case LUA_TYPE_USERDATA:
-    sethvalue(L, L->top, USERDATA_VALUE(o)->env);
+    SET_TABLE(L, L->top, USERDATA_VALUE(o)->env);
     break;
   case LUA_TYPE_THREAD:
     setobj2s(L, L->top, gt(THREAD_VALUE(o)));
     break;
   default:
-    setnilvalue(L->top);
+    SET_NIL(L->top);
     break;
   }
   api_incr_top(L);
@@ -607,7 +607,7 @@ LUA_API void lua_setfield(lua_State *L, int idx, const char *k) {
   api_checknelems(L, 1);
   t = index2adr(L, idx);
   api_checkvalidindex(L, t);
-  setsvalue(L, &key, luaS_new(L, k));
+  SET_STRING(L, &key, luaS_new(L, k));
   luaV_settable(L, t, &key, L->top - 1);
   L->top--; /* pop value */
   lua_unlock(L);
@@ -689,7 +689,7 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
     USERDATA_VALUE(o)->env = TABLE_VALUE(L->top - 1);
     break;
   case LUA_TYPE_THREAD:
-    sethvalue(L, gt(THREAD_VALUE(o)), TABLE_VALUE(L->top - 1));
+    SET_TABLE(L, gt(THREAD_VALUE(o)), TABLE_VALUE(L->top - 1));
     break;
   default:
     res = 0;
@@ -774,9 +774,9 @@ static void f_Ccall(lua_State *L, void *ud) {
   Closure *cl;
   cl = luaF_newCclosure(L, 0, getcurrenv(L));
   cl->c.f = c->func;
-  setclvalue(L, L->top, cl); /* push function */
+  SET_CLOSURE(L, L->top, cl); /* push function */
   api_incr_top(L);
-  setpvalue(L->top, c->ud); /* push only argument */
+  SET_PTR(L->top, c->ud); /* push only argument */
   api_incr_top(L);
   luaD_call(L, L->top - 2, 0);
 }
@@ -953,7 +953,7 @@ LUA_API void *lua_newuserdata(lua_State *L, size_t size) {
   lua_lock(L);
   luaC_checkGC(L);
   u = luaS_newudata(L, size, getcurrenv(L));
-  setuvalue(L, L->top, u);
+  SET_USERDATA(L, L->top, u);
   api_incr_top(L);
   lua_unlock(L);
   return u + 1;
@@ -1004,7 +1004,7 @@ LUA_API const char *lua_setupvalue(lua_State *L, int funcindex, int n) {
   name = aux_upvalue(fi, n, &val);
   if (name) {
     L->top--;
-    setobj(L, val, L->top);
+    SET_OBJECT(L, val, L->top);
     luaC_barrier(L, CLOSURE_VALUE(fi), L->top);
   }
   lua_unlock(L);

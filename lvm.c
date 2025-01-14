@@ -26,7 +26,7 @@ const TValue *luaV_tonumber(const TValue *obj, TValue *n) {
     return obj;
   }
   if (IS_TYPE_STRING(obj) && luaO_str2d(svalue(obj), &num)) {
-    setnvalue(n, num);
+    SET_NUMBER(n, num);
     return n;
   } else {
     return NULL;
@@ -139,7 +139,7 @@ void luaV_settable(lua_State *L, const TValue *t, TValue *key, StkId val) {
       return;
     }
     /* else repeat with `tm' */
-    setobj(L, &temp, tm); /* avoid pointing inside table (may rehash) */
+    SET_OBJECT(L, &temp, tm); /* avoid pointing inside table (may rehash) */
     t = &temp;
   }
   luaG_runerror(L, "loop in settable");
@@ -334,25 +334,25 @@ static void Arith(lua_State *L, StkId ra, const TValue *rb, const TValue *rc,
     lua_Number nb = NUMBER_VALUE(b), nc = NUMBER_VALUE(c);
     switch (op) {
     case TM_ADD:
-      setnvalue(ra, luai_numadd(nb, nc));
+      SET_NUMBER(ra, luai_numadd(nb, nc));
       break;
     case TM_SUB:
-      setnvalue(ra, luai_numsub(nb, nc));
+      SET_NUMBER(ra, luai_numsub(nb, nc));
       break;
     case TM_MUL:
-      setnvalue(ra, luai_nummul(nb, nc));
+      SET_NUMBER(ra, luai_nummul(nb, nc));
       break;
     case TM_DIV:
-      setnvalue(ra, luai_numdiv(nb, nc));
+      SET_NUMBER(ra, luai_numdiv(nb, nc));
       break;
     case TM_MOD:
-      setnvalue(ra, luai_nummod(nb, nc));
+      SET_NUMBER(ra, luai_nummod(nb, nc));
       break;
     case TM_POW:
-      setnvalue(ra, luai_numpow(nb, nc));
+      SET_NUMBER(ra, luai_numpow(nb, nc));
       break;
     case TM_UNM:
-      setnvalue(ra, luai_numunm(nb));
+      SET_NUMBER(ra, luai_numunm(nb));
       break;
     default:
       lua_assert(0);
@@ -406,7 +406,7 @@ static void Arith(lua_State *L, StkId ra, const TValue *rb, const TValue *rc,
     TValue *rc = RKC(i);                                                       \
     if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                            \
       lua_Number nb = NUMBER_VALUE(rb), nc = NUMBER_VALUE(rc);                 \
-      setnvalue(ra, op(nb, nc));                                               \
+      SET_NUMBER(ra, op(nb, nc));                                              \
     } else                                                                     \
       Protect(Arith(L, ra, rb, rc, tm));                                       \
   }
@@ -450,7 +450,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_LOADBOOL: {
-      setbvalue(ra, GETARG_B(i));
+      SET_BOOL(ra, GETARG_B(i));
       if (GETARG_C(i)) {
         pc++; /* skip next instruction (if C) */
       }
@@ -459,7 +459,7 @@ reentry: /* entry point */
     case OP_LOADNIL: {
       TValue *rb = RB(i);
       do {
-        setnilvalue(rb--);
+        SET_NIL(rb--);
       } while (rb >= ra);
       continue;
     }
@@ -471,7 +471,7 @@ reentry: /* entry point */
     case OP_GETGLOBAL: {
       TValue g;
       TValue *rb = KBx(i);
-      sethvalue(L, &g, cl->env);
+      SET_TABLE(L, &g, cl->env);
       lua_assert(IS_TYPE_STRING(rb));
       Protect(luaV_gettable(L, &g, rb, ra));
       continue;
@@ -482,14 +482,14 @@ reentry: /* entry point */
     }
     case OP_SETGLOBAL: {
       TValue g;
-      sethvalue(L, &g, cl->env);
+      SET_TABLE(L, &g, cl->env);
       lua_assert(IS_TYPE_STRING(KBx(i)));
       Protect(luaV_settable(L, &g, KBx(i), ra));
       continue;
     }
     case OP_SETUPVAL: {
       UpVal *uv = cl->upvalues[GETARG_B(i)];
-      setobj(L, uv->v, ra);
+      SET_OBJECT(L, uv->v, ra);
       luaC_barrier(L, uv, ra);
       continue;
     }
@@ -500,7 +500,7 @@ reentry: /* entry point */
     case OP_NEWTABLE: {
       int b = GETARG_B(i);
       int c = GETARG_C(i);
-      sethvalue(L, ra, luaH_new(L, luaO_fb2int(b), luaO_fb2int(c)));
+      SET_TABLE(L, ra, luaH_new(L, luaO_fb2int(b), luaO_fb2int(c)));
       Protect(luaC_checkGC(L));
       continue;
     }
@@ -538,7 +538,7 @@ reentry: /* entry point */
       TValue *rb = RB(i);
       if (IS_TYPE_NUMBER(rb)) {
         lua_Number nb = NUMBER_VALUE(rb);
-        setnvalue(ra, luai_numunm(nb));
+        SET_NUMBER(ra, luai_numunm(nb));
       } else {
         Protect(Arith(L, ra, rb, rb, TM_UNM));
       }
@@ -546,18 +546,18 @@ reentry: /* entry point */
     }
     case OP_NOT: {
       int res = IS_FALSE(RB(i)); /* next assignment may change this value */
-      setbvalue(ra, res);
+      SET_BOOL(ra, res);
       continue;
     }
     case OP_LEN: {
       const TValue *rb = RB(i);
       switch (GET_TYPE(rb)) {
       case LUA_TYPE_TABLE: {
-        setnvalue(ra, cast_num(luaH_getn(TABLE_VALUE(rb))));
+        SET_NUMBER(ra, cast_num(luaH_getn(TABLE_VALUE(rb))));
         break;
       }
       case LUA_TYPE_STRING: {
-        setnvalue(ra, cast_num(STRING_VALUE(rb)->len));
+        SET_NUMBER(ra, cast_num(STRING_VALUE(rb)->len));
         break;
       }
       default: { /* try metamethod */
@@ -700,8 +700,8 @@ reentry: /* entry point */
       if (luai_numlt(0, step) ? luai_numle(idx, limit)
                               : luai_numle(limit, idx)) {
         dojump(L, pc, GETARG_sBx(i)); /* jump back */
-        setnvalue(ra, idx);           /* update internal index... */
-        setnvalue(ra + 3, idx);       /* ...and external index */
+        SET_NUMBER(ra, idx);          /* update internal index... */
+        SET_NUMBER(ra + 3, idx);      /* ...and external index */
       }
       continue;
     }
@@ -717,7 +717,7 @@ reentry: /* entry point */
       } else if (!tonumber(pstep, ra + 2)) {
         luaG_runerror(L, LUA_QL("for") " step must be a number");
       }
-      setnvalue(ra, luai_numsub(NUMBER_VALUE(ra), NUMBER_VALUE(pstep)));
+      SET_NUMBER(ra, luai_numsub(NUMBER_VALUE(ra), NUMBER_VALUE(pstep)));
       dojump(L, pc, GETARG_sBx(i));
       continue;
     }
@@ -782,7 +782,7 @@ reentry: /* entry point */
           ncl->l.upvalues[j] = luaF_findupval(L, base + GETARG_B(*pc));
         }
       }
-      setclvalue(L, ra, ncl);
+      SET_CLOSURE(L, ra, ncl);
       Protect(luaC_checkGC(L));
       continue;
     }
@@ -801,7 +801,7 @@ reentry: /* entry point */
         if (j < n) {
           setobjs2s(L, ra + j, ci->base - n + j);
         } else {
-          setnilvalue(ra + j);
+          SET_NIL(ra + j);
         }
       }
       continue;

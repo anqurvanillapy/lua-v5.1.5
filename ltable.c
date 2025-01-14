@@ -129,7 +129,7 @@ static int findindex(lua_State *L, Table *t, StkId key) {
     do { /* check whether `key' is somewhere in the chain */
       /* key may be dead already, but it is ok to use it in `next' */
       if (luaO_rawequalObj(key2tval(n), key) ||
-          (GET_TYPE(gkey(n)) == LUA_TYPE_DEAD && iscollectable(key) &&
+          (GET_TYPE(gkey(n)) == LUA_TYPE_DEAD && IS_COLLECTABLE(key) &&
            GC_VALUE(gkey(n)) == GC_VALUE(key))) {
         i = cast_int(n - gnode(t, 0)); /* key index in hash table */
         /* hash elements are numbered after array ones */
@@ -147,7 +147,7 @@ int luaH_next(lua_State *L, Table *t, StkId key) {
   int i = findindex(L, t, key);       /* find original element */
   for (i++; i < t->sizearray; i++) {  /* try first array part */
     if (!IS_TYPE_NIL(&t->array[i])) { /* a non-nil value? */
-      setnvalue(key, cast_num(i + 1));
+      SET_NUMBER(key, cast_num(i + 1));
       setobj2s(L, key + 1, &t->array[i]);
       return 1;
     }
@@ -246,7 +246,7 @@ static void setarrayvector(lua_State *L, Table *t, int size) {
   int i;
   luaM_reallocvector(L, t->array, t->sizearray, size, TValue);
   for (i = t->sizearray; i < size; i++) {
-    setnilvalue(&t->array[i]);
+    SET_NIL(&t->array[i]);
   }
   t->sizearray = size;
 }
@@ -267,8 +267,8 @@ static void setnodevector(lua_State *L, Table *t, int size) {
     for (i = 0; i < size; i++) {
       Node *n = gnode(t, i);
       gnext(n) = NULL;
-      setnilvalue(gkey(n));
-      setnilvalue(gval(n));
+      SET_NIL(gkey(n));
+      SET_NIL(gval(n));
     }
   }
   t->lsizenode = cast_byte(lsize);
@@ -393,7 +393,7 @@ static TValue *newkey(lua_State *L, Table *t, const TValue *key) {
       gnext(othern) = n; /* redo the chain with `n' in place of `mp' */
       *n = *mp; /* copy colliding node into free pos. (mp->next also goes) */
       gnext(mp) = NULL; /* now `mp' is free */
-      setnilvalue(gval(mp));
+      SET_NIL(gval(mp));
     } else { /* colliding node is in its own main position */
       /* new node will go into free position */
       gnext(n) = gnext(mp); /* chain new position */
@@ -497,7 +497,7 @@ TValue *luaH_setnum(lua_State *L, Table *t, int key) {
     return cast(TValue *, p);
   } else {
     TValue k;
-    setnvalue(&k, cast_num(key));
+    SET_NUMBER(&k, cast_num(key));
     return newkey(L, t, &k);
   }
 }
@@ -508,7 +508,7 @@ TValue *luaH_setstr(lua_State *L, Table *t, TString *key) {
     return cast(TValue *, p);
   } else {
     TValue k;
-    setsvalue(L, &k, key);
+    SET_STRING(L, &k, key);
     return newkey(L, t, &k);
   }
 }
