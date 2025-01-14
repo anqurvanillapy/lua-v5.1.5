@@ -260,17 +260,16 @@ typedef struct Proto {
   int lastlinedefined;
   GCObject *gclist;
 
-  // Number of upvalues.
-  lu_byte upNum;
-  lu_byte numparams;
-  lu_byte is_vararg;
-  lu_byte maxstacksize;
+  lu_byte upvalueNum;
+  lu_byte paramNum;
+  lu_byte varargMode;
+  lu_byte maxStackSize;
 } Proto;
 
 /* masks for new-style vararg */
-#define VARARG_HASARG 1
-#define VARARG_ISVARARG 2
-#define VARARG_NEEDSARG 4
+#define VARARG_HAS_ARG 0b001
+#define VARARG_IS_VARARG 0b010
+#define VARARG_NEEDS_ARG 0b100
 
 typedef struct LocVar {
   TString *varname;

@@ -247,13 +247,14 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
 
 #define checkjump(pt, pc) check(0 <= pc && pc < pt->codeSize)
 
-#define checkreg(pt, reg) check((reg) < (pt)->maxstacksize)
+#define checkreg(pt, reg) check((reg) < (pt)->maxStackSize)
 
 static int precheck(const Proto *pt) {
-  check(pt->maxstacksize <= MAXSTACK);
-  check(pt->numparams + (pt->is_vararg & VARARG_HASARG) <= pt->maxstacksize);
-  check(!(pt->is_vararg & VARARG_NEEDSARG) || (pt->is_vararg & VARARG_HASARG));
-  check(pt->sizeUpvalues <= pt->upNum);
+  check(pt->maxStackSize <= MAXSTACK);
+  check(pt->paramNum + (pt->varargMode & VARARG_HAS_ARG) <= pt->maxStackSize);
+  check(!(pt->varargMode & VARARG_NEEDS_ARG) ||
+        (pt->varargMode & VARARG_HAS_ARG));
+  check(pt->sizeUpvalues <= pt->upvalueNum);
   check(pt->lineInfoSize == pt->codeSize || pt->lineInfoSize == 0);
   check(pt->codeSize > 0 &&
         GET_OPCODE(pt->code[pt->codeSize - 1]) == OP_RETURN);
@@ -287,7 +288,7 @@ static int checkArgMode(const Proto *pt, int r, enum OpArgMask mode) {
     checkreg(pt, r);
     break;
   case OpArgK:
-    check(ISK(r) ? INDEXK(r) < pt->kSize : r < pt->maxstacksize);
+    check(ISK(r) ? INDEXK(r) < pt->kSize : r < pt->maxStackSize);
     break;
   }
   return 1;
@@ -373,7 +374,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
     }
     case OP_GETUPVAL:
     case OP_SETUPVAL: {
-      check(b < pt->upNum);
+      check(b < pt->upvalueNum);
       break;
     }
     case OP_GETGLOBAL:
@@ -448,7 +449,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
     case OP_CLOSURE: {
       int nup, j;
       check(b < pt->pSize);
-      nup = pt->p[b]->upNum;
+      nup = pt->p[b]->upvalueNum;
       check(pc + nup < pt->codeSize);
       for (j = 1; j <= nup; j++) {
         OpCode op1 = GET_OPCODE(pt->code[pc + j]);
@@ -460,8 +461,8 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
       break;
     }
     case OP_VARARG: {
-      check((pt->is_vararg & VARARG_ISVARARG) &&
-            !(pt->is_vararg & VARARG_NEEDSARG));
+      check((pt->varargMode & VARARG_IS_VARARG) &&
+            !(pt->varargMode & VARARG_NEEDS_ARG));
       b--;
       if (b == LUA_MULTRET) {
         check(checkopenop(pt, pc));

@@ -108,10 +108,10 @@ static void DumpFunction(const Proto *f, const TString *p, DumpState *D) {
   DumpString((f->source == p || D->strip) ? NULL : f->source, D);
   DumpInt(f->linedefined, D);
   DumpInt(f->lastlinedefined, D);
-  DumpChar(f->upNum, D);
-  DumpChar(f->numparams, D);
-  DumpChar(f->is_vararg, D);
-  DumpChar(f->maxstacksize, D);
+  DumpChar(f->upvalueNum, D);
+  DumpChar(f->paramNum, D);
+  DumpChar(f->varargMode, D);
+  DumpChar(f->maxStackSize, D);
   DumpCode(f, D);
   DumpConstants(f, D);
   DumpDebug(f, D);

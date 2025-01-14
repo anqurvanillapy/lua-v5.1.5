@@ -123,7 +123,7 @@ static const Proto *combine(lua_State *L, int n) {
     setptvalue2s(L, L->top, f);
     incr_top(L);
     f->source = luaS_newliteral(L, "=(" PROGNAME ")");
-    f->maxstacksize = 1;
+    f->maxStackSize = 1;
     pc = 2 * n + 1;
     f->code = luaM_newvector(L, pc, Instruction);
     f->codeSize = pc;

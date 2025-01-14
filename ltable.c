@@ -144,16 +144,16 @@ static int findindex(lua_State *L, Table *t, StkId key) {
 }
 
 int luaH_next(lua_State *L, Table *t, StkId key) {
-  int i = findindex(L, t, key);      /* find original element */
-  for (i++; i < t->sizearray; i++) { /* try first array part */
-    if (!IS_TYPE_NIL(&t->array[i])) {    /* a non-nil value? */
+  int i = findindex(L, t, key);       /* find original element */
+  for (i++; i < t->sizearray; i++) {  /* try first array part */
+    if (!IS_TYPE_NIL(&t->array[i])) { /* a non-nil value? */
       setnvalue(key, cast_num(i + 1));
       setobj2s(L, key + 1, &t->array[i]);
       return 1;
     }
   }
   for (i -= t->sizearray; i < sizenode(t); i++) { /* then hash part */
-    if (!IS_TYPE_NIL(gval(gnode(t, i)))) {            /* a non-nil value? */
+    if (!IS_TYPE_NIL(gval(gnode(t, i)))) {        /* a non-nil value? */
       setobj2s(L, key, key2tval(gnode(t, i)));
       setobj2s(L, key + 1, gval(gnode(t, i)));
       return 1;

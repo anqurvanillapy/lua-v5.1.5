@@ -232,7 +232,7 @@ static void checkclosure(global_State *g, Closure *cl) {
       checkvalref(g, clgc, &cl->c.upvalue[i]);
   } else {
     int i;
-    lua_assert(cl->l.nupvalues == cl->l.p->upNum);
+    lua_assert(cl->l.nupvalues == cl->l.p->upvalueNum);
     checkobjref(g, clgc, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) {
       if (cl->l.upvals[i]) {
@@ -396,8 +396,8 @@ static int listcode(lua_State *L) {
                 "Lua function expected");
   p = clvalue(obj_at(L, 1))->l.p;
   lua_newtable(L);
-  setnameval(L, "maxstack", p->maxstacksize);
-  setnameval(L, "numparams", p->numparams);
+  setnameval(L, "maxstack", p->maxStackSize);
+  setnameval(L, "paramNum", p->paramNum);
   for (pc = 0; pc < p->codeSize; pc++) {
     char buff[100];
     lua_pushinteger(L, pc + 1);

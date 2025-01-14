@@ -224,7 +224,7 @@ static void traverseclosure(global_State *g, Closure *cl) {
       markvalue(g, &cl->c.upvalue[i]);
   } else {
     int i;
-    lua_assert(cl->l.nupvalues == cl->l.p->upNum);
+    lua_assert(cl->l.nupvalues == cl->l.p->upvalueNum);
     markobject(g, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) /* mark its upvalues */
       markobject(g, cl->l.upvals[i]);

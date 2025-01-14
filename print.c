@@ -207,9 +207,9 @@ static void PrintHeader(const Proto *f) {
          (f->linedefined == 0) ? "main" : "function", s, f->linedefined,
          f->lastlinedefined, S(f->codeSize), f->codeSize * Sizeof(Instruction),
          VOID(f));
-  printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->numparams,
-         f->is_vararg ? "+" : "", SS(f->numparams), S(f->maxstacksize),
-         S(f->upNum));
+  printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->paramNum,
+         f->varargMode ? "+" : "", SS(f->paramNum), S(f->maxStackSize),
+         S(f->upvalueNum));
   printf("%d local%s, %d constant%s, %d function%s\n", S(f->locVarsSize),
          S(f->kSize), S(f->pSize));
 }

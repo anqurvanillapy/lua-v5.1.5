@@ -97,7 +97,7 @@ void luaV_gettable(lua_State *L, const TValue *t, TValue *key, StkId val) {
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = hvalue(t);
       const TValue *res = luaH_get(h, key); /* do a primitive get */
-      if (!IS_TYPE_NIL(res) ||                  /* result is no nil? */
+      if (!IS_TYPE_NIL(res) ||              /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
         setobj2s(L, val, res);
         return;
@@ -123,7 +123,7 @@ void luaV_settable(lua_State *L, const TValue *t, TValue *key, StkId val) {
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = hvalue(t);
       TValue *oldval = luaH_set(L, h, key); /* do a primitive set */
-      if (!IS_TYPE_NIL(oldval) ||               /* result is no nil? */
+      if (!IS_TYPE_NIL(oldval) ||           /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
         setobj2t(L, oldval, val);
         h->flags = 0;
@@ -402,7 +402,7 @@ static void Arith(lua_State *L, StkId ra, const TValue *rb, const TValue *rc,
   {                                                                            \
     TValue *rb = RKB(i);                                                       \
     TValue *rc = RKC(i);                                                       \
-    if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                                    \
+    if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                            \
       lua_Number nb = nvalue(rb), nc = nvalue(rc);                             \
       setnvalue(ra, op(nb, nc));                                               \
     } else                                                                     \
@@ -654,7 +654,7 @@ reentry: /* entry point */
         for (aux = 0; pfunc + aux < L->top; aux++) /* move frame down */
           setobjs2s(L, func + aux, pfunc + aux);
         ci->top = L->top = func + aux; /* correct top */
-        lua_assert(L->top == L->base + clvalue(func)->l.p->maxstacksize);
+        lua_assert(L->top == L->base + clvalue(func)->l.p->maxStackSize);
         ci->savedpc = L->savedPC;
         ci->tailcalls++; /* one more call lost */
         L->ci--;         /* remove new frame */
@@ -727,7 +727,7 @@ reentry: /* entry point */
       Protect(luaD_call(L, cb, GETARG_C(i)));
       L->top = L->ci->top;
       cb = RA(i) + 3;                   /* previous call may change the stack */
-      if (!IS_TYPE_NIL(cb)) {               /* continue loop? */
+      if (!IS_TYPE_NIL(cb)) {           /* continue loop? */
         setobjs2s(L, cb - 1, cb);       /* save control variable */
         dojump(L, pc, GETARG_sBx(*pc)); /* jump back */
       }
@@ -768,7 +768,7 @@ reentry: /* entry point */
       Closure *ncl;
       int nup, j;
       p = cl->p->p[GETARG_Bx(i)];
-      nup = p->upNum;
+      nup = p->upvalueNum;
       ncl = luaF_newLclosure(L, nup, cl->env);
       ncl->l.p = p;
       for (j = 0; j < nup; j++, pc++) {
@@ -787,7 +787,7 @@ reentry: /* entry point */
       int b = GETARG_B(i) - 1;
       int j;
       CallInfo *ci = L->ci;
-      int n = cast_int(ci->base - ci->func) - cl->p->numparams - 1;
+      int n = cast_int(ci->base - ci->func) - cl->p->paramNum - 1;
       if (b == LUA_MULTRET) {
         Protect(luaD_checkstack(L, n));
         ra = RA(i); /* previous call may change the stack */
