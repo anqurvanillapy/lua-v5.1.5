@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "llimits.h"
+#include "limits.h"
 #include "lobject.h"
 #include "lzio.h"
 
@@ -49,7 +49,7 @@ struct BlockCnt; /* defined in lparser.c */
 
 /* state needed to generate code for a given function */
 typedef struct FuncState {
-  Proto *f;               /* current function header */
+  Prototype *f;           /* current function header */
   Table *h;               /* table to find (and reuse) elements in `k' */
   struct FuncState *prev; /* enclosing function */
   struct LexState *ls;    /* lexical state */
@@ -67,5 +67,5 @@ typedef struct FuncState {
   unsigned short actvar[LUAI_MAX_VARS];  /* declared-variable stack */
 } FuncState;
 
-LUAI_FUNC Proto *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,
-                             const char *name);
+LUAI_FUNC Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,
+                                 const char *name);

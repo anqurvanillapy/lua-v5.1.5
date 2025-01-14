@@ -114,12 +114,12 @@ static int doargs(int argc, const char *argv[]) {
 
 #define toproto(L, i) (CLOSURE_VALUE(L->top + (i))->l.p)
 
-static const Proto *combine(lua_State *L, int n) {
+static const Prototype *combine(lua_State *L, int n) {
   if (n == 1) {
     return toproto(L, -1);
   } else {
     int i, pc;
-    Proto *f = luaF_newproto(L);
+    Prototype *f = luaF_newproto(L);
     setptvalue2s(L, L->top, f);
     incr_top(L);
     f->source = luaS_newliteral(L, "=(" PROGNAME ")");
@@ -127,7 +127,7 @@ static const Proto *combine(lua_State *L, int n) {
     pc = 2 * n + 1;
     f->code = luaM_newvector(L, pc, Instruction);
     f->codeSize = pc;
-    f->inners = luaM_newvector(L, n, Proto *);
+    f->inners = luaM_newvector(L, n, Prototype *);
     f->pSize = n;
     pc = 0;
     for (i = 0; i < n; i++) {
@@ -153,7 +153,7 @@ static int Compiler_main(lua_State *L) {
   struct Compiler *s = (struct Compiler *)lua_touserdata(L, 1);
   int argc = s->argc;
   const char **argv = s->argv;
-  const Proto *f;
+  const Prototype *f;
   int i;
   if (!lua_checkstack(L, argc)) {
     fatal("too many input files");

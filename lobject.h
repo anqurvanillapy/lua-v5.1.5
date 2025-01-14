@@ -4,7 +4,7 @@
 
 #include <stdarg.h>
 
-#include "llimits.h"
+#include "limits.h"
 #include "lua.h"
 
 /* tags for values visible from Lua */
@@ -30,7 +30,7 @@ typedef struct GCHeader {
   GCHeaderFields;
 } GCHeader;
 
-typedef union {
+typedef union Value {
   GCObject *gc;
   void *p;
   lua_Number n;
@@ -41,10 +41,13 @@ typedef union {
   Value value;                                                                 \
   int tt
 
-// Tagged Values.
-typedef struct TValue {
+// Tagged values.
+typedef struct TaggedValue {
   TValueFields;
-} TValue;
+} TaggedValue;
+
+#define GET_TYPE(o) ((o)->tt)
+#define SET_TYPE(obj, t) ((obj)->tt = (t))
 
 #define IS_TYPE_NIL(o) ((o)->tt == LUA_TYPE_NIL)
 #define IS_TYPE_NUMBER(o) ((o)->tt == LUA_TYPE_NUMBER)
@@ -59,8 +62,8 @@ typedef struct TValue {
 #define IS_FALSE(o) (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && !BOOL_VALUE(o)))
 #define IS_COLLECTABLE(o) (GET_TYPE(o) >= LUA_TYPE_STRING)
 
-/* Macros to access values */
-#define GET_TYPE(o) ((o)->tt)
+// Getter macros.
+
 #define GC_VALUE(o) CHECK_EXPR(IS_COLLECTABLE(o), (o)->value.gc)
 #define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->value.p)
 #define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->value.n)
@@ -80,33 +83,34 @@ typedef struct TValue {
              ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                    \
               !IS_DEAD(g, (obj)->value.gc)))
 
-/* Macros to set values */
+// Setter macros.
+
 #define SET_NIL(obj) ((obj)->tt = LUA_TYPE_NIL)
 
 #define SET_NUMBER(obj, x)                                                     \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.n = (x);                                                        \
     i_o->tt = LUA_TYPE_NUMBER;                                                 \
   } while (false)
 
 #define SET_PTR(obj, x)                                                        \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.p = (x);                                                        \
     i_o->tt = LUA_TYPE_PTR;                                                    \
   } while (false)
 
 #define SET_BOOL(obj, x)                                                       \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.b = (x);                                                        \
     i_o->tt = LUA_TYPE_BOOLEAN;                                                \
   } while (false)
 
 #define SET_STRING(L, obj, x)                                                  \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_STRING;                                                 \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -114,7 +118,7 @@ typedef struct TValue {
 
 #define SET_USERDATA(L, obj, x)                                                \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_USERDATA;                                               \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -122,7 +126,7 @@ typedef struct TValue {
 
 #define SET_THREAD(L, obj, x)                                                  \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_THREAD;                                                 \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -130,7 +134,7 @@ typedef struct TValue {
 
 #define SET_CLOSURE(L, obj, x)                                                 \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_FUNCTION;                                               \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -138,7 +142,7 @@ typedef struct TValue {
 
 #define SET_TABLE(L, obj, x)                                                   \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
+    TaggedValue *i_o = (obj);                                                  \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_TABLE;                                                  \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -146,24 +150,22 @@ typedef struct TValue {
 
 #define SET_PROTO(L, obj, x)                                                   \
   do {                                                                         \
-    TValue *i_o = (obj);                                                       \
-    i_o->value.gc = cast(GCObject *, (x));                                     \
+    TaggedValue *i_o = (obj);                                                  \
+    i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_PROTO;                                                  \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
 
 #define SET_OBJECT(L, obj1, obj2)                                              \
   do {                                                                         \
-    const TValue *o2 = (obj2);                                                 \
-    TValue *o1 = (obj1);                                                       \
+    const TaggedValue *o2 = (obj2);                                            \
+    TaggedValue *o1 = (obj1);                                                  \
     o1->value = o2->value;                                                     \
     o1->tt = o2->tt;                                                           \
     DEBUG_CHECK_LIVENESS(G(L), o1);                                            \
   } while (false)
 
-/*
-** different types of sets, according to destination
-*/
+// Different types of setters, according to the destination.
 
 /* from stack to (same) stack */
 #define setobjs2s SET_OBJECT
@@ -180,15 +182,13 @@ typedef struct TValue {
 #define setobj2n SET_OBJECT
 #define setsvalue2n SET_STRING
 
-#define setttype(obj, tt) (GET_TYPE(obj) = (tt))
-
-typedef TValue *StkId; /* index to stack elements */
+typedef TaggedValue *StackIndex; /* index to stack elements */
 
 /*
 ** String headers for string table
 */
 typedef union TString {
-  L_Umaxalign dummy; /* ensures maximum alignment for strings */
+  UserMaxAlignment dummy; /* ensures maximum alignment for strings */
   struct {
     GCHeaderFields;
     lu_byte reserved;
@@ -201,7 +201,7 @@ typedef union TString {
 #define svalue(o) getstr(RAW_STRING_VALUE(o))
 
 typedef union Udata {
-  L_Umaxalign dummy; /* ensures maximum alignment for `local' udata */
+  UserMaxAlignment dummy; /* ensures maximum alignment for `local' udata */
   struct {
     GCHeaderFields;
     struct Table *metatable;
@@ -211,18 +211,18 @@ typedef union Udata {
 } Udata;
 
 // Function prototype. A script file is also a function.
-typedef struct Proto {
+typedef struct Prototype {
   GCHeaderFields;
 
   // Constant table.
-  TValue *k;
+  TaggedValue *k;
   int kSize;
 
   Instruction *code;
   int codeSize;
 
   // Functions defined inside this function.
-  struct Proto **inners;
+  struct Prototype **inners;
   int pSize;
 
   // An int-to-int map from opcodes to source lines.
@@ -246,7 +246,7 @@ typedef struct Proto {
   lu_byte paramNum;
   lu_byte varargMode;
   lu_byte maxStackSize;
-} Proto;
+} Prototype;
 
 /* masks for new-style vararg */
 #define VARARG_HAS_ARG 0b001
@@ -264,10 +264,10 @@ typedef struct LocVar {
 typedef struct UpVal {
   GCHeaderFields;
   // Points to stack or to its own value.
-  TValue *v;
+  TaggedValue *v;
   union {
     // The value (when closed).
-    TValue value;
+    TaggedValue value;
     // Double linked list (when open).
     struct {
       struct UpVal *prev;
@@ -286,12 +286,12 @@ typedef struct UpVal {
 typedef struct CClosure {
   ClosureHeader;
   lua_CFunction f;
-  TValue upvalue[1];
+  TaggedValue upvalue[1];
 } CClosure;
 
 typedef struct LClosure {
   ClosureHeader;
-  struct Proto *p;
+  struct Prototype *p;
   UpVal *upvalues[1];
 } LClosure;
 
@@ -314,11 +314,11 @@ typedef union TKey {
     TValueFields;
     struct Node *next; /* for chaining */
   } nk;
-  TValue tvk;
+  TaggedValue tvk;
 } TKey;
 
 typedef struct Node {
-  TValue i_val;
+  TaggedValue i_val;
   TKey i_key;
 } Node;
 
@@ -327,7 +327,7 @@ typedef struct Table {
   lu_byte flags;     /* 1<<p means tagmethod(p) is not present */
   lu_byte lsizenode; /* log2 of size of `node' array */
   struct Table *metatable;
-  TValue *array; /* array part */
+  TaggedValue *array; /* array part */
   Node *node;
   Node *lastfree; /* any free position is before this position */
   GCObject *gclist;
@@ -345,14 +345,14 @@ typedef struct Table {
 
 #define luaO_nilobject (&luaO_nilobject_)
 
-LUAI_DATA const TValue luaO_nilobject_;
+LUAI_DATA const TaggedValue luaO_nilobject_;
 
 #define ceillog2(x) (luaO_log2((x) - 1) + 1)
 
 LUAI_FUNC int luaO_log2(unsigned int x);
 LUAI_FUNC int luaO_int2fb(unsigned int x);
 LUAI_FUNC int luaO_fb2int(int x);
-LUAI_FUNC int luaO_rawequalObj(const TValue *t1, const TValue *t2);
+LUAI_FUNC int luaO_rawequalObj(const TaggedValue *t1, const TaggedValue *t2);
 LUAI_FUNC int luaO_str2d(const char *s, lua_Number *result);
 LUAI_FUNC const char *luaO_pushvfstring(lua_State *L, const char *fmt,
                                         va_list argp);

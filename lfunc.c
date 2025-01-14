@@ -39,7 +39,7 @@ UpVal *luaF_newupval(lua_State *L) {
   return uv;
 }
 
-UpVal *luaF_findupval(lua_State *L, StkId level) {
+UpVal *luaF_findupval(lua_State *L, StackIndex level) {
   global_State *g = G(L);
   GCObject **pp = &L->openUpval;
   UpVal *p;
@@ -81,7 +81,7 @@ void luaF_freeupval(lua_State *L, UpVal *uv) {
   luaM_free(L, uv); /* free upvalue */
 }
 
-void luaF_close(lua_State *L, StkId level) {
+void luaF_close(lua_State *L, StackIndex level) {
   UpVal *uv;
   global_State *g = G(L);
   while (L->openUpval != nullptr && (uv = ngcotouv(L->openUpval))->v >= level) {
@@ -99,8 +99,8 @@ void luaF_close(lua_State *L, StkId level) {
   }
 }
 
-Proto *luaF_newproto(lua_State *L) {
-  Proto *f = luaM_new(L, Proto);
+Prototype *luaF_newproto(lua_State *L) {
+  Prototype *f = luaM_new(L, Prototype);
   luaC_link(L, LuaObjectToGCObject(f), LUA_TYPE_PROTO);
   f->k = nullptr;
   f->kSize = 0;
@@ -124,10 +124,10 @@ Proto *luaF_newproto(lua_State *L) {
   return f;
 }
 
-void luaF_freeproto(lua_State *L, Proto *f) {
+void luaF_freeproto(lua_State *L, Prototype *f) {
   luaM_freearray(L, f->code, f->codeSize, Instruction);
-  luaM_freearray(L, f->inners, f->pSize, Proto *);
-  luaM_freearray(L, f->k, f->kSize, TValue);
+  luaM_freearray(L, f->inners, f->pSize, Prototype *);
+  luaM_freearray(L, f->k, f->kSize, TaggedValue);
   luaM_freearray(L, f->lineInfo, f->lineInfoSize, int);
   luaM_freearray(L, f->locVars, f->locVarsSize, struct LocVar);
   luaM_freearray(L, f->upvalues, f->upvaluesSize, TString *);
@@ -144,7 +144,7 @@ void luaF_freeclosure(lua_State *L, Closure *c) {
 ** Look for n-th local variable at line `line` in function `func`.
 ** Returns nullptr if not found.
 */
-const char *luaF_getlocalname(const Proto *f, int local_number, int pc) {
+const char *luaF_getlocalname(const Prototype *f, int local_number, int pc) {
   int i;
   for (i = 0; i < f->locVarsSize && f->locVars[i].startPC <= pc; i++) {
     if (pc < f->locVars[i].endPC) { /* is variable active? */

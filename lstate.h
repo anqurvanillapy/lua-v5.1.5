@@ -33,9 +33,9 @@ typedef struct stringtable {
 ** informations about a call
 */
 typedef struct CallInfo {
-  StkId base; /* base for this function */
-  StkId func; /* function index in the stack */
-  StkId top;  /* top for this function */
+  StackIndex base; /* base for this function */
+  StackIndex func; /* function index in the stack */
+  StackIndex top;  /* top for this function */
   const Instruction *savedpc;
   int nresults;  /* expected number of results from this function */
   int tailcalls; /* number of tail calls lost under this entry */
@@ -70,7 +70,7 @@ typedef struct global_State {
   int gcpause;         /* size of pause between successive GCs */
   int gcstepmul;       /* GC `granularity' */
   lua_CFunction panic; /* to be called in unprotected errors */
-  TValue l_registry;
+  TaggedValue l_registry;
   struct lua_State *mainthread;
   UpVal uvhead; /* head of double-linked list of all open upvalues */
   struct Table *mt[NUM_TAGS]; /* metatables for basic types */
@@ -84,9 +84,9 @@ struct lua_State {
   lu_byte status;
 
   // First free slot in the stack.
-  StkId top;
+  StackIndex top;
   // Base of current function.
-  StkId base;
+  StackIndex base;
 
   global_State *l_G;
 
@@ -95,9 +95,9 @@ struct lua_State {
   // Saved PC of current function.
   const Instruction *savedPC;
   // Last free slot in the stack.
-  StkId stackLast;
+  StackIndex stackLast;
   // Stack base.
-  StkId stack;
+  StackIndex stack;
   // Points after end of ci array.
   CallInfo *endCI;
   // Points to the CallInfo array.
@@ -118,9 +118,9 @@ struct lua_State {
   lua_Hook hook;
 
   // Table of globals.
-  TValue l_gt;
+  TaggedValue l_gt;
   // Temporary place for environments.
-  TValue env;
+  TaggedValue env;
 
   // List of open upvalues in this stack.
   GCObject *openUpval;
@@ -143,7 +143,7 @@ union GCObject {
   union Udata u;
   union Closure cl;
   struct Table h;
-  struct Proto p;
+  struct Prototype p;
   struct UpVal uv;
   struct lua_State th; /* thread */
 };

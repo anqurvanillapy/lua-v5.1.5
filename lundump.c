@@ -75,25 +75,25 @@ static TString *LoadString(LoadState *S) {
   }
 }
 
-static void LoadCode(LoadState *S, Proto *f) {
+static void LoadCode(LoadState *S, Prototype *f) {
   int n = LoadInt(S);
   f->code = luaM_newvector(S->L, n, Instruction);
   f->codeSize = n;
   LoadVector(S, f->code, n, sizeof(Instruction));
 }
 
-static Proto *LoadFunction(LoadState *S, TString *p);
+static Prototype *LoadFunction(LoadState *S, TString *p);
 
-static void LoadConstants(LoadState *S, Proto *f) {
+static void LoadConstants(LoadState *S, Prototype *f) {
   int i, n;
   n = LoadInt(S);
-  f->k = luaM_newvector(S->L, n, TValue);
+  f->k = luaM_newvector(S->L, n, TaggedValue);
   f->kSize = n;
   for (i = 0; i < n; i++) {
     SET_NIL(&f->k[i]);
   }
   for (i = 0; i < n; i++) {
-    TValue *o = &f->k[i];
+    TaggedValue *o = &f->k[i];
     int t = LoadChar(S);
     switch (t) {
     case LUA_TYPE_NIL:
@@ -114,7 +114,7 @@ static void LoadConstants(LoadState *S, Proto *f) {
     }
   }
   n = LoadInt(S);
-  f->inners = luaM_newvector(S->L, n, Proto *);
+  f->inners = luaM_newvector(S->L, n, Prototype *);
   f->pSize = n;
   for (i = 0; i < n; i++) {
     f->inners[i] = NULL;
@@ -124,7 +124,7 @@ static void LoadConstants(LoadState *S, Proto *f) {
   }
 }
 
-static void LoadDebug(LoadState *S, Proto *f) {
+static void LoadDebug(LoadState *S, Prototype *f) {
   int i, n;
   n = LoadInt(S);
   f->lineInfo = luaM_newvector(S->L, n, int);
@@ -152,8 +152,8 @@ static void LoadDebug(LoadState *S, Proto *f) {
   }
 }
 
-static Proto *LoadFunction(LoadState *S, TString *p) {
-  Proto *f;
+static Prototype *LoadFunction(LoadState *S, TString *p) {
+  Prototype *f;
   if (++S->L->nestedCCallNum > LUAI_MAX_C_CALLS) {
     error(S, "code too deep");
   }
@@ -190,7 +190,7 @@ static void LoadHeader(LoadState *S) {
 /*
 ** load precompiled chunk
 */
-Proto *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff, const char *name) {
+Prototype *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff, const char *name) {
   LoadState S;
   if (*name == '@' || *name == '=') {
     S.name = name + 1;

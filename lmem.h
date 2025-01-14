@@ -4,7 +4,7 @@
 
 #include <stddef.h>
 
-#include "llimits.h"
+#include "limits.h"
 #include "lua.h"
 
 #define MEMERRMSG "not enough memory"

@@ -50,9 +50,9 @@ static void setnameval(lua_State *L, const char *name, int val) {
 #ifndef EXTERNMEMCHECK
 /* full memory check */
 #define HEADER                                                                 \
-  (sizeof(L_Umaxalign)) /* ensures maximum alignment for HEADER                \
-                         */
-#define MARKSIZE 16     /* size of marks after each block */
+  (sizeof(UserMaxAlignment)) /* ensures maximum alignment for HEADER           \
+                              */
+#define MARKSIZE 16          /* size of marks after each block */
 #define blockhead(b) (cast(char *, b) - HEADER)
 #define setsize(newblock, size) (*cast(size_t *, newblock) = size)
 #define checkblocksize(b, size) (size == (*cast(size_t *, blockhead(b))))
@@ -200,7 +200,7 @@ static void checktable(global_State *g, Table *h) {
 ** All marks are conditional because a GC may happen while the
 ** prototype is still being created
 */
-static void checkproto(global_State *g, Proto *f) {
+static void checkproto(global_State *g, Prototype *f) {
   int i;
   GCObject *fgc = LuaObjectToGCObject(f);
   if (f->source)
@@ -244,7 +244,7 @@ static void checkclosure(global_State *g, Closure *cl) {
 }
 
 static void checkstack(global_State *g, lua_State *L1) {
-  StkId o;
+  StackIndex o;
   CallInfo *ci;
   GCObject *uvo;
   lua_assert(!IS_DEAD(g, LuaObjectToGCObject(L1)));
@@ -318,7 +318,7 @@ int lua_checkpc(lua_State *L, pCallInfo ci) {
   if (ci == L->baseCI || !f_isLua(ci))
     return 1;
   else {
-    Proto *p = ci_func(ci)->l.p;
+    Prototype *p = ci_func(ci)->l.p;
     if (ci < L->ci)
       return p->code <= ci->savedpc && ci->savedpc <= p->code + p->codeSize;
     else
@@ -355,7 +355,7 @@ int lua_checkmemory(lua_State *L) {
 ** =======================================================
 */
 
-static char *buildop(Proto *p, int pc, char *buff) {
+static char *buildop(Prototype *p, int pc, char *buff) {
   Instruction i = p->code[pc];
   OpCode o = GET_OPCODE(i);
   const char *name = luaP_opnames[o];
@@ -379,7 +379,7 @@ static char *buildop(Proto *p, int pc, char *buff) {
 }
 
 #if 0
-void luaI_printcode (Proto *pt, int size) {
+void luaI_printcode (Prototype *pt, int size) {
   int pc;
   for (pc=0; pc<size; pc++) {
     char buff[100];
@@ -391,7 +391,7 @@ void luaI_printcode (Proto *pt, int size) {
 
 static int listcode(lua_State *L) {
   int pc;
-  Proto *p;
+  Prototype *p;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
   p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
@@ -408,7 +408,7 @@ static int listcode(lua_State *L) {
 }
 
 static int listk(lua_State *L) {
-  Proto *p;
+  Prototype *p;
   int i;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
@@ -422,7 +422,7 @@ static int listk(lua_State *L) {
 }
 
 static int listlocals(lua_State *L) {
-  Proto *p;
+  Prototype *p;
   int pc = luaL_checkint(L, 2) - 1;
   int i = 0;
   const char *name;
@@ -470,7 +470,7 @@ static int settrick(lua_State *L) {
 }*/
 
 static int get_gccolor(lua_State *L) {
-  TValue *o;
+  TaggedValue *o;
   luaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!IS_COLLECTABLE(o))
@@ -505,7 +505,7 @@ static int hash_query(lua_State *L) {
     luaL_argcheck(L, lua_type(L, 1) == LUA_TYPE_STRING, 1, "string expected");
     lua_pushinteger(L, STRING_VALUE(obj_at(L, 1))->hash);
   } else {
-    TValue *o = obj_at(L, 1);
+    TaggedValue *o = obj_at(L, 1);
     Table *t;
     luaL_checktype(L, 2, LUA_TYPE_TABLE);
     t = TABLE_VALUE(obj_at(L, 2));

@@ -209,17 +209,17 @@ static void freeexp(FuncState *fs, expdesc *e) {
   }
 }
 
-static int addk(FuncState *fs, TValue *k, TValue *v) {
+static int addk(FuncState *fs, TaggedValue *k, TaggedValue *v) {
   lua_State *L = fs->L;
-  TValue *idx = luaH_set(L, fs->h, k);
-  Proto *f = fs->f;
+  TaggedValue *idx = luaH_set(L, fs->h, k);
+  Prototype *f = fs->f;
   int oldsize = f->kSize;
   if (IS_TYPE_NUMBER(idx)) {
     lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(NUMBER_VALUE(idx))], v));
     return cast_int(NUMBER_VALUE(idx));
   } else { /* constant not found; create a new entry */
     SET_NUMBER(idx, cast_num(fs->nk));
-    luaM_growvector(L, f->k, fs->nk, f->kSize, TValue, MAXARG_Bx,
+    luaM_growvector(L, f->k, fs->nk, f->kSize, TaggedValue, MAXARG_Bx,
                     "constant table overflow");
     while (oldsize < f->kSize) {
       SET_NIL(&f->k[oldsize++]);
@@ -231,25 +231,25 @@ static int addk(FuncState *fs, TValue *k, TValue *v) {
 }
 
 int luaK_stringK(FuncState *fs, TString *s) {
-  TValue o;
+  TaggedValue o;
   SET_STRING(fs->L, &o, s);
   return addk(fs, &o, &o);
 }
 
 int luaK_numberK(FuncState *fs, lua_Number r) {
-  TValue o;
+  TaggedValue o;
   SET_NUMBER(&o, r);
   return addk(fs, &o, &o);
 }
 
 static int boolK(FuncState *fs, int b) {
-  TValue o;
+  TaggedValue o;
   SET_BOOL(&o, b);
   return addk(fs, &o, &o);
 }
 
 static int nilK(FuncState *fs) {
-  TValue k, v;
+  TaggedValue k, v;
   SET_NIL(&v);
   /* cannot use nil as key; instead use table itself to represent nil */
   SET_TABLE(fs->L, &k, fs->h);
@@ -821,7 +821,7 @@ void luaK_fixline(FuncState *fs, int line) {
 }
 
 static int luaK_code(FuncState *fs, Instruction i, int line) {
-  Proto *f = fs->f;
+  Prototype *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
   luaM_growvector(fs->L, f->code, fs->pc, f->codeSize, Instruction, MAX_INT,

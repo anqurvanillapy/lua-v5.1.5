@@ -54,13 +54,13 @@ static void DumpString(const TString *s, DumpState *D) {
 
 #define DumpCode(f, D) DumpVector(f->code, f->codeSize, sizeof(Instruction), D)
 
-static void DumpFunction(const Proto *f, const TString *p, DumpState *D);
+static void DumpFunction(const Prototype *f, const TString *p, DumpState *D);
 
-static void DumpConstants(const Proto *f, DumpState *D) {
+static void DumpConstants(const Prototype *f, DumpState *D) {
   int i, n = f->kSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
-    const TValue *o = &f->k[i];
+    const TaggedValue *o = &f->k[i];
     DumpChar(GET_TYPE(o), D);
     switch (GET_TYPE(o)) {
     case LUA_TYPE_NIL:
@@ -86,7 +86,7 @@ static void DumpConstants(const Proto *f, DumpState *D) {
   }
 }
 
-static void DumpDebug(const Proto *f, DumpState *D) {
+static void DumpDebug(const Prototype *f, DumpState *D) {
   int i, n;
   n = (D->strip) ? 0 : f->lineInfoSize;
   DumpVector(f->lineInfo, n, sizeof(int), D);
@@ -104,7 +104,7 @@ static void DumpDebug(const Proto *f, DumpState *D) {
   }
 }
 
-static void DumpFunction(const Proto *f, const TString *p, DumpState *D) {
+static void DumpFunction(const Prototype *f, const TString *p, DumpState *D) {
   DumpString((f->source == p || D->strip) ? NULL : f->source, D);
   DumpInt(f->lineDefined, D);
   DumpInt(f->lineDefinedLast, D);
@@ -126,7 +126,7 @@ static void DumpHeader(DumpState *D) {
 /*
 ** dump Lua function as precompiled chunk
 */
-int luaU_dump(lua_State *L, const Proto *f, lua_Writer w, void *data,
+int luaU_dump(lua_State *L, const Prototype *f, lua_Writer w, void *data,
               int strip) {
   DumpState D;
   D.L = L;

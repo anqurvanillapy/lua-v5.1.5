@@ -33,8 +33,8 @@ void luaT_init(lua_State *L) {
 ** function to be used with macro "fasttm": optimized for absence of
 ** tag methods
 */
-const TValue *luaT_gettm(Table *events, TMS event, TString *ename) {
-  const TValue *tm = luaH_getstr(events, ename);
+const TaggedValue *luaT_gettm(Table *events, TMS event, TString *ename) {
+  const TaggedValue *tm = luaH_getstr(events, ename);
   lua_assert(event <= TM_EQ);
   if (IS_TYPE_NIL(tm)) {                     /* no tag method? */
     events->flags |= cast_byte(1u << event); /* cache this fact */
@@ -44,7 +44,8 @@ const TValue *luaT_gettm(Table *events, TMS event, TString *ename) {
   }
 }
 
-const TValue *luaT_gettmbyobj(lua_State *L, const TValue *o, TMS event) {
+const TaggedValue *luaT_gettmbyobj(lua_State *L, const TaggedValue *o,
+                                   TMS event) {
   Table *mt;
   switch (GET_TYPE(o)) {
   case LUA_TYPE_TABLE:

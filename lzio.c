@@ -4,7 +4,7 @@
 
 #include "lua.h"
 
-#include "llimits.h"
+#include "limits.h"
 #include "lmem.h"
 #include "lstate.h"
 #include "lzio.h"

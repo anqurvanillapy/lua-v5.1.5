@@ -60,8 +60,8 @@ static void PrintString(const TString *ts) {
   putchar('"');
 }
 
-static void PrintConstant(const Proto *f, int i) {
-  const TValue *o = &f->k[i];
+static void PrintConstant(const Prototype *f, int i) {
+  const TaggedValue *o = &f->k[i];
   switch (GET_TYPE(o)) {
   case LUA_TYPE_NIL:
     printf("nil");
@@ -81,7 +81,7 @@ static void PrintConstant(const Proto *f, int i) {
   }
 }
 
-static void PrintCode(const Proto *f) {
+static void PrintCode(const Prototype *f) {
   const Instruction *code = f->code;
   int pc, n = f->codeSize;
   for (pc = 0; pc < n; pc++) {
@@ -194,7 +194,7 @@ static void PrintCode(const Proto *f) {
 #define SS(x) (x == 1) ? "" : "s"
 #define S(x) x, SS(x)
 
-static void PrintHeader(const Proto *f) {
+static void PrintHeader(const Prototype *f) {
   const char *s = getstr(f->source);
   if (*s == '@' || *s == '=') {
     s++;
@@ -214,7 +214,7 @@ static void PrintHeader(const Proto *f) {
          S(f->kSize), S(f->pSize));
 }
 
-static void PrintConstants(const Proto *f) {
+static void PrintConstants(const Prototype *f) {
   int i, n = f->kSize;
   printf("constants (%d) for %p:\n", n, VOID(f));
   for (i = 0; i < n; i++) {
@@ -224,7 +224,7 @@ static void PrintConstants(const Proto *f) {
   }
 }
 
-static void PrintLocals(const Proto *f) {
+static void PrintLocals(const Prototype *f) {
   int i, n = f->locVarsSize;
   printf("locals (%d) for %p:\n", n, VOID(f));
   for (i = 0; i < n; i++) {
@@ -233,7 +233,7 @@ static void PrintLocals(const Proto *f) {
   }
 }
 
-static void PrintUpvalues(const Proto *f) {
+static void PrintUpvalues(const Prototype *f) {
   int i, n = f->upvaluesSize;
   printf("upvalues (%d) for %p:\n", n, VOID(f));
   if (f->upvalues == NULL) {
@@ -244,7 +244,7 @@ static void PrintUpvalues(const Proto *f) {
   }
 }
 
-void PrintFunction(const Proto *f, int full) {
+void PrintFunction(const Prototype *f, int full) {
   int i, n = f->pSize;
   PrintHeader(f);
   PrintCode(f);

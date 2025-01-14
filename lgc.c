@@ -53,7 +53,7 @@
 static void removeentry(Node *n) {
   lua_assert(IS_TYPE_NIL(gval(n)));
   if (IS_COLLECTABLE(gkey(n))) {
-    setttype(gkey(n), LUA_TYPE_DEAD); /* dead key; remove it */
+    SET_TYPE(gkey(n), LUA_TYPE_DEAD); /* dead key; remove it */
   }
 }
 
@@ -149,7 +149,7 @@ static int traversetable(global_State *g, Table *h) {
   int i;
   int weakkey = 0;
   int weakvalue = 0;
-  const TValue *mode;
+  const TaggedValue *mode;
   if (h->metatable)
     markobject(g, h->metatable);
   mode = gfasttm(g, h->metatable, TM_MODE);
@@ -193,7 +193,7 @@ static int traversetable(global_State *g, Table *h) {
 ** All marks are conditional because a GC may happen while the
 ** prototype is still being created
 */
-static void traverseproto(global_State *g, Proto *f) {
+static void traverseproto(global_State *g, Prototype *f) {
   int i;
   if (f->source) {
     stringmark(f->source);
@@ -231,7 +231,7 @@ static void traverseclosure(global_State *g, Closure *cl) {
   }
 }
 
-static void checkstacksizes(lua_State *L, StkId max) {
+static void checkstacksizes(lua_State *L, StackIndex max) {
   int ci_used = cast_int(L->ci - L->baseCI); /* number of `ci' in use */
   int s_used = cast_int(max - L->stack);     /* part of stack in use */
   if (L->ciSize > LUAI_MAXCALLS) {           /* handling overflow? */
@@ -249,7 +249,7 @@ static void checkstacksizes(lua_State *L, StkId max) {
 }
 
 static void traversestack(global_State *g, lua_State *l) {
-  StkId o, lim;
+  StackIndex o, lim;
   CallInfo *ci;
   markvalue(g, gt(l));
   lim = l->top;
@@ -282,7 +282,7 @@ static l_mem propagatemark(global_State *g) {
     if (traversetable(g, h)) { /* table is weak? */
       black2gray(o);           /* keep it gray */
     }
-    return sizeof(Table) + sizeof(TValue) * h->sizearray +
+    return sizeof(Table) + sizeof(TaggedValue) * h->sizearray +
            sizeof(Node) * sizenode(h);
   }
   case LUA_TYPE_FUNCTION: {
@@ -299,15 +299,15 @@ static l_mem propagatemark(global_State *g) {
     g->grayagain = o;
     black2gray(o);
     traversestack(g, th);
-    return sizeof(lua_State) + sizeof(TValue) * th->stackSize +
+    return sizeof(lua_State) + sizeof(TaggedValue) * th->stackSize +
            sizeof(CallInfo) * th->ciSize;
   }
   case LUA_TYPE_PROTO: {
-    Proto *p = gco2p(o);
+    Prototype *p = gco2p(o);
     g->gray = p->gcList;
     traverseproto(g, p);
-    return sizeof(Proto) + sizeof(Instruction) * p->codeSize +
-           sizeof(Proto *) * p->pSize + sizeof(TValue) * p->kSize +
+    return sizeof(Prototype) + sizeof(Instruction) * p->codeSize +
+           sizeof(Prototype *) * p->pSize + sizeof(TaggedValue) * p->kSize +
            sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
            sizeof(TString *) * p->upvaluesSize;
   }
@@ -332,7 +332,7 @@ static size_t propagateall(global_State *g) {
 ** other objects: if really collected, cannot keep them; for userdata
 ** being finalized, keep them in keys, but not in values
 */
-static int iscleared(const TValue *o, int iskey) {
+static int iscleared(const TaggedValue *o, int iskey) {
   if (!IS_COLLECTABLE(o)) {
     return 0;
   }
@@ -356,7 +356,7 @@ static void cleartable(GCObject *l) {
                testbit(h->marked, KEYWEAKBIT));
     if (testbit(h->marked, VALUEWEAKBIT)) {
       while (i--) {
-        TValue *o = &h->array[i];
+        TaggedValue *o = &h->array[i];
         if (iscleared(o, 0)) { /* value was collected? */
           SET_NIL(o);          /* remove value */
         }
@@ -453,7 +453,7 @@ static void GCTM(lua_State *L) {
   global_State *g = G(L);
   GCObject *o = g->tmudata->gch.next; /* get first element */
   Udata *udata = rawgco2u(o);
-  const TValue *tm;
+  const TaggedValue *tm;
   /* remove udata from `tmudata' */
   if (o == g->tmudata) { /* last element? */
     g->tmudata = NULL;

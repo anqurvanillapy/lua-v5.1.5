@@ -126,7 +126,7 @@ static void checkname(LexState *ls, expdesc *e) {
 
 static int registerlocalvar(LexState *ls, TString *varname) {
   FuncState *fs = ls->fs;
-  Proto *f = fs->f;
+  Prototype *f = fs->f;
   int oldsize = f->locVarsSize;
   luaM_growvector(ls->L, f->locVars, fs->nlocvars, f->locVarsSize, LocVar,
                   SHRT_MAX, "too many local variables");
@@ -165,7 +165,7 @@ static void removevars(LexState *ls, int tolevel) {
 
 static int indexupvalue(FuncState *fs, TString *name, expdesc *v) {
   int i;
-  Proto *f = fs->f;
+  Prototype *f = fs->f;
   int oldsize = f->upvaluesSize;
   for (i = 0; i < f->upvalueNum; i++) {
     if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
@@ -298,10 +298,10 @@ static void leaveBlock(FuncState *fs) {
 
 static void pushclosure(LexState *ls, FuncState *func, expdesc *v) {
   FuncState *fs = ls->fs;
-  Proto *f = fs->f;
+  Prototype *f = fs->f;
   int oldsize = f->pSize;
   int i;
-  luaM_growvector(ls->L, f->inners, fs->np, f->pSize, Proto *, MAXARG_Bx,
+  luaM_growvector(ls->L, f->inners, fs->np, f->pSize, Prototype *, MAXARG_Bx,
                   "constant table overflow");
   while (oldsize < f->pSize) {
     f->inners[oldsize++] = NULL;
@@ -317,7 +317,7 @@ static void pushclosure(LexState *ls, FuncState *func, expdesc *v) {
 
 static void open_func(LexState *ls, FuncState *fs) {
   lua_State *L = ls->L;
-  Proto *f = luaF_newproto(L);
+  Prototype *f = luaF_newproto(L);
   fs->f = f;
   fs->prev = ls->fs; /* linked list of funcstates */
   fs->ls = ls;
@@ -345,16 +345,16 @@ static void open_func(LexState *ls, FuncState *fs) {
 static void close_func(LexState *ls) {
   lua_State *L = ls->L;
   FuncState *fs = ls->fs;
-  Proto *f = fs->f;
+  Prototype *f = fs->f;
   removevars(ls, 0);
   luaK_ret(fs, 0, 0); /* final return */
   luaM_reallocvector(L, f->code, f->codeSize, fs->pc, Instruction);
   f->codeSize = fs->pc;
   luaM_reallocvector(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
   f->lineInfoSize = fs->pc;
-  luaM_reallocvector(L, f->k, f->kSize, fs->nk, TValue);
+  luaM_reallocvector(L, f->k, f->kSize, fs->nk, TaggedValue);
   f->kSize = fs->nk;
-  luaM_reallocvector(L, f->inners, f->pSize, fs->np, Proto *);
+  luaM_reallocvector(L, f->inners, f->pSize, fs->np, Prototype *);
   f->pSize = fs->np;
   luaM_reallocvector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
@@ -368,7 +368,7 @@ static void close_func(LexState *ls) {
   L->top -= 2; /* remove table and prototype from the stack */
 }
 
-Proto *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
+Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
   struct LexState lexstate;
   struct FuncState funcstate;
   lexstate.buff = buff;
@@ -525,7 +525,7 @@ static void constructor(LexState *ls, expdesc *t) {
 static void parlist(LexState *ls) {
   /* parlist -> [ param { `,' param } ] */
   FuncState *fs = ls->fs;
-  Proto *f = fs->f;
+  Prototype *f = fs->f;
   int nparams = 0;
   f->varargMode = 0;
   if (ls->t.token != ')') { /* is `parlist' not empty? */
