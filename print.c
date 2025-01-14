@@ -64,16 +64,16 @@ static void PrintString(const TString *ts) {
 static void PrintConstant(const Proto *f, int i) {
   const TValue *o = &f->k[i];
   switch (ttype(o)) {
-  case LUA_TNIL:
+  case LUA_TYPE_NIL:
     printf("nil");
     break;
-  case LUA_TBOOLEAN:
+  case LUA_TYPE_BOOLEAN:
     printf(bvalue(o) ? "true" : "false");
     break;
-  case LUA_TNUMBER:
+  case LUA_TYPE_NUMBER:
     printf(LUA_NUMBER_FMT, nvalue(o));
     break;
-  case LUA_TSTRING:
+  case LUA_TYPE_STRING:
     PrintString(rawtsvalue(o));
     break;
   default: /* cannot happen */

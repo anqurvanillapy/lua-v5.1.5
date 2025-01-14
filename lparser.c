@@ -146,7 +146,7 @@ static int registerlocalvar(LexState *ls, TString *varname) {
 
 static void new_localvar(LexState *ls, TString *name, int n) {
   FuncState *fs = ls->fs;
-  luaY_checklimit(fs, fs->nactvar + n + 1, LUAI_MAXVARS, "local variables");
+  luaY_checklimit(fs, fs->nactvar + n + 1, LUAI_MAX_VARS, "local variables");
   fs->actvar[fs->nactvar + n] =
       cast(unsigned short, registerlocalvar(ls, name));
 }
@@ -177,7 +177,7 @@ static int indexupvalue(FuncState *fs, TString *name, expdesc *v) {
     }
   }
   /* new one */
-  luaY_checklimit(fs, f->nups + 1, LUAI_MAXUPVALUES, "upvalues");
+  luaY_checklimit(fs, f->nups + 1, LUAI_MAX_UPVALUES, "upvalues");
   luaM_growvector(fs->L, f->upvalues, f->nups, f->sizeupvalues, TString *,
                   MAX_INT, "");
   while (oldsize < f->sizeupvalues) {
@@ -267,12 +267,12 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, expdesc *e) {
 }
 
 static void enterlevel(LexState *ls) {
-  if (++ls->L->nCcalls > LUAI_MAXCCALLS) {
+  if (++ls->L->nestedCCallNum > LUAI_MAX_C_CALLS) {
     luaX_lexerror(ls, "chunk has too many syntax levels", 0);
   }
 }
 
-#define leavelevel(ls) ((ls)->L->nCcalls--)
+#define leavelevel(ls) ((ls)->L->nestedCCallNum--)
 
 static void enterblock(FuncState *fs, BlockCnt *bl, lu_byte isbreakable) {
   bl->breaklist = NO_JUMP;
@@ -931,7 +931,7 @@ static void assignment(LexState *ls, struct LHS_assign *lh, int nvars) {
     if (nv.v.k == VLOCAL) {
       check_conflict(ls, lh, &nv.v);
     }
-    luaY_checklimit(ls->fs, nvars, LUAI_MAXCCALLS - ls->L->nCcalls,
+    luaY_checklimit(ls->fs, nvars, LUAI_MAX_C_CALLS - ls->L->nestedCCallNum,
                     "variables in assignment");
     assignment(ls, &nv, nvars + 1);
   } else { /* assignment -> `=' explist1 */

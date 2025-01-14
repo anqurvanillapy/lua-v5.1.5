@@ -49,10 +49,10 @@ const TValue *luaT_gettm(Table *events, TMS event, TString *ename) {
 const TValue *luaT_gettmbyobj(lua_State *L, const TValue *o, TMS event) {
   Table *mt;
   switch (ttype(o)) {
-  case LUA_TTABLE:
+  case LUA_TYPE_TABLE:
     mt = hvalue(o)->metatable;
     break;
-  case LUA_TUSERDATA:
+  case LUA_TYPE_USERDATA:
     mt = uvalue(o)->metatable;
     break;
   default:

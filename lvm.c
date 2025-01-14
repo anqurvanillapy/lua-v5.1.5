@@ -48,10 +48,10 @@ int luaV_tostring(lua_State *L, StkId obj) {
 }
 
 static void traceexec(lua_State *L, const Instruction *pc) {
-  lu_byte mask = L->hookmask;
-  const Instruction *oldpc = L->savedpc;
-  L->savedpc = pc;
-  if ((mask & LUA_MASKCOUNT) && L->hookcount == 0) {
+  lu_byte mask = L->hookMask;
+  const Instruction *oldpc = L->savedPC;
+  L->savedPC = pc;
+  if ((mask & LUA_MASKCOUNT) && L->hookCount == 0) {
     resethookcount(L);
     luaD_callhook(L, LUA_HOOKCOUNT, -1);
   }
@@ -255,22 +255,22 @@ int luaV_equalval(lua_State *L, const TValue *t1, const TValue *t2) {
   const TValue *tm;
   lua_assert(ttype(t1) == ttype(t2));
   switch (ttype(t1)) {
-  case LUA_TNIL:
+  case LUA_TYPE_NIL:
     return 1;
-  case LUA_TNUMBER:
+  case LUA_TYPE_NUMBER:
     return luai_numeq(nvalue(t1), nvalue(t2));
-  case LUA_TBOOLEAN:
+  case LUA_TYPE_BOOLEAN:
     return bvalue(t1) == bvalue(t2); /* true must be 1 !! */
-  case LUA_TLIGHTUSERDATA:
+  case LUA_TYPE_LIGHTUSERDATA:
     return pvalue(t1) == pvalue(t2);
-  case LUA_TUSERDATA: {
+  case LUA_TYPE_USERDATA: {
     if (uvalue(t1) == uvalue(t2)) {
       return 1;
     }
     tm = get_compTM(L, uvalue(t1)->metatable, uvalue(t2)->metatable, TM_EQ);
     break; /* will try TM */
   }
-  case LUA_TTABLE: {
+  case LUA_TYPE_TABLE: {
     if (hvalue(t1) == hvalue(t2)) {
       return 1;
     }
@@ -393,7 +393,7 @@ static void Arith(lua_State *L, StkId ra, const TValue *rb, const TValue *rc,
 
 #define Protect(x)                                                             \
   {                                                                            \
-    L->savedpc = pc;                                                           \
+    L->savedPC = pc;                                                           \
     {                                                                          \
       x;                                                                       \
     };                                                                         \
@@ -418,7 +418,7 @@ void luaV_execute(lua_State *L, int nexeccalls) {
   const Instruction *pc;
 reentry: /* entry point */
   lua_assert(isLua(L->ci));
-  pc = L->savedpc;
+  pc = L->savedPC;
   cl = &clvalue(L->ci->func)->l;
   base = L->base;
   k = cl->p->k;
@@ -426,11 +426,11 @@ reentry: /* entry point */
   for (;;) {
     const Instruction i = *pc++;
     StkId ra;
-    if ((L->hookmask & (LUA_MASKLINE | LUA_MASKCOUNT)) &&
-        (--L->hookcount == 0 || L->hookmask & LUA_MASKLINE)) {
+    if ((L->hookMask & (LUA_MASKLINE | LUA_MASKCOUNT)) &&
+        (--L->hookCount == 0 || L->hookMask & LUA_MASKLINE)) {
       traceexec(L, pc);
       if (L->status == LUA_YIELD) { /* did hook yield? */
-        L->savedpc = pc - 1;
+        L->savedPC = pc - 1;
         return;
       }
       base = L->base;
@@ -438,7 +438,7 @@ reentry: /* entry point */
     /* warning!! several calls may realloc the stack and invalidate `ra' */
     ra = RA(i);
     lua_assert(base == L->base && L->base == L->ci->base);
-    lua_assert(base <= L->top && L->top <= L->stack + L->stacksize);
+    lua_assert(base <= L->top && L->top <= L->stack + L->stackSize);
     lua_assert(L->top == L->ci->top || luaG_checkopenop(i));
     switch (GET_OPCODE(i)) {
     case OP_MOVE: {
@@ -552,11 +552,11 @@ reentry: /* entry point */
     case OP_LEN: {
       const TValue *rb = RB(i);
       switch (ttype(rb)) {
-      case LUA_TTABLE: {
+      case LUA_TYPE_TABLE: {
         setnvalue(ra, cast_num(luaH_getn(hvalue(rb))));
         break;
       }
-      case LUA_TSTRING: {
+      case LUA_TYPE_STRING: {
         setnvalue(ra, cast_num(tsvalue(rb)->len));
         break;
       }
@@ -616,7 +616,7 @@ reentry: /* entry point */
       if (b != 0) {
         L->top = ra + b; /* else previous instruction set top */
       }
-      L->savedpc = pc;
+      L->savedPC = pc;
       switch (luaD_precall(L, ra, nresults)) {
       case PCRLUA: {
         nexeccalls++;
@@ -640,7 +640,7 @@ reentry: /* entry point */
       if (b != 0) {
         L->top = ra + b; /* else previous instruction set top */
       }
-      L->savedpc = pc;
+      L->savedPC = pc;
       lua_assert(GETARG_C(i) - 1 == LUA_MULTRET);
       switch (luaD_precall(L, ra, LUA_MULTRET)) {
       case PCRLUA: {
@@ -649,7 +649,7 @@ reentry: /* entry point */
         int aux;
         StkId func = ci->func;
         StkId pfunc = (ci + 1)->func; /* previous function index */
-        if (L->openupval) {
+        if (L->openUpval) {
           luaF_close(L, ci->base);
         }
         L->base = ci->base = ci->func + ((ci + 1)->base - pfunc);
@@ -657,7 +657,7 @@ reentry: /* entry point */
           setobjs2s(L, func + aux, pfunc + aux);
         ci->top = L->top = func + aux; /* correct top */
         lua_assert(L->top == L->base + clvalue(func)->l.p->maxstacksize);
-        ci->savedpc = L->savedpc;
+        ci->savedpc = L->savedPC;
         ci->tailcalls++; /* one more call lost */
         L->ci--;         /* remove new frame */
         goto reentry;
@@ -676,10 +676,10 @@ reentry: /* entry point */
       if (b != 0) {
         L->top = ra + b - 1;
       }
-      if (L->openupval) {
+      if (L->openUpval) {
         luaF_close(L, base);
       }
-      L->savedpc = pc;
+      L->savedPC = pc;
       b = luaD_poscall(L, ra);
       if (--nexeccalls == 0) { /* was previous function running `here'? */
         return;                /* no: return */
@@ -708,7 +708,7 @@ reentry: /* entry point */
       const TValue *init = ra;
       const TValue *plimit = ra + 1;
       const TValue *pstep = ra + 2;
-      L->savedpc = pc; /* next steps may throw errors */
+      L->savedPC = pc; /* next steps may throw errors */
       if (!tonumber(init, ra)) {
         luaG_runerror(L, LUA_QL("for") " initial value must be a number");
       } else if (!tonumber(plimit, ra + 1)) {

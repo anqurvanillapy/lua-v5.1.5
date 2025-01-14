@@ -7,10 +7,10 @@
 #include "lzio.h"
 
 #define luaD_checkstack(L, n)                                                  \
-  if ((char *)L->stack_last - (char *)L->top <= (n) * (int)sizeof(TValue))     \
+  if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(TValue))     \
     luaD_growstack(L, n);                                                      \
   else                                                                         \
-    condhardstacktests(luaD_reallocstack(L, L->stacksize - EXTRA_STACK - 1));
+    condhardstacktests(luaD_reallocstack(L, L->stackSize - EXTRA_STACK - 1));
 
 #define incr_top(L)                                                            \
   {                                                                            \
@@ -21,8 +21,8 @@
 #define savestack(L, p) ((char *)(p) - (char *)L->stack)
 #define restorestack(L, n) ((TValue *)((char *)L->stack + (n)))
 
-#define saveci(L, p) ((char *)(p) - (char *)L->base_ci)
-#define restoreci(L, n) ((CallInfo *)((char *)L->base_ci + (n)))
+#define saveci(L, p) ((char *)(p) - (char *)L->baseCI)
+#define restoreci(L, n) ((CallInfo *)((char *)L->baseCI + (n)))
 
 /* results from luaD_precall */
 #define PCRLUA 0   /* initiated a call to a Lua function */

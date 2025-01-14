@@ -7,12 +7,12 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-#define aux_getn(L, n) (luaL_checktype(L, n, LUA_TTABLE), luaL_getn(L, n))
+#define aux_getn(L, n) (luaL_checktype(L, n, LUA_TYPE_TABLE), luaL_getn(L, n))
 
 static int foreachi(lua_State *L) {
   int i;
   int n = aux_getn(L, 1);
-  luaL_checktype(L, 2, LUA_TFUNCTION);
+  luaL_checktype(L, 2, LUA_TYPE_FUNCTION);
   for (i = 1; i <= n; i++) {
     lua_pushvalue(L, 2);   /* function */
     lua_pushinteger(L, i); /* 1st argument */
@@ -27,8 +27,8 @@ static int foreachi(lua_State *L) {
 }
 
 static int foreach (lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
-  luaL_checktype(L, 2, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
+  luaL_checktype(L, 2, LUA_TYPE_FUNCTION);
   lua_pushnil(L); /* first key */
   while (lua_next(L, 1)) {
     lua_pushvalue(L, 2);  /* function */
@@ -45,11 +45,11 @@ static int foreach (lua_State *L) {
 
 static int maxn(lua_State *L) {
   lua_Number max = 0;
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   lua_pushnil(L); /* first key */
   while (lua_next(L, 1)) {
     lua_pop(L, 1); /* remove value */
-    if (lua_type(L, -1) == LUA_TNUMBER) {
+    if (lua_type(L, -1) == LUA_TYPE_NUMBER) {
       lua_Number v = lua_tonumber(L, -1);
       if (v > max) {
         max = v;
@@ -66,7 +66,7 @@ static int getn(lua_State *L) {
 }
 
 static int setn(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
 #ifndef luaL_setn
   luaL_setn(L, 1, luaL_checkint(L, 2));
 #else
@@ -137,7 +137,7 @@ static int tconcat(lua_State *L) {
   size_t lsep;
   int i, last;
   const char *sep = luaL_optlstring(L, 2, "", &lsep);
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   i = luaL_optint(L, 3, 1);
   last = luaL_opt(L, luaL_checkint, 4, luaL_getn(L, 1));
   luaL_buffinit(L, &b);
@@ -260,7 +260,7 @@ static int sort(lua_State *L) {
   int n = aux_getn(L, 1);
   luaL_checkstack(L, 40, "");   /* assume array is smaller than 2^40 */
   if (!lua_isnoneornil(L, 2)) { /* is there a 2nd argument? */
-    luaL_checktype(L, 2, LUA_TFUNCTION);
+    luaL_checktype(L, 2, LUA_TYPE_FUNCTION);
   }
   lua_settop(L, 2); /* make sure there is two arguments */
   auxsort(L, 1, n);

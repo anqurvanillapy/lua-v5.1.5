@@ -146,7 +146,7 @@ static int writer(lua_State *L, const void *b, size_t size, void *B) {
 
 static int str_dump(lua_State *L) {
   luaL_Buffer b;
-  luaL_checktype(L, 1, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LUA_TYPE_FUNCTION);
   lua_settop(L, 1);
   luaL_buffinit(L, &b);
   if (lua_dump(L, writer, &b) != 0) {
@@ -660,19 +660,19 @@ static void add_value(MatchState *ms, luaL_Buffer *b, const char *s,
                       const char *e) {
   lua_State *L = ms->L;
   switch (lua_type(L, 3)) {
-  case LUA_TNUMBER:
-  case LUA_TSTRING: {
+  case LUA_TYPE_NUMBER:
+  case LUA_TYPE_STRING: {
     add_s(ms, b, s, e);
     return;
   }
-  case LUA_TFUNCTION: {
+  case LUA_TYPE_FUNCTION: {
     int n;
     lua_pushvalue(L, 3);
     n = push_captures(ms, s, e);
     lua_call(L, n, 1);
     break;
   }
-  case LUA_TTABLE: {
+  case LUA_TYPE_TABLE: {
     push_onecapture(ms, 0, s, e);
     lua_gettable(L, 3);
     break;
@@ -698,8 +698,8 @@ static int str_gsub(lua_State *L) {
   MatchState ms;
   luaL_Buffer b;
   luaL_argcheck(L,
-                tr == LUA_TNUMBER || tr == LUA_TSTRING || tr == LUA_TFUNCTION ||
-                    tr == LUA_TTABLE,
+                tr == LUA_TYPE_NUMBER || tr == LUA_TYPE_STRING || tr == LUA_TYPE_FUNCTION ||
+                    tr == LUA_TYPE_TABLE,
                 3, "string/function/table expected");
   luaL_buffinit(L, &b);
   ms.L = L;

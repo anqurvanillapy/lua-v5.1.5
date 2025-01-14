@@ -90,8 +90,8 @@ static int luaB_getmetatable(lua_State *L) {
 
 static int luaB_setmetatable(lua_State *L) {
   int t = lua_type(L, 2);
-  luaL_checktype(L, 1, LUA_TTABLE);
-  luaL_argcheck(L, t == LUA_TNIL || t == LUA_TTABLE, 2,
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
+  luaL_argcheck(L, t == LUA_TYPE_NIL || t == LUA_TYPE_TABLE, 2,
                 "nil or table expected");
   if (luaL_getmetafield(L, 1, "__metatable")) {
     luaL_error(L, "cannot change a protected metatable");
@@ -129,7 +129,7 @@ static int luaB_getfenv(lua_State *L) {
 }
 
 static int luaB_setfenv(lua_State *L) {
-  luaL_checktype(L, 2, LUA_TTABLE);
+  luaL_checktype(L, 2, LUA_TYPE_TABLE);
   getfunc(L, 0);
   lua_pushvalue(L, 2);
   if (lua_isnumber(L, 1) && lua_tonumber(L, 1) == 0) {
@@ -153,7 +153,7 @@ static int luaB_rawequal(lua_State *L) {
 }
 
 static int luaB_rawget(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   luaL_checkany(L, 2);
   lua_settop(L, 2);
   lua_rawget(L, 1);
@@ -161,7 +161,7 @@ static int luaB_rawget(lua_State *L) {
 }
 
 static int luaB_rawset(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   luaL_checkany(L, 2);
   luaL_checkany(L, 3);
   lua_settop(L, 3);
@@ -207,7 +207,7 @@ static int luaB_type(lua_State *L) {
 }
 
 static int luaB_next(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   lua_settop(L, 2); /* create a 2nd argument if there isn't one */
   if (lua_next(L, 1)) {
     return 2;
@@ -218,7 +218,7 @@ static int luaB_next(lua_State *L) {
 }
 
 static int luaB_pairs(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   lua_pushvalue(L, lua_upvalueindex(1)); /* return generator, */
   lua_pushvalue(L, 1);                   /* state, */
   lua_pushnil(L);                        /* and initial value */
@@ -227,7 +227,7 @@ static int luaB_pairs(lua_State *L) {
 
 static int ipairsaux(lua_State *L) {
   int i = luaL_checkint(L, 2);
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   i++; /* next value */
   lua_pushinteger(L, i);
   lua_rawgeti(L, 1, i);
@@ -235,7 +235,7 @@ static int ipairsaux(lua_State *L) {
 }
 
 static int luaB_ipairs(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   lua_pushvalue(L, lua_upvalueindex(1)); /* return generator, */
   lua_pushvalue(L, 1);                   /* state, */
   lua_pushinteger(L, 0);                 /* and initial value */
@@ -290,7 +290,7 @@ static const char *generic_reader(lua_State *L, void *ud, size_t *size) {
 static int luaB_load(lua_State *L) {
   int status;
   const char *cname = luaL_optstring(L, 2, "=(load)");
-  luaL_checktype(L, 1, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LUA_TYPE_FUNCTION);
   lua_settop(L, 3); /* function, eventual name, plus one reserved slot */
   status = lua_load(L, generic_reader, NULL, cname);
   return load_aux(L, status);
@@ -316,7 +316,7 @@ static int luaB_assert(lua_State *L) {
 
 static int luaB_unpack(lua_State *L) {
   int i, e, n;
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   i = luaL_optint(L, 2, 1);
   e = luaL_opt(L, luaL_checkint, 3, luaL_getn(L, 1));
   if (i > e) {
@@ -335,7 +335,7 @@ static int luaB_unpack(lua_State *L) {
 
 static int luaB_select(lua_State *L) {
   int n = lua_gettop(L);
-  if (lua_type(L, 1) == LUA_TSTRING && *lua_tostring(L, 1) == '#') {
+  if (lua_type(L, 1) == LUA_TYPE_STRING && *lua_tostring(L, 1) == '#') {
     lua_pushinteger(L, n - 1);
     return 1;
   } else {
@@ -376,16 +376,16 @@ static int luaB_tostring(lua_State *L) {
     return 1;                              /* use its value */
   }
   switch (lua_type(L, 1)) {
-  case LUA_TNUMBER:
+  case LUA_TYPE_NUMBER:
     lua_pushstring(L, lua_tostring(L, 1));
     break;
-  case LUA_TSTRING:
+  case LUA_TYPE_STRING:
     lua_pushvalue(L, 1);
     break;
-  case LUA_TBOOLEAN:
+  case LUA_TYPE_BOOLEAN:
     lua_pushstring(L, (lua_toboolean(L, 1) ? "true" : "false"));
     break;
-  case LUA_TNIL:
+  case LUA_TYPE_NIL:
     lua_pushliteral(L, "nil");
     break;
   default:

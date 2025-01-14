@@ -68,7 +68,7 @@ static TValue *index2adr(lua_State *L, int idx) {
 }
 
 static Table *getcurrenv(lua_State *L) {
-  if (L->ci == L->base_ci) { /* no enclosing function? */
+  if (L->ci == L->baseCI) { /* no enclosing function? */
     return hvalue(gt(L));    /* use global table as environment */
   } else {
     Closure *func = curr_func(L);
@@ -113,7 +113,7 @@ LUA_API void lua_xmove(lua_State *from, lua_State *to, int n) {
 }
 
 LUA_API void lua_setlevel(lua_State *from, lua_State *to) {
-  to->nCcalls = from->nCcalls;
+  to->nestedCCallNum = from->nestedCCallNum;
 }
 
 LUA_API lua_CFunction lua_atpanic(lua_State *L, lua_CFunction panicf) {
@@ -146,7 +146,7 @@ LUA_API int lua_gettop(lua_State *L) { return cast_int(L->top - L->base); }
 LUA_API void lua_settop(lua_State *L, int idx) {
   lua_lock(L);
   if (idx >= 0) {
-    api_check(L, idx <= L->stack_last - L->base);
+    api_check(L, idx <= L->stackLast - L->base);
     while (L->top < L->base + idx) {
       setnilvalue(L->top++);
     }
@@ -185,7 +185,7 @@ LUA_API void lua_replace(lua_State *L, int idx) {
   StkId o;
   lua_lock(L);
   /* explicit test for incompatible code */
-  if (idx == LUA_ENVIRONINDEX && L->ci == L->base_ci) {
+  if (idx == LUA_ENVIRONINDEX && L->ci == L->baseCI) {
     luaG_runerror(L, "no calling environment");
   }
   api_checknelems(L, 1);
@@ -218,12 +218,12 @@ LUA_API void lua_pushvalue(lua_State *L, int idx) {
 
 LUA_API int lua_type(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
-  return (o == luaO_nilobject) ? LUA_TNONE : ttype(o);
+  return (o == luaO_nilobject) ? LUA_TYPE_NONE : ttype(o);
 }
 
 LUA_API const char *lua_typename(lua_State *L, int t) {
   UNUSED(L);
-  return (t == LUA_TNONE) ? "no value" : luaT_typenames[t];
+  return (t == LUA_TYPE_NONE) ? "no value" : luaT_typenames[t];
 }
 
 LUA_API int lua_iscfunction(lua_State *L, int idx) {
@@ -239,7 +239,7 @@ LUA_API int lua_isnumber(lua_State *L, int idx) {
 
 LUA_API int lua_isstring(lua_State *L, int idx) {
   int t = lua_type(L, idx);
-  return (t == LUA_TSTRING || t == LUA_TNUMBER);
+  return (t == LUA_TYPE_STRING || t == LUA_TYPE_NUMBER);
 }
 
 LUA_API int lua_isuserdata(lua_State *L, int idx) {
@@ -330,13 +330,13 @@ LUA_API const char *lua_tolstring(lua_State *L, int idx, size_t *len) {
 LUA_API size_t lua_objlen(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
   switch (ttype(o)) {
-  case LUA_TSTRING:
+  case LUA_TYPE_STRING:
     return tsvalue(o)->len;
-  case LUA_TUSERDATA:
+  case LUA_TYPE_USERDATA:
     return uvalue(o)->len;
-  case LUA_TTABLE:
+  case LUA_TYPE_TABLE:
     return luaH_getn(hvalue(o));
-  case LUA_TNUMBER: {
+  case LUA_TYPE_NUMBER: {
     size_t l;
     lua_lock(L); /* `luaV_tostring' may create a new string */
     l = (luaV_tostring(L, o) ? tsvalue(o)->len : 0);
@@ -356,9 +356,9 @@ LUA_API lua_CFunction lua_tocfunction(lua_State *L, int idx) {
 LUA_API void *lua_touserdata(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
   switch (ttype(o)) {
-  case LUA_TUSERDATA:
+  case LUA_TYPE_USERDATA:
     return (rawuvalue(o) + 1);
-  case LUA_TLIGHTUSERDATA:
+  case LUA_TYPE_LIGHTUSERDATA:
     return pvalue(o);
   default:
     return NULL;
@@ -373,14 +373,14 @@ LUA_API lua_State *lua_tothread(lua_State *L, int idx) {
 LUA_API const void *lua_topointer(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
   switch (ttype(o)) {
-  case LUA_TTABLE:
+  case LUA_TYPE_TABLE:
     return hvalue(o);
-  case LUA_TFUNCTION:
+  case LUA_TYPE_FUNCTION:
     return clvalue(o);
-  case LUA_TTHREAD:
+  case LUA_TYPE_THREAD:
     return thvalue(o);
-  case LUA_TUSERDATA:
-  case LUA_TLIGHTUSERDATA:
+  case LUA_TYPE_USERDATA:
+  case LUA_TYPE_LIGHTUSERDATA:
     return lua_touserdata(L, idx);
   default:
     return NULL;
@@ -461,7 +461,7 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
   while (n--)
     setobj2n(L, &cl->c.upvalue[n], L->top + n);
   setclvalue(L, L->top, cl);
-  lua_assert(iswhite(obj2gco(cl)));
+  lua_assert(iswhite(LuaObjectToGCObject(cl)));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -547,10 +547,10 @@ LUA_API int lua_getmetatable(lua_State *L, int objindex) {
   lua_lock(L);
   obj = index2adr(L, objindex);
   switch (ttype(obj)) {
-  case LUA_TTABLE:
+  case LUA_TYPE_TABLE:
     mt = hvalue(obj)->metatable;
     break;
-  case LUA_TUSERDATA:
+  case LUA_TYPE_USERDATA:
     mt = uvalue(obj)->metatable;
     break;
   default:
@@ -574,13 +574,13 @@ LUA_API void lua_getfenv(lua_State *L, int idx) {
   o = index2adr(L, idx);
   api_checkvalidindex(L, o);
   switch (ttype(o)) {
-  case LUA_TFUNCTION:
+  case LUA_TYPE_FUNCTION:
     sethvalue(L, L->top, clvalue(o)->c.env);
     break;
-  case LUA_TUSERDATA:
+  case LUA_TYPE_USERDATA:
     sethvalue(L, L->top, uvalue(o)->env);
     break;
-  case LUA_TTHREAD:
+  case LUA_TYPE_THREAD:
     setobj2s(L, L->top, gt(thvalue(o)));
     break;
   default:
@@ -657,13 +657,13 @@ LUA_API int lua_setmetatable(lua_State *L, int objindex) {
     mt = hvalue(L->top - 1);
   }
   switch (ttype(obj)) {
-  case LUA_TTABLE: {
+  case LUA_TYPE_TABLE: {
     hvalue(obj)->metatable = mt;
     if (mt)
       luaC_objbarriert(L, hvalue(obj), mt);
     break;
   }
-  case LUA_TUSERDATA: {
+  case LUA_TYPE_USERDATA: {
     uvalue(obj)->metatable = mt;
     if (mt)
       luaC_objbarrier(L, rawuvalue(obj), mt);
@@ -688,13 +688,13 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
   api_checkvalidindex(L, o);
   api_check(L, ttistable(L->top - 1));
   switch (ttype(o)) {
-  case LUA_TFUNCTION:
+  case LUA_TYPE_FUNCTION:
     clvalue(o)->c.env = hvalue(L->top - 1);
     break;
-  case LUA_TUSERDATA:
+  case LUA_TYPE_USERDATA:
     uvalue(o)->env = hvalue(L->top - 1);
     break;
-  case LUA_TTHREAD:
+  case LUA_TYPE_THREAD:
     sethvalue(L, gt(thvalue(o)), hvalue(L->top - 1));
     break;
   default:

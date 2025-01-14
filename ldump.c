@@ -65,15 +65,15 @@ static void DumpConstants(const Proto *f, DumpState *D) {
     const TValue *o = &f->k[i];
     DumpChar(ttype(o), D);
     switch (ttype(o)) {
-    case LUA_TNIL:
+    case LUA_TYPE_NIL:
       break;
-    case LUA_TBOOLEAN:
+    case LUA_TYPE_BOOLEAN:
       DumpChar(bvalue(o), D);
       break;
-    case LUA_TNUMBER:
+    case LUA_TYPE_NUMBER:
       DumpNumber(nvalue(o), D);
       break;
-    case LUA_TSTRING:
+    case LUA_TYPE_STRING:
       DumpString(rawtsvalue(o), D);
       break;
     default:

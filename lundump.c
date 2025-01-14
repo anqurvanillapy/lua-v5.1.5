@@ -98,16 +98,16 @@ static void LoadConstants(LoadState *S, Proto *f) {
     TValue *o = &f->k[i];
     int t = LoadChar(S);
     switch (t) {
-    case LUA_TNIL:
+    case LUA_TYPE_NIL:
       setnilvalue(o);
       break;
-    case LUA_TBOOLEAN:
+    case LUA_TYPE_BOOLEAN:
       setbvalue(o, LoadChar(S) != 0);
       break;
-    case LUA_TNUMBER:
+    case LUA_TYPE_NUMBER:
       setnvalue(o, LoadNumber(S));
       break;
-    case LUA_TSTRING:
+    case LUA_TYPE_STRING:
       setsvalue2n(S->L, o, LoadString(S));
       break;
     default:
@@ -156,7 +156,7 @@ static void LoadDebug(LoadState *S, Proto *f) {
 
 static Proto *LoadFunction(LoadState *S, TString *p) {
   Proto *f;
-  if (++S->L->nCcalls > LUAI_MAXCCALLS) {
+  if (++S->L->nestedCCallNum > LUAI_MAX_C_CALLS) {
     error(S, "code too deep");
   }
   f = luaF_newproto(S->L);
@@ -177,7 +177,7 @@ static Proto *LoadFunction(LoadState *S, TString *p) {
   LoadDebug(S, f);
   IF(!luaG_checkcode(f), "bad code");
   S->L->top--;
-  S->L->nCcalls--;
+  S->L->nestedCCallNum--;
   return f;
 }
 

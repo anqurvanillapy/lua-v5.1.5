@@ -134,7 +134,7 @@ LUALIB_API void luaL_checktype(lua_State *L, int narg, int t) {
 }
 
 LUALIB_API void luaL_checkany(lua_State *L, int narg) {
-  if (lua_type(L, narg) == LUA_TNONE) {
+  if (lua_type(L, narg) == LUA_TYPE_NONE) {
     luaL_argerror(L, narg, "value expected");
   }
 }
@@ -142,7 +142,7 @@ LUALIB_API void luaL_checkany(lua_State *L, int narg) {
 LUALIB_API const char *luaL_checklstring(lua_State *L, int narg, size_t *len) {
   const char *s = lua_tolstring(L, narg, len);
   if (!s) {
-    tag_error(L, narg, LUA_TSTRING);
+    tag_error(L, narg, LUA_TYPE_STRING);
   }
   return s;
 }
@@ -162,7 +162,7 @@ LUALIB_API const char *luaL_optlstring(lua_State *L, int narg, const char *def,
 LUALIB_API lua_Number luaL_checknumber(lua_State *L, int narg) {
   lua_Number d = lua_tonumber(L, narg);
   if (d == 0 && !lua_isnumber(L, narg)) { /* avoid extra test when d is not 0 */
-    tag_error(L, narg, LUA_TNUMBER);
+    tag_error(L, narg, LUA_TYPE_NUMBER);
   }
   return d;
 }
@@ -174,7 +174,7 @@ LUALIB_API lua_Number luaL_optnumber(lua_State *L, int narg, lua_Number def) {
 LUALIB_API lua_Integer luaL_checkinteger(lua_State *L, int narg) {
   lua_Integer d = lua_tointeger(L, narg);
   if (d == 0 && !lua_isnumber(L, narg)) { /* avoid extra test when d is not 0 */
-    tag_error(L, narg, LUA_TNUMBER);
+    tag_error(L, narg, LUA_TYPE_NUMBER);
   }
   return d;
 }
@@ -302,7 +302,7 @@ LUALIB_API const char *luaL_findtable(lua_State *L, int idx, const char *fname,
 */
 
 #define bufflen(B) ((B)->p - (B)->buffer)
-#define bufffree(B) ((size_t)(LUAL_BUFFERSIZE - bufflen(B)))
+#define bufffree(B) ((size_t)(LUAL_BUFFER_SIZE - bufflen(B)))
 
 #define LIMIT (LUA_MINSTACK / 2)
 
@@ -425,7 +425,7 @@ LUALIB_API void luaL_unref(lua_State *L, int t, int ref) {
 typedef struct FileStream {
   int extraline;
   FILE *f;
-  char buff[LUAL_BUFFERSIZE];
+  char buff[LUAL_BUFFER_SIZE];
 } FileStream;
 
 static const char *fileReader(lua_State *L, void *ud, size_t *size) {

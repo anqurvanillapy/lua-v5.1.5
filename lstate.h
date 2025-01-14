@@ -77,36 +77,59 @@ typedef struct global_State {
   TString *tmname[TM_N];      /* array with tag-method names */
 } global_State;
 
-/*
-** `per thread' state
-*/
+// Per-thread state.
 struct lua_State {
   CommonHeader;
+
   lu_byte status;
-  StkId top;  /* first free slot in the stack */
-  StkId base; /* base of current function */
+
+  // First free slot in the stack.
+  StkId top;
+  // Base of current function.
+  StkId base;
+
   global_State *l_G;
-  CallInfo *ci;               /* call info for current function */
-  const Instruction *savedpc; /* `savedpc' of current function */
-  StkId stack_last;           /* last free slot in the stack */
-  StkId stack;                /* stack base */
-  CallInfo *end_ci;           /* points after end of ci array*/
-  CallInfo *base_ci;          /* array of CallInfo's */
-  int stacksize;
-  int size_ci;               /* size of array `base_ci' */
-  unsigned short nCcalls;    /* number of nested C calls */
-  unsigned short baseCcalls; /* nested C calls when resuming coroutine */
-  lu_byte hookmask;
-  lu_byte allowhook;
-  int basehookcount;
-  int hookcount;
+
+  // Call info for current function.
+  CallInfo *ci;
+  // Saved PC of current function.
+  const Instruction *savedPC;
+  // Last free slot in the stack.
+  StkId stackLast;
+  // Stack base.
+  StkId stack;
+  // Points after end of ci array.
+  CallInfo *endCI;
+  // Points to the CallInfo array.
+  CallInfo *baseCI;
+  int stackSize;
+  // Size of baseCI.
+  int ciSize;
+
+  // Number of nested C calls.
+  unsigned short nestedCCallNum;
+  // Nested C calls when resuming coroutine.
+  unsigned short nestedCCallBaseNum;
+
+  lu_byte hookMask;
+  lu_byte allowHook;
+  int baseHookCount;
+  int hookCount;
   lua_Hook hook;
-  TValue l_gt;         /* table of globals */
-  TValue env;          /* temporary place for environments */
-  GCObject *openupval; /* list of open upvalues in this stack */
-  GCObject *gclist;
-  struct lua_longjmp *errorJmp; /* current error recover point */
-  ptrdiff_t errfunc; /* current error handling function (stack index) */
+
+  // Table of globals.
+  TValue l_gt;
+  // Temporary place for environments.
+  TValue env;
+
+  // List of open upvalues in this stack.
+  GCObject *openUpval;
+  GCObject *gcList;
+
+  // Current error recover point.
+  struct lua_longjmp *errorJmp;
+  // current error handling function (stack index).
+  ptrdiff_t errFunc;
 };
 
 #define G(L) (L->l_G)
@@ -126,20 +149,20 @@ union GCObject {
 };
 
 /* macros to convert a GCObject into a specific value */
-#define rawgco2ts(o) check_exp((o)->gch.tt == LUA_TSTRING, &((o)->ts))
+#define rawgco2ts(o) check_exp((o)->gch.tt == LUA_TYPE_STRING, &((o)->ts))
 #define gco2ts(o) (&rawgco2ts(o)->tsv)
-#define rawgco2u(o) check_exp((o)->gch.tt == LUA_TUSERDATA, &((o)->u))
+#define rawgco2u(o) check_exp((o)->gch.tt == LUA_TYPE_USERDATA, &((o)->u))
 #define gco2u(o) (&rawgco2u(o)->uv)
-#define gco2cl(o) check_exp((o)->gch.tt == LUA_TFUNCTION, &((o)->cl))
-#define gco2h(o) check_exp((o)->gch.tt == LUA_TTABLE, &((o)->h))
+#define gco2cl(o) check_exp((o)->gch.tt == LUA_TYPE_FUNCTION, &((o)->cl))
+#define gco2h(o) check_exp((o)->gch.tt == LUA_TYPE_TABLE, &((o)->h))
 #define gco2p(o) check_exp((o)->gch.tt == LUA_TPROTO, &((o)->p))
 #define gco2uv(o) check_exp((o)->gch.tt == LUA_TUPVAL, &((o)->uv))
 #define ngcotouv(o)                                                            \
   check_exp((o) == NULL || (o)->gch.tt == LUA_TUPVAL, &((o)->uv))
-#define gco2th(o) check_exp((o)->gch.tt == LUA_TTHREAD, &((o)->th))
+#define gco2th(o) check_exp((o)->gch.tt == LUA_TYPE_THREAD, &((o)->th))
 
 /* macro to convert any Lua object into a GCObject */
-#define obj2gco(v) (cast(GCObject *, (v)))
+#define LuaObjectToGCObject(v) (cast(GCObject *, (v)))
 
 LUAI_FUNC lua_State *luaE_newthread(lua_State *L);
 LUAI_FUNC void luaE_freethread(lua_State *L, lua_State *L1);

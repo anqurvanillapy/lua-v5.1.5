@@ -27,7 +27,7 @@ static int currentpc(lua_State *L, CallInfo *ci) {
     return -1; /* function is not a Lua function? */
   }
   if (ci == L->ci) {
-    ci->savedpc = L->savedpc;
+    ci->savedpc = L->savedPC;
   }
   return pcRel(ci->savedpc, ci_func(ci)->l.p);
 }
@@ -50,31 +50,31 @@ LUA_API int lua_sethook(lua_State *L, lua_Hook func, int mask, int count) {
     func = NULL;
   }
   L->hook = func;
-  L->basehookcount = count;
+  L->baseHookCount = count;
   resethookcount(L);
-  L->hookmask = cast_byte(mask);
+  L->hookMask = cast_byte(mask);
   return 1;
 }
 
 LUA_API lua_Hook lua_gethook(lua_State *L) { return L->hook; }
 
-LUA_API int lua_gethookmask(lua_State *L) { return L->hookmask; }
+LUA_API int lua_gethookmask(lua_State *L) { return L->hookMask; }
 
-LUA_API int lua_gethookcount(lua_State *L) { return L->basehookcount; }
+LUA_API int lua_gethookcount(lua_State *L) { return L->baseHookCount; }
 
 LUA_API int lua_getstack(lua_State *L, int level, lua_Debug *ar) {
   int status;
   CallInfo *ci;
   lua_lock(L);
-  for (ci = L->ci; level > 0 && ci > L->base_ci; ci--) {
+  for (ci = L->ci; level > 0 && ci > L->baseCI; ci--) {
     level--;
     if (f_isLua(ci)) {        /* Lua function? */
       level -= ci->tailcalls; /* skip lost tail calls */
     }
   }
-  if (level == 0 && ci > L->base_ci) { /* level found? */
+  if (level == 0 && ci > L->baseCI) { /* level found? */
     status = 1;
-    ar->i_ci = cast_int(ci - L->base_ci);
+    ar->i_ci = cast_int(ci - L->baseCI);
   } else if (level < 0) { /* level is of a lost tail call? */
     status = 1;
     ar->i_ci = 0;
@@ -105,7 +105,7 @@ static const char *findlocal(lua_State *L, CallInfo *ci, int n) {
 }
 
 LUA_API const char *lua_getlocal(lua_State *L, const lua_Debug *ar, int n) {
-  CallInfo *ci = L->base_ci + ar->i_ci;
+  CallInfo *ci = L->baseCI + ar->i_ci;
   const char *name = findlocal(L, ci, n);
   lua_lock(L);
   if (name) {
@@ -116,7 +116,7 @@ LUA_API const char *lua_getlocal(lua_State *L, const lua_Debug *ar, int n) {
 }
 
 LUA_API const char *lua_setlocal(lua_State *L, const lua_Debug *ar, int n) {
-  CallInfo *ci = L->base_ci + ar->i_ci;
+  CallInfo *ci = L->baseCI + ar->i_ci;
   const char *name = findlocal(L, ci, n);
   lua_lock(L);
   if (name)
@@ -215,7 +215,7 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
     f = clvalue(func);
     L->top--;                 /* pop function */
   } else if (ar->i_ci != 0) { /* no tail call? */
-    ci = L->base_ci + ar->i_ci;
+    ci = L->baseCI + ar->i_ci;
     lua_assert(ttisfunction(ci->func));
     f = clvalue(ci->func);
   }
@@ -623,8 +623,8 @@ static void addinfo(lua_State *L, const char *msg) {
 }
 
 void luaG_errormsg(lua_State *L) {
-  if (L->errfunc != 0) { /* is there an error handling function? */
-    StkId errfunc = restorestack(L, L->errfunc);
+  if (L->errFunc != 0) { /* is there an error handling function? */
+    StkId errfunc = restorestack(L, L->errFunc);
     if (!ttisfunction(errfunc)) {
       luaD_throw(L, LUA_ERRERR);
     }

@@ -46,8 +46,8 @@
 
 #define markobject(g, t)                                                       \
   {                                                                            \
-    if (iswhite(obj2gco(t)))                                                   \
-      reallymarkobject(g, obj2gco(t));                                         \
+    if (iswhite(LuaObjectToGCObject(t)))                                                   \
+      reallymarkobject(g, LuaObjectToGCObject(t));                                         \
   }
 
 #define setthreshold(g) (g->GCthreshold = (g->estimate / 100) * g->gcpause)
@@ -63,10 +63,10 @@ static void reallymarkobject(global_State *g, GCObject *o) {
   lua_assert(iswhite(o) && !isdead(g, o));
   white2gray(o);
   switch (o->gch.tt) {
-  case LUA_TSTRING: {
+  case LUA_TYPE_STRING: {
     return;
   }
-  case LUA_TUSERDATA: {
+  case LUA_TYPE_USERDATA: {
     Table *mt = gco2u(o)->metatable;
     gray2black(o); /* udata are never gray */
     if (mt)
@@ -82,18 +82,18 @@ static void reallymarkobject(global_State *g, GCObject *o) {
     }
     return;
   }
-  case LUA_TFUNCTION: {
+  case LUA_TYPE_FUNCTION: {
     gco2cl(o)->c.gclist = g->gray;
     g->gray = o;
     break;
   }
-  case LUA_TTABLE: {
+  case LUA_TYPE_TABLE: {
     gco2h(o)->gclist = g->gray;
     g->gray = o;
     break;
   }
-  case LUA_TTHREAD: {
-    gco2th(o)->gclist = g->gray;
+  case LUA_TYPE_THREAD: {
+    gco2th(o)->gcList = g->gray;
     g->gray = o;
     break;
   }
@@ -163,7 +163,7 @@ static int traversetable(global_State *g, Table *h) {
       h->marked |=
           cast_byte((weakkey << KEYWEAKBIT) | (weakvalue << VALUEWEAKBIT));
       h->gclist = g->weak;  /* must be cleared after GC, ... */
-      g->weak = obj2gco(h); /* ... so put in the appropriate list */
+      g->weak = LuaObjectToGCObject(h); /* ... so put in the appropriate list */
     }
   }
   if (weakkey && weakvalue) {
@@ -234,18 +234,18 @@ static void traverseclosure(global_State *g, Closure *cl) {
 }
 
 static void checkstacksizes(lua_State *L, StkId max) {
-  int ci_used = cast_int(L->ci - L->base_ci); /* number of `ci' in use */
+  int ci_used = cast_int(L->ci - L->baseCI); /* number of `ci' in use */
   int s_used = cast_int(max - L->stack);      /* part of stack in use */
-  if (L->size_ci > LUAI_MAXCALLS) {           /* handling overflow? */
+  if (L->ciSize > LUAI_MAXCALLS) {           /* handling overflow? */
     return;                                   /* do not touch the stacks */
   }
-  if (4 * ci_used < L->size_ci && 2 * BASIC_CI_SIZE < L->size_ci) {
-    luaD_reallocCI(L, L->size_ci / 2); /* still big enough... */
+  if (4 * ci_used < L->ciSize && 2 * BASIC_CI_SIZE < L->ciSize) {
+    luaD_reallocCI(L, L->ciSize / 2); /* still big enough... */
   }
   condhardstacktests(luaD_reallocCI(L, ci_used + 1));
-  if (4 * s_used < L->stacksize &&
-      2 * (BASIC_STACK_SIZE + EXTRA_STACK) < L->stacksize) {
-    luaD_reallocstack(L, L->stacksize / 2); /* still big enough... */
+  if (4 * s_used < L->stackSize &&
+      2 * (BASIC_STACK_SIZE + EXTRA_STACK) < L->stackSize) {
+    luaD_reallocstack(L, L->stackSize / 2); /* still big enough... */
   }
   condhardstacktests(luaD_reallocstack(L, s_used));
 }
@@ -255,8 +255,8 @@ static void traversestack(global_State *g, lua_State *l) {
   CallInfo *ci;
   markvalue(g, gt(l));
   lim = l->top;
-  for (ci = l->base_ci; ci <= l->ci; ci++) {
-    lua_assert(ci->top <= l->stack_last);
+  for (ci = l->baseCI; ci <= l->ci; ci++) {
+    lua_assert(ci->top <= l->stackLast);
     if (lim < ci->top) {
       lim = ci->top;
     }
@@ -278,7 +278,7 @@ static l_mem propagatemark(global_State *g) {
   lua_assert(isgray(o));
   gray2black(o);
   switch (o->gch.tt) {
-  case LUA_TTABLE: {
+  case LUA_TYPE_TABLE: {
     Table *h = gco2h(o);
     g->gray = h->gclist;
     if (traversetable(g, h)) { /* table is weak? */
@@ -287,22 +287,22 @@ static l_mem propagatemark(global_State *g) {
     return sizeof(Table) + sizeof(TValue) * h->sizearray +
            sizeof(Node) * sizenode(h);
   }
-  case LUA_TFUNCTION: {
+  case LUA_TYPE_FUNCTION: {
     Closure *cl = gco2cl(o);
     g->gray = cl->c.gclist;
     traverseclosure(g, cl);
     return (cl->c.isC) ? sizeCclosure(cl->c.nupvalues)
                        : sizeLclosure(cl->l.nupvalues);
   }
-  case LUA_TTHREAD: {
+  case LUA_TYPE_THREAD: {
     lua_State *th = gco2th(o);
-    g->gray = th->gclist;
-    th->gclist = g->grayagain;
+    g->gray = th->gcList;
+    th->gcList = g->grayagain;
     g->grayagain = o;
     black2gray(o);
     traversestack(g, th);
-    return sizeof(lua_State) + sizeof(TValue) * th->stacksize +
-           sizeof(CallInfo) * th->size_ci;
+    return sizeof(lua_State) + sizeof(TValue) * th->stackSize +
+           sizeof(CallInfo) * th->ciSize;
   }
   case LUA_TPROTO: {
     Proto *p = gco2p(o);
@@ -381,26 +381,26 @@ static void freeobj(lua_State *L, GCObject *o) {
   case LUA_TPROTO:
     luaF_freeproto(L, gco2p(o));
     break;
-  case LUA_TFUNCTION:
+  case LUA_TYPE_FUNCTION:
     luaF_freeclosure(L, gco2cl(o));
     break;
   case LUA_TUPVAL:
     luaF_freeupval(L, gco2uv(o));
     break;
-  case LUA_TTABLE:
+  case LUA_TYPE_TABLE:
     luaH_free(L, gco2h(o));
     break;
-  case LUA_TTHREAD: {
+  case LUA_TYPE_THREAD: {
     lua_assert(gco2th(o) != L && gco2th(o) != G(L)->mainthread);
     luaE_freethread(L, gco2th(o));
     break;
   }
-  case LUA_TSTRING: {
+  case LUA_TYPE_STRING: {
     G(L)->strt.nuse--;
     luaM_freemem(L, o, sizestring(gco2ts(o)));
     break;
   }
-  case LUA_TUSERDATA: {
+  case LUA_TYPE_USERDATA: {
     luaM_freemem(L, o, sizeudata(gco2u(o)));
     break;
   }
@@ -416,8 +416,9 @@ static GCObject **sweeplist(lua_State *L, GCObject **p, lu_mem count) {
   global_State *g = G(L);
   int deadmask = otherwhite(g);
   while ((curr = *p) != NULL && count-- > 0) {
-    if (curr->gch.tt == LUA_TTHREAD) { /* sweep open upvalues of each thread */
-      sweepwholelist(L, &gco2th(curr)->openupval);
+    if (curr->gch.tt ==
+        LUA_TYPE_THREAD) { /* sweep open upvalues of each thread */
+      sweepwholelist(L, &gco2th(curr)->openUpval);
     }
     if ((curr->gch.marked ^ WHITEBITS) & deadmask) { /* not dead? */
       lua_assert(!isdead(g, curr) || testbit(curr->gch.marked, FIXEDBIT));
@@ -465,15 +466,15 @@ static void GCTM(lua_State *L) {
   makewhite(g, o);
   tm = fasttm(L, udata->uv.metatable, TM_GC);
   if (tm != NULL) {
-    lu_byte oldah = L->allowhook;
+    lu_byte oldah = L->allowHook;
     lu_mem oldt = g->GCthreshold;
-    L->allowhook = 0; /* stop debug hooks during GC tag method */
+    L->allowHook = 0; /* stop debug hooks during GC tag method */
     g->GCthreshold = 2 * g->totalbytes; /* avoid GC steps */
     setobj2s(L, L->top, tm);
     setuvalue(L, L->top + 1, udata);
     L->top += 2;
     luaD_call(L, L->top - 2, 0);
-    L->allowhook = oldah;  /* restore hooks */
+    L->allowHook = oldah;  /* restore hooks */
     g->GCthreshold = oldt; /* restore threshold */
   }
 }
@@ -525,7 +526,7 @@ static void remarkupvals(global_State *g) {
   UpVal *uv;
   for (uv = g->uvhead.u.l.next; uv != &g->uvhead; uv = uv->u.l.next) {
     lua_assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
-    if (isgray(obj2gco(uv)))
+    if (isgray(LuaObjectToGCObject(uv)))
       markvalue(g, uv->v);
   }
 }
@@ -540,7 +541,7 @@ static void atomic(lua_State *L) {
   /* remark weak tables */
   g->gray = g->weak;
   g->weak = NULL;
-  lua_assert(!iswhite(obj2gco(g->mainthread)));
+  lua_assert(!iswhite(LuaObjectToGCObject(g->mainthread)));
   markobject(g, L); /* mark running thread */
   markmt(g);        /* mark basic metatables (again) */
   propagateall(g);
@@ -670,7 +671,7 @@ void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v) {
   global_State *g = G(L);
   lua_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
   lua_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
-  lua_assert(ttype(&o->gch) != LUA_TTABLE);
+  lua_assert(ttype(&o->gch) != LUA_TYPE_TABLE);
   /* must keep invariant? */
   if (g->gcstate == GCSpropagate) {
     reallymarkobject(g, v); /* restore invariant */
@@ -681,7 +682,7 @@ void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v) {
 
 void luaC_barrierback(lua_State *L, Table *t) {
   global_State *g = G(L);
-  GCObject *o = obj2gco(t);
+  GCObject *o = LuaObjectToGCObject(t);
   lua_assert(isblack(o) && !isdead(g, o));
   lua_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
   black2gray(o); /* make table gray (again) */
@@ -699,7 +700,7 @@ void luaC_link(lua_State *L, GCObject *o, lu_byte tt) {
 
 void luaC_linkupval(lua_State *L, UpVal *uv) {
   global_State *g = G(L);
-  GCObject *o = obj2gco(uv);
+  GCObject *o = LuaObjectToGCObject(uv);
   o->gch.next = g->rootgc; /* link upvalue into `rootgc' list */
   g->rootgc = o;
   if (isgray(o)) {

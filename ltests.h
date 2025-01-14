@@ -65,6 +65,6 @@ int l_main(int argc, const char *argv[]);
 
 /* change some sizes to give some bugs a chance */
 
-#undef LUAL_BUFFERSIZE
-#define LUAL_BUFFERSIZE 27
+#undef LUAL_BUFFER_SIZE
+#define LUAL_BUFFER_SIZE 27
 #define MINSTRTABSIZE 2

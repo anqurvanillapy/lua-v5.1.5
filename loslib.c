@@ -175,7 +175,7 @@ static int os_time(lua_State *L) {
     t = time(NULL);            /* get current time */
   } else {
     struct tm ts;
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LUA_TYPE_TABLE);
     lua_settop(L, 1); /* make sure table is at the top */
     ts.tm_sec = getfield(L, "sec", 0);
     ts.tm_min = getfield(L, "min", 0);

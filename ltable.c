@@ -58,8 +58,8 @@
 #define dummynode (&dummynode_)
 
 static const Node dummynode_ = {
-    {{NULL}, LUA_TNIL},        /* value */
-    {{{NULL}, LUA_TNIL, NULL}} /* key */
+    {{NULL}, LUA_TYPE_NIL},        /* value */
+    {{{NULL}, LUA_TYPE_NIL, NULL}} /* key */
 };
 
 /*
@@ -84,13 +84,13 @@ static Node *hashnum(const Table *t, lua_Number n) {
 */
 static Node *mainposition(const Table *t, const TValue *key) {
   switch (ttype(key)) {
-  case LUA_TNUMBER:
+  case LUA_TYPE_NUMBER:
     return hashnum(t, nvalue(key));
-  case LUA_TSTRING:
+  case LUA_TYPE_STRING:
     return hashstr(t, rawtsvalue(key));
-  case LUA_TBOOLEAN:
+  case LUA_TYPE_BOOLEAN:
     return hashboolean(t, bvalue(key));
-  case LUA_TLIGHTUSERDATA:
+  case LUA_TYPE_LIGHTUSERDATA:
     return hashpointer(t, pvalue(key));
   default:
     return hashpointer(t, gcvalue(key));
@@ -339,7 +339,7 @@ static void rehash(lua_State *L, Table *t, const TValue *ek) {
 
 Table *luaH_new(lua_State *L, int narray, int nhash) {
   Table *t = luaM_new(L, Table);
-  luaC_link(L, obj2gco(t), LUA_TTABLE);
+  luaC_link(L, LuaObjectToGCObject(t), LUA_TYPE_TABLE);
   t->metatable = NULL;
   t->flags = cast_byte(~0);
   /* temporary values (kept only if some malloc fails) */
@@ -451,11 +451,11 @@ const TValue *luaH_getstr(Table *t, TString *key) {
 */
 const TValue *luaH_get(Table *t, const TValue *key) {
   switch (ttype(key)) {
-  case LUA_TNIL:
+  case LUA_TYPE_NIL:
     return luaO_nilobject;
-  case LUA_TSTRING:
+  case LUA_TYPE_STRING:
     return luaH_getstr(t, rawtsvalue(key));
-  case LUA_TNUMBER: {
+  case LUA_TYPE_NUMBER: {
     int k;
     lua_Number n = nvalue(key);
     lua_number2int(k, n);

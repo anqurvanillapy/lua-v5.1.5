@@ -281,27 +281,27 @@
 */
 
 /*
-@@ LUAI_MAXCCALLS is the maximum depth for nested C calls (short) and
+@@ LUAI_MAX_C_CALLS is the maximum depth for nested C calls (short) and
 @* syntactical nested non-terminals in a program.
 */
-#define LUAI_MAXCCALLS 200
+#define LUAI_MAX_C_CALLS 200
 
 /*
-@@ LUAI_MAXVARS is the maximum number of local variables per function
+@@ LUAI_MAX_VARS is the maximum number of local variables per function
 @* (must be smaller than 250).
 */
-#define LUAI_MAXVARS 200
+#define LUAI_MAX_VARS 200
 
 /*
-@@ LUAI_MAXUPVALUES is the maximum number of upvalues per function
+@@ LUAI_MAX_UPVALUES is the maximum number of upvalues per function
 @* (must be smaller than 250).
 */
-#define LUAI_MAXUPVALUES 60
+#define LUAI_MAX_UPVALUES 60
 
 /*
-@@ LUAL_BUFFERSIZE is the buffer size used by the lauxlib buffer system.
+@@ LUAL_BUFFER_SIZE is the buffer size used by the lauxlib buffer system.
 */
-#define LUAL_BUFFERSIZE BUFSIZ
+#define LUAL_BUFFER_SIZE BUFSIZ
 
 /* }================================================================== */
 

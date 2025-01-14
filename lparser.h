@@ -63,8 +63,8 @@ typedef struct FuncState {
   int np;                 /* number of elements in `p' */
   short nlocvars;         /* number of elements in `locvars' */
   lu_byte nactvar;        /* number of active local variables */
-  upvaldesc upvalues[LUAI_MAXUPVALUES]; /* upvalues */
-  unsigned short actvar[LUAI_MAXVARS];  /* declared-variable stack */
+  upvaldesc upvalues[LUAI_MAX_UPVALUES]; /* upvalues */
+  unsigned short actvar[LUAI_MAX_VARS];  /* declared-variable stack */
 } FuncState;
 
 LUAI_FUNC Proto *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,

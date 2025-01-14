@@ -257,7 +257,7 @@ static int read_line(lua_State *L, FILE *f) {
   for (;;) {
     size_t l;
     char *p = luaL_prepbuffer(&b);
-    if (fgets(p, LUAL_BUFFERSIZE, f) == NULL) { /* eof? */
+    if (fgets(p, LUAL_BUFFER_SIZE, f) == NULL) { /* eof? */
       luaL_pushresult(&b);                      /* close buffer */
       return (lua_objlen(L, -1) > 0); /* check whether read something */
     }
@@ -277,7 +277,7 @@ static int read_chars(lua_State *L, FILE *f, size_t n) {
   size_t nr;   /* number of chars actually read */
   luaL_Buffer b;
   luaL_buffinit(L, &b);
-  rlen = LUAL_BUFFERSIZE; /* try to read that much each time */
+  rlen = LUAL_BUFFER_SIZE; /* try to read that much each time */
   do {
     char *p = luaL_prepbuffer(&b);
     if (rlen > n) {
@@ -303,7 +303,7 @@ static int g_read(lua_State *L, FILE *f, int first) {
     luaL_checkstack(L, nargs + LUA_MINSTACK, "too many arguments");
     success = 1;
     for (n = first; nargs-- && success; n++) {
-      if (lua_type(L, n) == LUA_TNUMBER) {
+      if (lua_type(L, n) == LUA_TYPE_NUMBER) {
         size_t l = (size_t)lua_tointeger(L, n);
         success = (l == 0) ? test_eof(L, f) : read_chars(L, f, l);
       } else {
@@ -370,7 +370,7 @@ static int g_write(lua_State *L, FILE *f, int arg) {
   int nargs = lua_gettop(L) - 1;
   int status = 1;
   for (; nargs--; arg++) {
-    if (lua_type(L, arg) == LUA_TNUMBER) {
+    if (lua_type(L, arg) == LUA_TYPE_NUMBER) {
       /* optimization: could be done exactly as for strings */
       status = status && fprintf(f, LUA_NUMBER_FMT, lua_tonumber(L, arg)) > 0;
     } else {
@@ -408,7 +408,7 @@ static int f_setvbuf(lua_State *L) {
   static const char *const modenames[] = {"no", "full", "line", NULL};
   FILE *f = tofile(L);
   int op = luaL_checkoption(L, 2, NULL, modenames);
-  lua_Integer sz = luaL_optinteger(L, 3, LUAL_BUFFERSIZE);
+  lua_Integer sz = luaL_optinteger(L, 3, LUAL_BUFFER_SIZE);
   int res = setvbuf(f, NULL, mode[op], sz);
   return pushresult(L, res == 0, NULL);
 }

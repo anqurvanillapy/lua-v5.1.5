@@ -66,32 +66,32 @@
 
 #define luaC_checkGC(L)                                                        \
   {                                                                            \
-    condhardstacktests(luaD_reallocstack(L, L->stacksize - EXTRA_STACK - 1));  \
+    condhardstacktests(luaD_reallocstack(L, L->stackSize - EXTRA_STACK - 1));  \
     if (G(L)->totalbytes >= G(L)->GCthreshold)                                 \
       luaC_step(L);                                                            \
   }
 
 #define luaC_barrier(L, p, v)                                                  \
   {                                                                            \
-    if (valiswhite(v) && isblack(obj2gco(p)))                                  \
-      luaC_barrierf(L, obj2gco(p), gcvalue(v));                                \
+    if (valiswhite(v) && isblack(LuaObjectToGCObject(p)))                                  \
+      luaC_barrierf(L, LuaObjectToGCObject(p), gcvalue(v));                                \
   }
 
 #define luaC_barriert(L, t, v)                                                 \
   {                                                                            \
-    if (valiswhite(v) && isblack(obj2gco(t)))                                  \
+    if (valiswhite(v) && isblack(LuaObjectToGCObject(t)))                                  \
       luaC_barrierback(L, t);                                                  \
   }
 
 #define luaC_objbarrier(L, p, o)                                               \
   {                                                                            \
-    if (iswhite(obj2gco(o)) && isblack(obj2gco(p)))                            \
-      luaC_barrierf(L, obj2gco(p), obj2gco(o));                                \
+    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(p)))                            \
+      luaC_barrierf(L, LuaObjectToGCObject(p), LuaObjectToGCObject(o));                                \
   }
 
 #define luaC_objbarriert(L, t, o)                                              \
   {                                                                            \
-    if (iswhite(obj2gco(o)) && isblack(obj2gco(t)))                            \
+    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(t)))                            \
       luaC_barrierback(L, t);                                                  \
   }
 

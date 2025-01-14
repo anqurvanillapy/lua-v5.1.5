@@ -23,7 +23,7 @@ static int db_getmetatable(lua_State *L) {
 
 static int db_setmetatable(lua_State *L) {
   int t = lua_type(L, 2);
-  luaL_argcheck(L, t == LUA_TNIL || t == LUA_TTABLE, 2,
+  luaL_argcheck(L, t == LUA_TYPE_NIL || t == LUA_TYPE_TABLE, 2,
                 "nil or table expected");
   lua_settop(L, 2);
   lua_pushboolean(L, lua_setmetatable(L, 1));
@@ -37,7 +37,7 @@ static int db_getfenv(lua_State *L) {
 }
 
 static int db_setfenv(lua_State *L) {
-  luaL_checktype(L, 2, LUA_TTABLE);
+  luaL_checktype(L, 2, LUA_TYPE_TABLE);
   lua_settop(L, 2);
   if (lua_setfenv(L, 1) == 0) {
     luaL_error(L,
@@ -161,7 +161,7 @@ static int db_setlocal(lua_State *L) {
 static int auxupvalue(lua_State *L, int get) {
   const char *name;
   int n = luaL_checkint(L, 2);
-  luaL_checktype(L, 1, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LUA_TYPE_FUNCTION);
   if (lua_iscfunction(L, 1)) {
     return 0; /* cannot touch C upvalues from Lua */
   }
@@ -257,7 +257,7 @@ static int db_sethook(lua_State *L) {
     count = 0; /* turn off hooks */
   } else {
     const char *smask = luaL_checkstring(L, arg + 2);
-    luaL_checktype(L, arg + 1, LUA_TFUNCTION);
+    luaL_checktype(L, arg + 1, LUA_TYPE_FUNCTION);
     count = luaL_optint(L, arg + 3, 0);
     func = hookf;
     mask = makemask(smask, count);

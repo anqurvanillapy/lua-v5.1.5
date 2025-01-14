@@ -8,7 +8,7 @@
 #include "lua.h"
 
 /* tags for values visible from Lua */
-#define LAST_TAG LUA_TTHREAD
+#define LAST_TAG LUA_TYPE_THREAD
 
 #define NUM_TAGS (LAST_TAG + 1)
 
@@ -63,15 +63,15 @@ typedef struct lua_TValue {
 } TValue;
 
 /* Macros to test type */
-#define ttisnil(o) (ttype(o) == LUA_TNIL)
-#define ttisnumber(o) (ttype(o) == LUA_TNUMBER)
-#define ttisstring(o) (ttype(o) == LUA_TSTRING)
-#define ttistable(o) (ttype(o) == LUA_TTABLE)
-#define ttisfunction(o) (ttype(o) == LUA_TFUNCTION)
-#define ttisboolean(o) (ttype(o) == LUA_TBOOLEAN)
-#define ttisuserdata(o) (ttype(o) == LUA_TUSERDATA)
-#define ttisthread(o) (ttype(o) == LUA_TTHREAD)
-#define ttislightuserdata(o) (ttype(o) == LUA_TLIGHTUSERDATA)
+#define ttisnil(o) (ttype(o) == LUA_TYPE_NIL)
+#define ttisnumber(o) (ttype(o) == LUA_TYPE_NUMBER)
+#define ttisstring(o) (ttype(o) == LUA_TYPE_STRING)
+#define ttistable(o) (ttype(o) == LUA_TYPE_TABLE)
+#define ttisfunction(o) (ttype(o) == LUA_TYPE_FUNCTION)
+#define ttisboolean(o) (ttype(o) == LUA_TYPE_BOOLEAN)
+#define ttisuserdata(o) (ttype(o) == LUA_TYPE_USERDATA)
+#define ttisthread(o) (ttype(o) == LUA_TYPE_THREAD)
+#define ttislightuserdata(o) (ttype(o) == LUA_TYPE_LIGHTUSERDATA)
 
 /* Macros to access values */
 #define ttype(o) ((o)->tt)
@@ -101,34 +101,34 @@ typedef struct lua_TValue {
               !isdead(g, (obj)->value.gc)))
 
 /* Macros to set values */
-#define setnilvalue(obj) ((obj)->tt = LUA_TNIL)
+#define setnilvalue(obj) ((obj)->tt = LUA_TYPE_NIL)
 
 #define setnvalue(obj, x)                                                      \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.n = (x);                                                        \
-    i_o->tt = LUA_TNUMBER;                                                     \
+    i_o->tt = LUA_TYPE_NUMBER;                                                     \
   } while (0)
 
 #define setpvalue(obj, x)                                                      \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.p = (x);                                                        \
-    i_o->tt = LUA_TLIGHTUSERDATA;                                              \
+    i_o->tt = LUA_TYPE_LIGHTUSERDATA;                                              \
   } while (0)
 
 #define setbvalue(obj, x)                                                      \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.b = (x);                                                        \
-    i_o->tt = LUA_TBOOLEAN;                                                    \
+    i_o->tt = LUA_TYPE_BOOLEAN;                                                    \
   } while (0)
 
 #define setsvalue(L, obj, x)                                                   \
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TSTRING;                                                     \
+    i_o->tt = LUA_TYPE_STRING;                                                     \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -136,7 +136,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TUSERDATA;                                                   \
+    i_o->tt = LUA_TYPE_USERDATA;                                                   \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -144,7 +144,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TTHREAD;                                                     \
+    i_o->tt = LUA_TYPE_THREAD;                                                     \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -152,7 +152,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TFUNCTION;                                                   \
+    i_o->tt = LUA_TYPE_FUNCTION;                                                   \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -160,7 +160,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TTABLE;                                                      \
+    i_o->tt = LUA_TYPE_TABLE;                                                      \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -202,7 +202,7 @@ typedef struct lua_TValue {
 
 #define setttype(obj, tt) (ttype(obj) = (tt))
 
-#define iscollectable(o) (ttype(o) >= LUA_TSTRING)
+#define iscollectable(o) (ttype(o) >= LUA_TYPE_STRING)
 
 typedef TValue *StkId; /* index to stack elements */
 
@@ -314,8 +314,8 @@ typedef union Closure {
   LClosure l;
 } Closure;
 
-#define iscfunction(o) (ttype(o) == LUA_TFUNCTION && clvalue(o)->c.isC)
-#define isLfunction(o) (ttype(o) == LUA_TFUNCTION && !clvalue(o)->c.isC)
+#define iscfunction(o) (ttype(o) == LUA_TYPE_FUNCTION && clvalue(o)->c.isC)
+#define isLfunction(o) (ttype(o) == LUA_TYPE_FUNCTION && !clvalue(o)->c.isC)
 
 /*
 ** Tables

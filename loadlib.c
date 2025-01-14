@@ -498,7 +498,7 @@ static int ll_module(lua_State *L) {
 }
 
 static int ll_seeall(lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   if (!lua_getmetatable(L, 1)) {
     lua_createtable(L, 0, 1); /* create new metatable */
     lua_pushvalue(L, -1);

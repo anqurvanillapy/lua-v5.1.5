@@ -106,11 +106,11 @@ typedef struct luaL_Buffer {
   char *p; /* current position in buffer */
   int lvl; /* number of strings in the stack (level) */
   lua_State *L;
-  char buffer[LUAL_BUFFERSIZE];
+  char buffer[LUAL_BUFFER_SIZE];
 } luaL_Buffer;
 
 #define luaL_addchar(B, c)                                                     \
-  ((void)((B)->p < ((B)->buffer + LUAL_BUFFERSIZE) || luaL_prepbuffer(B)),     \
+  ((void)((B)->p < ((B)->buffer + LUAL_BUFFER_SIZE) || luaL_prepbuffer(B)),     \
    (*(B)->p++ = (char)(c)))
 
 /* compatibility only */

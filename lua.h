@@ -53,17 +53,17 @@ typedef void *(*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
 /*
 ** basic types
 */
-#define LUA_TNONE (-1)
+#define LUA_TYPE_NONE (-1)
 
-#define LUA_TNIL 0
-#define LUA_TBOOLEAN 1
-#define LUA_TLIGHTUSERDATA 2
-#define LUA_TNUMBER 3
-#define LUA_TSTRING 4
-#define LUA_TTABLE 5
-#define LUA_TFUNCTION 6
-#define LUA_TUSERDATA 7
-#define LUA_TTHREAD 8
+#define LUA_TYPE_NIL 0
+#define LUA_TYPE_BOOLEAN 1
+#define LUA_TYPE_LIGHTUSERDATA 2
+#define LUA_TYPE_NUMBER 3
+#define LUA_TYPE_STRING 4
+#define LUA_TYPE_TABLE 5
+#define LUA_TYPE_FUNCTION 6
+#define LUA_TYPE_USERDATA 7
+#define LUA_TYPE_THREAD 8
 
 /* minimum Lua stack available to a C function */
 #define LUA_MINSTACK 20
@@ -228,13 +228,13 @@ LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud);
 
 #define lua_strlen(L, i) lua_objlen(L, (i))
 
-#define lua_isfunction(L, n) (lua_type(L, (n)) == LUA_TFUNCTION)
-#define lua_istable(L, n) (lua_type(L, (n)) == LUA_TTABLE)
-#define lua_islightuserdata(L, n) (lua_type(L, (n)) == LUA_TLIGHTUSERDATA)
-#define lua_isnil(L, n) (lua_type(L, (n)) == LUA_TNIL)
-#define lua_isboolean(L, n) (lua_type(L, (n)) == LUA_TBOOLEAN)
-#define lua_isthread(L, n) (lua_type(L, (n)) == LUA_TTHREAD)
-#define lua_isnone(L, n) (lua_type(L, (n)) == LUA_TNONE)
+#define lua_isfunction(L, n) (lua_type(L, (n)) == LUA_TYPE_FUNCTION)
+#define lua_istable(L, n) (lua_type(L, (n)) == LUA_TYPE_TABLE)
+#define lua_islightuserdata(L, n) (lua_type(L, (n)) == LUA_TYPE_LIGHTUSERDATA)
+#define lua_isnil(L, n) (lua_type(L, (n)) == LUA_TYPE_NIL)
+#define lua_isboolean(L, n) (lua_type(L, (n)) == LUA_TYPE_BOOLEAN)
+#define lua_isthread(L, n) (lua_type(L, (n)) == LUA_TYPE_THREAD)
+#define lua_isnone(L, n) (lua_type(L, (n)) == LUA_TYPE_NONE)
 #define lua_isnoneornil(L, n) (lua_type(L, (n)) <= 0)
 
 #define lua_pushliteral(L, s)                                                  \

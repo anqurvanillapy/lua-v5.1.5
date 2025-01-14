@@ -172,7 +172,7 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
   return r;
 }
 
-#define checkobjref(g, f, t) lua_assert(testobjref(g, f, obj2gco(t)))
+#define checkobjref(g, f, t) lua_assert(testobjref(g, f, LuaObjectToGCObject(t)))
 
 #define checkvalref(g, f, t)                                                   \
   lua_assert(!iscollectable(t) || ((ttype(t) == (t)->value.gc->gch.tt) &&      \
@@ -180,7 +180,7 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
 
 static void checktable(global_State *g, Table *h) {
   int i;
-  GCObject *hgc = obj2gco(h);
+  GCObject *hgc = LuaObjectToGCObject(h);
   if (h->metatable)
     checkobjref(g, hgc, h->metatable);
   i = h->sizearray;
@@ -203,7 +203,7 @@ static void checktable(global_State *g, Table *h) {
 */
 static void checkproto(global_State *g, Proto *f) {
   int i;
-  GCObject *fgc = obj2gco(f);
+  GCObject *fgc = LuaObjectToGCObject(f);
   if (f->source)
     checkobjref(g, fgc, f->source);
   for (i = 0; i < f->sizek; i++) {
@@ -225,7 +225,7 @@ static void checkproto(global_State *g, Proto *f) {
 }
 
 static void checkclosure(global_State *g, Closure *cl) {
-  GCObject *clgc = obj2gco(cl);
+  GCObject *clgc = LuaObjectToGCObject(cl);
   checkobjref(g, clgc, cl->l.env);
   if (cl->c.isC) {
     int i;
@@ -248,25 +248,25 @@ static void checkstack(global_State *g, lua_State *L1) {
   StkId o;
   CallInfo *ci;
   GCObject *uvo;
-  lua_assert(!isdead(g, obj2gco(L1)));
-  for (uvo = L1->openupval; uvo != NULL; uvo = uvo->gch.next) {
+  lua_assert(!isdead(g, LuaObjectToGCObject(L1)));
+  for (uvo = L1->openUpval; uvo != NULL; uvo = uvo->gch.next) {
     UpVal *uv = gco2uv(uvo);
     lua_assert(uv->v != &uv->u.value); /* must be open */
     lua_assert(!isblack(uvo));         /* open upvalues cannot be black */
   }
   checkliveness(g, gt(L1));
-  if (L1->base_ci) {
-    for (ci = L1->base_ci; ci <= L1->ci; ci++) {
-      lua_assert(ci->top <= L1->stack_last);
+  if (L1->baseCI) {
+    for (ci = L1->baseCI; ci <= L1->ci; ci++) {
+      lua_assert(ci->top <= L1->stackLast);
       lua_assert(lua_checkpc(L1, ci));
     }
   } else
-    lua_assert(L1->size_ci == 0);
+    lua_assert(L1->ciSize == 0);
   if (L1->stack) {
     for (o = L1->stack; o < L1->top; o++)
       checkliveness(g, o);
   } else
-    lua_assert(L1->stacksize == 0);
+    lua_assert(L1->stackSize == 0);
 }
 
 static void checkobject(global_State *g, GCObject *o) {
@@ -287,21 +287,21 @@ static void checkobject(global_State *g, GCObject *o) {
       checkvalref(g, o, uv->v);
       break;
     }
-    case LUA_TUSERDATA: {
+    case LUA_TYPE_USERDATA: {
       Table *mt = gco2u(o)->metatable;
       if (mt)
         checkobjref(g, o, mt);
       break;
     }
-    case LUA_TTABLE: {
+    case LUA_TYPE_TABLE: {
       checktable(g, gco2h(o));
       break;
     }
-    case LUA_TTHREAD: {
+    case LUA_TYPE_THREAD: {
       checkstack(g, gco2th(o));
       break;
     }
-    case LUA_TFUNCTION: {
+    case LUA_TYPE_FUNCTION: {
       checkclosure(g, gco2cl(o));
       break;
     }
@@ -316,14 +316,14 @@ static void checkobject(global_State *g, GCObject *o) {
 }
 
 int lua_checkpc(lua_State *L, pCallInfo ci) {
-  if (ci == L->base_ci || !f_isLua(ci))
+  if (ci == L->baseCI || !f_isLua(ci))
     return 1;
   else {
     Proto *p = ci_func(ci)->l.p;
     if (ci < L->ci)
       return p->code <= ci->savedpc && ci->savedpc <= p->code + p->sizecode;
     else
-      return p->code <= L->savedpc && L->savedpc <= p->code + p->sizecode;
+      return p->code <= L->savedPC && L->savedPC <= p->code + p->sizecode;
   }
 }
 
@@ -332,17 +332,17 @@ int lua_checkmemory(lua_State *L) {
   GCObject *o;
   UpVal *uv;
   checkstack(g, g->mainthread);
-  for (o = g->rootgc; o != obj2gco(g->mainthread); o = o->gch.next)
+  for (o = g->rootgc; o != LuaObjectToGCObject(g->mainthread); o = o->gch.next)
     checkobject(g, o);
   for (o = o->gch.next; o != NULL; o = o->gch.next) {
-    lua_assert(o->gch.tt == LUA_TUSERDATA);
+    lua_assert(o->gch.tt == LUA_TYPE_USERDATA);
     checkobject(g, o);
   }
   for (uv = g->uvhead.u.l.next; uv != &g->uvhead; uv = uv->u.l.next) {
     lua_assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
     lua_assert(uv->v != &uv->u.value); /* must be open */
-    lua_assert(!isblack(obj2gco(uv))); /* open upvalues are never black */
-    checkvalref(g, obj2gco(uv), uv->v);
+    lua_assert(!isblack(LuaObjectToGCObject(uv))); /* open upvalues are never black */
+    checkvalref(g, LuaObjectToGCObject(uv), uv->v);
   }
   return 0;
 }
@@ -440,9 +440,9 @@ static int get_limits(lua_State *L) {
   lua_createtable(L, 0, 5);
   setnameval(L, "BITS_INT", LUAI_BITSINT);
   setnameval(L, "LFPF", LFIELDS_PER_FLUSH);
-  setnameval(L, "MAXVARS", LUAI_MAXVARS);
+  setnameval(L, "MAXVARS", LUAI_MAX_VARS);
   setnameval(L, "MAXSTACK", MAXSTACK);
-  setnameval(L, "MAXUPVALUES", LUAI_MAXUPVALUES);
+  setnameval(L, "MAXUPVALUES", LUAI_MAX_UPVALUES);
   setnameval(L, "NUM_OPCODES", NUM_OPCODES);
   return 1;
 }
@@ -502,12 +502,12 @@ static int gcstate(lua_State *L) {
 
 static int hash_query(lua_State *L) {
   if (lua_isnone(L, 2)) {
-    luaL_argcheck(L, lua_type(L, 1) == LUA_TSTRING, 1, "string expected");
+    luaL_argcheck(L, lua_type(L, 1) == LUA_TYPE_STRING, 1, "string expected");
     lua_pushinteger(L, tsvalue(obj_at(L, 1))->hash);
   } else {
     TValue *o = obj_at(L, 1);
     Table *t;
-    luaL_checktype(L, 2, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TYPE_TABLE);
     t = hvalue(obj_at(L, 2));
     lua_pushinteger(L, luaH_mainposition(t, o) - t->node);
   }
@@ -517,9 +517,9 @@ static int hash_query(lua_State *L) {
 static int stacklevel(lua_State *L) {
   unsigned long a = 0;
   lua_pushinteger(L, (L->top - L->stack));
-  lua_pushinteger(L, (L->stack_last - L->stack));
-  lua_pushinteger(L, (L->ci - L->base_ci));
-  lua_pushinteger(L, (L->end_ci - L->base_ci));
+  lua_pushinteger(L, (L->stackLast - L->stack));
+  lua_pushinteger(L, (L->ci - L->baseCI));
+  lua_pushinteger(L, (L->endCI - L->baseCI));
   lua_pushinteger(L, (unsigned long)&a);
   return 5;
 }
@@ -527,7 +527,7 @@ static int stacklevel(lua_State *L) {
 static int table_query(lua_State *L) {
   const Table *t;
   int i = luaL_optint(L, 2, -1);
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LUA_TYPE_TABLE);
   t = hvalue(obj_at(L, 1));
   if (i == -1) {
     lua_pushinteger(L, t->sizearray);
@@ -598,7 +598,7 @@ static int unref(lua_State *L) {
 
 static int upvalue(lua_State *L) {
   int n = luaL_checkint(L, 2);
-  luaL_checktype(L, 1, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LUA_TYPE_FUNCTION);
   if (lua_isnone(L, 3)) {
     const char *name = lua_getupvalue(L, 1, n);
     if (name == NULL)
