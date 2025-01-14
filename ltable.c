@@ -88,7 +88,7 @@ static Node *mainposition(const Table *t, const TValue *key) {
     return hashstr(t, RAW_STRING_VALUE(key));
   case LUA_TYPE_BOOLEAN:
     return hashboolean(t, BOOL_VALUE(key));
-  case LUA_TYPE_LIGHTUSERDATA:
+  case LUA_TYPE_PTR:
     return hashpointer(t, PTR_VALUE(key));
   default:
     return hashpointer(t, GC_VALUE(key));

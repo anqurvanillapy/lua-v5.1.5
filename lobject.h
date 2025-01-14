@@ -34,16 +34,16 @@ typedef union {
   GCObject *gc;
   void *p;
   lua_Number n;
-  int b;
+  bool b;
 } Value;
 
-#define TValuefields                                                           \
+#define TValueFields                                                           \
   Value value;                                                                 \
   int tt
 
 // Tagged Values.
-typedef struct lua_TValue {
-  TValuefields;
+typedef struct TValue {
+  TValueFields;
 } TValue;
 
 #define IS_TYPE_NIL(o) ((o)->tt == LUA_TYPE_NIL)
@@ -54,12 +54,14 @@ typedef struct lua_TValue {
 #define IS_TYPE_BOOLEAN(o) ((o)->tt == LUA_TYPE_BOOLEAN)
 #define IS_TYPE_USERDATA(o) ((o)->tt == LUA_TYPE_USERDATA)
 #define IS_TYPE_THREAD(o) ((o)->tt == LUA_TYPE_THREAD)
-#define IS_TYPE_LIGHTUSERDATA(o) ((o)->tt == LUA_TYPE_LIGHTUSERDATA)
+#define IS_TYPE_PTR(o) ((o)->tt == LUA_TYPE_PTR)
+
+#define IS_FALSE(o) (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && !BOOL_VALUE(o)))
 
 /* Macros to access values */
 #define GET_TYPE(o) ((o)->tt)
 #define GC_VALUE(o) CHECK_EXPR(iscollectable(o), (o)->value.gc)
-#define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_LIGHTUSERDATA(o), (o)->value.p)
+#define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->value.p)
 #define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->value.n)
 #define RAW_STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->value.gc->ts)
 #define STRING_VALUE(o) (&RAW_STRING_VALUE(o)->tsv)
@@ -70,16 +72,12 @@ typedef struct lua_TValue {
 #define BOOL_VALUE(o) CHECK_EXPR(IS_TYPE_BOOLEAN(o), (o)->value.b)
 #define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->value.gc->th)
 
-#define l_isfalse(o)                                                           \
-  (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && BOOL_VALUE(o) == 0))
-
 /*
 ** for internal debug only
 */
-#define checkconsistency(obj)                                                  \
+#define CHECK_CONSISTENCY(obj)                                                 \
   lua_assert(!iscollectable(obj) || (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
-
-#define checkliveness(g, obj)                                                  \
+#define CHECK_LIVENESS(g, obj)                                                 \
   lua_assert(!iscollectable(obj) ||                                            \
              ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                    \
               !isdead(g, (obj)->value.gc)))
@@ -98,7 +96,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.p = (x);                                                        \
-    i_o->tt = LUA_TYPE_LIGHTUSERDATA;                                          \
+    i_o->tt = LUA_TYPE_PTR;                                                    \
   } while (0)
 
 #define setbvalue(obj, x)                                                      \
@@ -113,7 +111,7 @@ typedef struct lua_TValue {
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_STRING;                                                 \
-    checkliveness(G(L), i_o);                                                  \
+    CHECK_LIVENESS(G(L), i_o);                                                 \
   } while (0)
 
 #define setuvalue(L, obj, x)                                                   \
@@ -121,7 +119,7 @@ typedef struct lua_TValue {
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_USERDATA;                                               \
-    checkliveness(G(L), i_o);                                                  \
+    CHECK_LIVENESS(G(L), i_o);                                                 \
   } while (0)
 
 #define setthvalue(L, obj, x)                                                  \
@@ -129,7 +127,7 @@ typedef struct lua_TValue {
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_THREAD;                                                 \
-    checkliveness(G(L), i_o);                                                  \
+    CHECK_LIVENESS(G(L), i_o);                                                 \
   } while (0)
 
 #define setclvalue(L, obj, x)                                                  \
@@ -137,7 +135,7 @@ typedef struct lua_TValue {
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_FUNCTION;                                               \
-    checkliveness(G(L), i_o);                                                  \
+    CHECK_LIVENESS(G(L), i_o);                                                 \
   } while (0)
 
 #define sethvalue(L, obj, x)                                                   \
@@ -145,7 +143,7 @@ typedef struct lua_TValue {
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_TABLE;                                                  \
-    checkliveness(G(L), i_o);                                                  \
+    CHECK_LIVENESS(G(L), i_o);                                                 \
   } while (0)
 
 #define setptvalue(L, obj, x)                                                  \
@@ -153,7 +151,7 @@ typedef struct lua_TValue {
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
     i_o->tt = LUA_TYPE_PROTO;                                                  \
-    checkliveness(G(L), i_o);                                                  \
+    CHECK_LIVENESS(G(L), i_o);                                                 \
   } while (0)
 
 #define setobj(L, obj1, obj2)                                                  \
@@ -162,7 +160,7 @@ typedef struct lua_TValue {
     TValue *o1 = (obj1);                                                       \
     o1->value = o2->value;                                                     \
     o1->tt = o2->tt;                                                           \
-    checkliveness(G(L), o1);                                                   \
+    CHECK_LIVENESS(G(L), o1);                                                  \
   } while (0)
 
 /*
@@ -317,7 +315,7 @@ typedef union Closure {
 
 typedef union TKey {
   struct {
-    TValuefields;
+    TValueFields;
     struct Node *next; /* for chaining */
   } nk;
   TValue tvk;

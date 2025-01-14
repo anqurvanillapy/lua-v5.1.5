@@ -190,7 +190,7 @@ static int call_orderTM(lua_State *L, const TValue *p1, const TValue *p2,
     return -1;
   }
   callTMres(L, L->top, tm1, p1, p2);
-  return !l_isfalse(L->top);
+  return !IS_FALSE(L->top);
 }
 
 static int l_strcmp(const TString *ls, const TString *rs) {
@@ -259,7 +259,7 @@ int luaV_equalval(lua_State *L, const TValue *t1, const TValue *t2) {
     return luai_numeq(NUMBER_VALUE(t1), NUMBER_VALUE(t2));
   case LUA_TYPE_BOOLEAN:
     return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* true must be 1 !! */
-  case LUA_TYPE_LIGHTUSERDATA:
+  case LUA_TYPE_PTR:
     return PTR_VALUE(t1) == PTR_VALUE(t2);
   case LUA_TYPE_USERDATA: {
     if (USERDATA_VALUE(t1) == USERDATA_VALUE(t2)) {
@@ -284,7 +284,7 @@ int luaV_equalval(lua_State *L, const TValue *t1, const TValue *t2) {
     return 0; /* no TM? */
   }
   callTMres(L, L->top, tm, t1, t2); /* call TM */
-  return !l_isfalse(L->top);
+  return !IS_FALSE(L->top);
 }
 
 void luaV_concat(lua_State *L, int total, int last) {
@@ -545,7 +545,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_NOT: {
-      int res = l_isfalse(RB(i)); /* next assignment may change this value */
+      int res = IS_FALSE(RB(i)); /* next assignment may change this value */
       setbvalue(ra, res);
       continue;
     }
@@ -596,14 +596,14 @@ reentry: /* entry point */
       continue;
     }
     case OP_TEST: {
-      if (l_isfalse(ra) != GETARG_C(i))
+      if (IS_FALSE(ra) != GETARG_C(i))
         dojump(L, pc, GETARG_sBx(*pc));
       pc++;
       continue;
     }
     case OP_TESTSET: {
       TValue *rb = RB(i);
-      if (l_isfalse(rb) != GETARG_C(i)) {
+      if (IS_FALSE(rb) != GETARG_C(i)) {
         setobjs2s(L, ra, rb);
         dojump(L, pc, GETARG_sBx(*pc));
       }

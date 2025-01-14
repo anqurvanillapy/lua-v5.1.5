@@ -57,7 +57,7 @@ typedef void *(*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
 
 #define LUA_TYPE_NIL 0
 #define LUA_TYPE_BOOLEAN 1
-#define LUA_TYPE_LIGHTUSERDATA 2
+#define LUA_TYPE_PTR 2
 #define LUA_TYPE_NUMBER 3
 #define LUA_TYPE_STRING 4
 #define LUA_TYPE_TABLE 5
@@ -230,7 +230,7 @@ LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud);
 
 #define lua_isfunction(L, n) (lua_type(L, (n)) == LUA_TYPE_FUNCTION)
 #define lua_istable(L, n) (lua_type(L, (n)) == LUA_TYPE_TABLE)
-#define lua_islightuserdata(L, n) (lua_type(L, (n)) == LUA_TYPE_LIGHTUSERDATA)
+#define lua_islightuserdata(L, n) (lua_type(L, (n)) == LUA_TYPE_PTR)
 #define lua_isnil(L, n) (lua_type(L, (n)) == LUA_TYPE_NIL)
 #define lua_isboolean(L, n) (lua_type(L, (n)) == LUA_TYPE_BOOLEAN)
 #define lua_isthread(L, n) (lua_type(L, (n)) == LUA_TYPE_THREAD)

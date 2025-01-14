@@ -238,7 +238,7 @@ LUA_API int lua_isstring(lua_State *L, int idx) {
 
 LUA_API int lua_isuserdata(lua_State *L, int idx) {
   const TValue *o = index2adr(L, idx);
-  return (IS_TYPE_USERDATA(o) || IS_TYPE_LIGHTUSERDATA(o));
+  return (IS_TYPE_USERDATA(o) || IS_TYPE_PTR(o));
 }
 
 LUA_API int lua_rawequal(lua_State *L, int index1, int index2) {
@@ -297,7 +297,7 @@ LUA_API lua_Integer lua_tointeger(lua_State *L, int idx) {
 
 LUA_API int lua_toboolean(lua_State *L, int idx) {
   const TValue *o = index2adr(L, idx);
-  return !l_isfalse(o);
+  return !IS_FALSE(o);
 }
 
 LUA_API const char *lua_tolstring(lua_State *L, int idx, size_t *len) {
@@ -352,7 +352,7 @@ LUA_API void *lua_touserdata(lua_State *L, int idx) {
   switch (GET_TYPE(o)) {
   case LUA_TYPE_USERDATA:
     return (RAW_USERDATA_VALUE(o) + 1);
-  case LUA_TYPE_LIGHTUSERDATA:
+  case LUA_TYPE_PTR:
     return PTR_VALUE(o);
   default:
     return NULL;
@@ -374,7 +374,7 @@ LUA_API const void *lua_topointer(lua_State *L, int idx) {
   case LUA_TYPE_THREAD:
     return THREAD_VALUE(o);
   case LUA_TYPE_USERDATA:
-  case LUA_TYPE_LIGHTUSERDATA:
+  case LUA_TYPE_PTR:
     return lua_touserdata(L, idx);
   default:
     return NULL;

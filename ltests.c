@@ -253,7 +253,7 @@ static void checkstack(global_State *g, lua_State *L1) {
     lua_assert(uv->v != &uv->u.value); /* must be open */
     lua_assert(!isblack(uvo));         /* open upvalues cannot be black */
   }
-  checkliveness(g, gt(L1));
+  CHECK_LIVENESS(g, gt(L1));
   if (L1->baseCI) {
     for (ci = L1->baseCI; ci <= L1->ci; ci++) {
       lua_assert(ci->top <= L1->stackLast);
@@ -263,7 +263,7 @@ static void checkstack(global_State *g, lua_State *L1) {
     lua_assert(L1->ciSize == 0);
   if (L1->stack) {
     for (o = L1->stack; o < L1->top; o++)
-      checkliveness(g, o);
+      CHECK_LIVENESS(g, o);
   } else
     lua_assert(L1->stackSize == 0);
 }

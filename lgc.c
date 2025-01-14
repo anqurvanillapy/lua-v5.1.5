@@ -37,7 +37,7 @@
 
 #define markvalue(g, o)                                                        \
   {                                                                            \
-    checkconsistency(o);                                                       \
+    CHECK_CONSISTENCY(o);                                                      \
     if (iscollectable(o) && iswhite(GC_VALUE(o)))                              \
       reallymarkobject(g, GC_VALUE(o));                                        \
   }

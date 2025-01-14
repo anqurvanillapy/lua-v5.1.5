@@ -76,7 +76,7 @@ int luaO_rawequalObj(const TValue *t1, const TValue *t2) {
       return luai_numeq(NUMBER_VALUE(t1), NUMBER_VALUE(t2));
     case LUA_TYPE_BOOLEAN:
       return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* boolean true must be 1 !! */
-    case LUA_TYPE_LIGHTUSERDATA:
+    case LUA_TYPE_PTR:
       return PTR_VALUE(t1) == PTR_VALUE(t2);
     default:
       lua_assert(iscollectable(t1));
