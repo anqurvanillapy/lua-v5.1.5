@@ -537,11 +537,12 @@ static void parlist(LexState *ls) {
       }
       case TK_DOTS: { /* param -> `...' */
         luaX_next(ls);
-#if defined(LUA_COMPAT_VARARG)
-        /* use `arg' as default name */
+
+        // Compatible with the old-style variadic arguments: Use `arg` as the
+        // default name.
         new_localvarliteral(ls, "arg", nparams++);
         f->varargMode = VARARG_HAS_ARG | VARARG_NEEDS_ARG;
-#endif
+
         f->varargMode |= VARARG_IS_VARARG;
         break;
       }

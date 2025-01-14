@@ -193,9 +193,10 @@ static StkId adjust_varargs(lua_State *L, Proto *p, int actual) {
   for (; actual < nfixargs; ++actual) {
     setnilvalue(L->top++);
   }
-#if defined(LUA_COMPAT_VARARG)
-  if (p->varargMode & VARARG_NEEDS_ARG) { /* compat. with old-style vararg? */
-    int nvar = actual - nfixargs;         /* number of extra arguments */
+
+  // Compatible with old-style variadic arguments.
+  if (p->varargMode & VARARG_NEEDS_ARG) {
+    int nvar = actual - nfixargs; /* number of extra arguments */
     lua_assert(p->varargMode & VARARG_HAS_ARG);
     luaC_checkGC(L);
     luaD_checkstack(L, p->maxStackSize);
@@ -205,7 +206,7 @@ static StkId adjust_varargs(lua_State *L, Proto *p, int actual) {
     /* store counter in field `n' */
     setnvalue(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
   }
-#endif
+
   /* move fixed parameters to final position */
   fixed = L->top - actual; /* first fixed argument */
   base = L->top;           /* final position of first argument */
