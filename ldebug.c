@@ -208,7 +208,7 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
   lua_lock(L);
   if (*what == '>') {
     StkId func = L->top - 1;
-    luai_apicheck(L, IS_TYPE_FUNCTION(func));
+    lua_assert(IS_TYPE_FUNCTION(func));
     what++; /* skip the '>' */
     f = clvalue(func);
     L->top--;                 /* pop function */

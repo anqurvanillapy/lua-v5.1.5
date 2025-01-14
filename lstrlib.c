@@ -893,14 +893,12 @@ static int str_format(lua_State *L) {
 }
 
 static const luaL_Reg strlib[] = {
-    {"byte", str_byte},       {"char", str_char},
-    {"dump", str_dump},       {"find", str_find},
-    {"format", str_format},   {"gfind", gfind_nodef},
-    {"gmatch", gmatch},       {"gsub", str_gsub},
-    {"len", str_len},         {"lower", str_lower},
-    {"match", str_match},     {"rep", str_rep},
-    {"reverse", str_reverse}, {"sub", str_sub},
-    {"upper", str_upper},     {NULL, NULL}};
+    {"byte", str_byte},       {"char", str_char},     {"dump", str_dump},
+    {"find", str_find},       {"format", str_format}, {"gfind", gfind_nodef},
+    {"gmatch", gmatch},       {"gsub", str_gsub},     {"len", str_len},
+    {"lower", str_lower},     {"match", str_match},   {"rep", str_rep},
+    {"reverse", str_reverse}, {"sub", str_sub},       {"upper", str_upper},
+    {nullptr, nullptr}};
 
 static void createmetatable(lua_State *L) {
   lua_createtable(L, 0, 1); /* create metatable for strings */
@@ -918,10 +916,8 @@ static void createmetatable(lua_State *L) {
 */
 LUALIB_API int luaopen_string(lua_State *L) {
   luaL_register(L, LUA_STRLIBNAME, strlib);
-#if defined(LUA_COMPAT_GFIND)
   lua_getfield(L, -1, "gmatch");
   lua_setfield(L, -2, "gfind");
-#endif
   createmetatable(L);
   return 1;
 }

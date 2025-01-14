@@ -12,20 +12,8 @@
 */
 
 #if defined(LUA_USE_LINUX)
-#define LUA_USE_POSIX
-#define LUA_USE_DLOPEN   /* needs an extra library: -ldl */
-#define LUA_USE_READLINE /* needs some extra libraries */
-#endif
-
-/*
-@@ LUA_USE_POSIX includes all functionallity listed as X/Open System
-@* Interfaces Extension (XSI).
-** CHANGE it (define it) if your system is XSI compatible.
-*/
-#if defined(LUA_USE_POSIX)
-#define LUA_USE_MKSTEMP
-#define LUA_USE_ISATTY
 #define LUA_USE_POPEN
+#define LUA_USE_DLOPEN /* needs an extra library: -ldl */
 #endif
 
 /*
@@ -143,81 +131,15 @@
 #define LUAI_GCMUL 200 /* GC runs 'twice the speed' of memory allocation */
 
 /*
-@@ LUA_COMPAT_LOADLIB controls compatibility about global loadlib.
-** CHANGE it to undefined as soon as you do not need a global 'loadlib'
-** function (the function is still available as 'package.loadlib').
-*/
-#undef LUA_COMPAT_LOADLIB
-
-/*
-@@ LUA_COMPAT_MOD controls compatibility with old math.mod function.
-** CHANGE it to undefined as soon as your programs use 'math.fmod' or
-** the new '%' operator instead of 'math.mod'.
-*/
-#define LUA_COMPAT_MOD
-
-/*
-@@ LUA_COMPAT_LSTR controls compatibility with old long string nesting
-@* facility.
-** CHANGE it to 2 if you want the old behaviour, or undefine it to turn
-** off the advisory error when nesting [[...]].
-*/
-#define LUA_COMPAT_LSTR 1
-
-/*
-@@ LUA_COMPAT_GFIND controls compatibility with old 'string.gfind' name.
-** CHANGE it to undefined as soon as you rename 'string.gfind' to
-** 'string.gmatch'.
-*/
-#define LUA_COMPAT_GFIND
-
-/*
-@@ LUA_COMPAT_OPENLIB controls compatibility with old 'luaL_openlib'
-@* behavior.
-** CHANGE it to undefined as soon as you replace to 'luaL_register'
-** your uses of 'luaL_openlib'
-*/
-#define LUA_COMPAT_OPENLIB
-
-/*
-@@ luai_apicheck is the assert macro used by the Lua-C API.
-** CHANGE luai_apicheck if you want Lua to perform some checks in the
-** parameters it gets from API calls. This may slow down the interpreter
-** a bit, but may be quite useful when debugging C code that interfaces
-** with Lua. A useful redefinition is to use assert.h.
-*/
-#if defined(LUA_USE_APICHECK)
-#include <assert.h>
-#define luai_apicheck(L, o)                                                    \
-  {                                                                            \
-    (void)L;                                                                   \
-    assert(o);                                                                 \
-  }
-#else
-#define luai_apicheck(L, o)                                                    \
-  {                                                                            \
-    (void)L;                                                                   \
-  }
-#endif
-
-/*
-@@ LUAI_BITSINT defines the number of bits in an int.
+@@ LUAI_INT_BITS defines the number of bits in an int.
 ** CHANGE here if Lua cannot automatically detect the number of bits of
 ** your machine. Probably you do not need to change this.
 */
-/* avoid overflows in comparison */
-#if INT_MAX - 20 < 32760
-#define LUAI_BITSINT 16
-#elif INT_MAX > 2147483640L
-/* int has at least 32 bits */
-#define LUAI_BITSINT 32
-#else
-#error "you must define LUA_BITSINT with number of bits in an integer"
-#endif
+/* Of course `int` has at least 32 bits, time has changed man. */
+#define LUAI_INT_BITS 32
 
 /*
 @@ LUAI_UINT32 is an unsigned integer with at least 32 bits.
-@@ LUAI_INT32 is an signed integer with at least 32 bits.
 @@ LUAI_UMEM is an unsigned integer big enough to count the total
 @* memory used by Lua.
 @@ LUAI_MEM is a signed integer big enough to count the total memory
@@ -227,20 +149,9 @@
 ** part always works, but may waste space on machines with 64-bit
 ** longs.) Probably you do not need to change this.
 */
-#if LUAI_BITSINT >= 32
 #define LUAI_UINT32 unsigned int
-#define LUAI_INT32 int
-#define LUAI_MAXINT32 INT_MAX
 #define LUAI_UMEM size_t
 #define LUAI_MEM ptrdiff_t
-#else
-/* 16-bit ints */
-#define LUAI_UINT32 unsigned long
-#define LUAI_INT32 long
-#define LUAI_MAXINT32 LONG_MAX
-#define LUAI_UMEM unsigned long
-#define LUAI_MEM long
-#endif
 
 /*
 @@ LUAI_MAXCALLS limits the number of nested calls.
@@ -306,8 +217,6 @@
 ** change lua_number2int & lua_number2integer.
 ** ===================================================================
 */
-
-#define LUA_NUMBER_DOUBLE
 #define LUA_NUMBER double
 
 /*
