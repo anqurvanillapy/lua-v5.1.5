@@ -96,7 +96,7 @@ static void reallymarkobject(global_State *g, GCObject *o) {
     break;
   }
   case LUA_TPROTO: {
-    gco2p(o)->gclist = g->gray;
+    gco2p(o)->gcList = g->gray;
     g->gray = o;
     break;
   }
@@ -200,14 +200,14 @@ static void traverseproto(global_State *g, Proto *f) {
   }
   for (i = 0; i < f->kSize; i++) /* mark literals */
     markvalue(g, &f->k[i]);
-  for (i = 0; i < f->sizeUpvalues; i++) { /* mark upvalue names */
+  for (i = 0; i < f->upvaluesSize; i++) { /* mark upvalue names */
     if (f->upvalues[i]) {
       stringmark(f->upvalues[i]);
     }
   }
   for (i = 0; i < f->pSize; i++) { /* mark nested protos */
-    if (f->p[i])
-      markobject(g, f->p[i]);
+    if (f->inners[i])
+      markobject(g, f->inners[i]);
   }
   for (i = 0; i < f->locVarsSize; i++) { /* mark local-variable names */
     if (f->locVars[i].varname) {
@@ -304,12 +304,12 @@ static l_mem propagatemark(global_State *g) {
   }
   case LUA_TPROTO: {
     Proto *p = gco2p(o);
-    g->gray = p->gclist;
+    g->gray = p->gcList;
     traverseproto(g, p);
     return sizeof(Proto) + sizeof(Instruction) * p->codeSize +
            sizeof(Proto *) * p->pSize + sizeof(TValue) * p->kSize +
            sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
-           sizeof(TString *) * p->sizeUpvalues;
+           sizeof(TString *) * p->upvaluesSize;
   }
   default:
     lua_assert(0);

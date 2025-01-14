@@ -977,7 +977,7 @@ static const char *aux_upvalue(StkId fi, int n, TValue **val) {
     return "";
   } else {
     Proto *p = f->l.p;
-    if (!(1 <= n && n <= p->sizeUpvalues)) {
+    if (!(1 <= n && n <= p->upvaluesSize)) {
       return NULL;
     }
     *val = f->l.upvals[n - 1]->v;

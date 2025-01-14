@@ -82,7 +82,7 @@ static void DumpConstants(const Proto *f, DumpState *D) {
   n = f->pSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
-    DumpFunction(f->p[i], f->source, D);
+    DumpFunction(f->inners[i], f->source, D);
   }
 }
 
@@ -97,7 +97,7 @@ static void DumpDebug(const Proto *f, DumpState *D) {
     DumpInt(f->locVars[i].startPC, D);
     DumpInt(f->locVars[i].endPC, D);
   }
-  n = (D->strip) ? 0 : f->sizeUpvalues;
+  n = (D->strip) ? 0 : f->upvaluesSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
     DumpString(f->upvalues[i], D);
@@ -106,8 +106,8 @@ static void DumpDebug(const Proto *f, DumpState *D) {
 
 static void DumpFunction(const Proto *f, const TString *p, DumpState *D) {
   DumpString((f->source == p || D->strip) ? NULL : f->source, D);
-  DumpInt(f->linedefined, D);
-  DumpInt(f->lastlinedefined, D);
+  DumpInt(f->lineDefined, D);
+  DumpInt(f->lineDefinedLast, D);
   DumpChar(f->upvalueNum, D);
   DumpChar(f->paramNum, D);
   DumpChar(f->varargMode, D);

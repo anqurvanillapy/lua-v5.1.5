@@ -127,11 +127,11 @@ static const Proto *combine(lua_State *L, int n) {
     pc = 2 * n + 1;
     f->code = luaM_newvector(L, pc, Instruction);
     f->codeSize = pc;
-    f->p = luaM_newvector(L, n, Proto *);
+    f->inners = luaM_newvector(L, n, Proto *);
     f->pSize = n;
     pc = 0;
     for (i = 0; i < n; i++) {
-      f->p[i] = toproto(L, i - n - 1);
+      f->inners[i] = toproto(L, i - n - 1);
       f->code[pc++] = CREATE_ABx(OP_CLOSURE, 0, i);
       f->code[pc++] = CREATE_ABC(OP_CALL, 0, 1, 1);
     }

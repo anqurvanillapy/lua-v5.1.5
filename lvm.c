@@ -767,7 +767,7 @@ reentry: /* entry point */
       Proto *p;
       Closure *ncl;
       int nup, j;
-      p = cl->p->p[GETARG_Bx(i)];
+      p = cl->p->inners[GETARG_Bx(i)];
       nup = p->upvalueNum;
       ncl = luaF_newLclosure(L, nup, cl->env);
       ncl->l.p = p;

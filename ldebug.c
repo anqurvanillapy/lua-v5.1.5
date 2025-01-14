@@ -132,8 +132,8 @@ static void funcinfo(lua_Debug *ar, Closure *cl) {
     ar->what = "C";
   } else {
     ar->source = getstr(cl->l.p->source);
-    ar->linedefined = cl->l.p->linedefined;
-    ar->lastlinedefined = cl->l.p->lastlinedefined;
+    ar->linedefined = cl->l.p->lineDefined;
+    ar->lastlinedefined = cl->l.p->lineDefinedLast;
     ar->what = (ar->linedefined == 0) ? "main" : "Lua";
   }
   luaO_chunkid(ar->short_src, ar->source, LUA_IDSIZE);
@@ -254,7 +254,7 @@ static int precheck(const Proto *pt) {
   check(pt->paramNum + (pt->varargMode & VARARG_HAS_ARG) <= pt->maxStackSize);
   check(!(pt->varargMode & VARARG_NEEDS_ARG) ||
         (pt->varargMode & VARARG_HAS_ARG));
-  check(pt->sizeUpvalues <= pt->upvalueNum);
+  check(pt->upvaluesSize <= pt->upvalueNum);
   check(pt->lineInfoSize == pt->codeSize || pt->lineInfoSize == 0);
   check(pt->codeSize > 0 &&
         GET_OPCODE(pt->code[pt->codeSize - 1]) == OP_RETURN);
@@ -449,7 +449,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
     case OP_CLOSURE: {
       int nup, j;
       check(b < pt->pSize);
-      nup = pt->p[b]->upvalueNum;
+      nup = pt->inners[b]->upvalueNum;
       check(pc + nup < pt->codeSize);
       for (j = 1; j <= nup; j++) {
         OpCode op1 = GET_OPCODE(pt->code[pc + j]);

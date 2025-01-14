@@ -209,13 +209,13 @@ static void checkproto(global_State *g, Proto *f) {
     if (IS_TYPE_STRING(f->k + i))
       checkobjref(g, fgc, rawtsvalue(f->k + i));
   }
-  for (i = 0; i < f->sizeUpvalues; i++) {
+  for (i = 0; i < f->upvaluesSize; i++) {
     if (f->upvalues[i])
       checkobjref(g, fgc, f->upvalues[i]);
   }
   for (i = 0; i < f->pSize; i++) {
-    if (f->p[i])
-      checkobjref(g, fgc, f->p[i]);
+    if (f->inners[i])
+      checkobjref(g, fgc, f->inners[i]);
   }
   for (i = 0; i < f->locVarsSize; i++) {
     if (f->locVars[i].varname)

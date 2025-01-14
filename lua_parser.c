@@ -56,11 +56,11 @@ static void error_expected(LexState *ls, int token) {
 
 static void errorlimit(FuncState *fs, int limit, const char *what) {
   const char *msg =
-      (fs->f->linedefined == 0)
+      (fs->f->lineDefined == 0)
           ? luaO_pushfstring(fs->L, "main function has more than %d %s", limit,
                              what)
           : luaO_pushfstring(fs->L, "function at line %d has more than %d %s",
-                             fs->f->linedefined, limit, what);
+                             fs->f->lineDefined, limit, what);
   luaX_lexerror(fs->ls, msg, 0);
 }
 
@@ -166,7 +166,7 @@ static void removevars(LexState *ls, int tolevel) {
 static int indexupvalue(FuncState *fs, TString *name, expdesc *v) {
   int i;
   Proto *f = fs->f;
-  int oldsize = f->sizeUpvalues;
+  int oldsize = f->upvaluesSize;
   for (i = 0; i < f->upvalueNum; i++) {
     if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
       lua_assert(f->upvalues[i] == name);
@@ -175,9 +175,9 @@ static int indexupvalue(FuncState *fs, TString *name, expdesc *v) {
   }
   /* new one */
   luaY_checklimit(fs, f->upvalueNum + 1, LUAI_MAX_UPVALUES, "upvalues");
-  luaM_growvector(fs->L, f->upvalues, f->upvalueNum, f->sizeUpvalues, TString *,
+  luaM_growvector(fs->L, f->upvalues, f->upvalueNum, f->upvaluesSize, TString *,
                   MAX_INT, "");
-  while (oldsize < f->sizeUpvalues) {
+  while (oldsize < f->upvaluesSize) {
     f->upvalues[oldsize++] = nullptr;
   }
   f->upvalues[f->upvalueNum] = name;
@@ -301,12 +301,12 @@ static void pushclosure(LexState *ls, FuncState *func, expdesc *v) {
   Proto *f = fs->f;
   int oldsize = f->pSize;
   int i;
-  luaM_growvector(ls->L, f->p, fs->np, f->pSize, Proto *, MAXARG_Bx,
+  luaM_growvector(ls->L, f->inners, fs->np, f->pSize, Proto *, MAXARG_Bx,
                   "constant table overflow");
   while (oldsize < f->pSize) {
-    f->p[oldsize++] = NULL;
+    f->inners[oldsize++] = NULL;
   }
-  f->p[fs->np++] = func->f;
+  f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
   init_exp(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
   for (i = 0; i < func->f->upvalueNum; i++) {
@@ -354,12 +354,12 @@ static void close_func(LexState *ls) {
   f->lineInfoSize = fs->pc;
   luaM_reallocvector(L, f->k, f->kSize, fs->nk, TValue);
   f->kSize = fs->nk;
-  luaM_reallocvector(L, f->p, f->pSize, fs->np, Proto *);
+  luaM_reallocvector(L, f->inners, f->pSize, fs->np, Proto *);
   f->pSize = fs->np;
   luaM_reallocvector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
-  luaM_reallocvector(L, f->upvalues, f->sizeUpvalues, f->upvalueNum, TString *);
-  f->sizeUpvalues = f->upvalueNum;
+  luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvalueNum, TString *);
+  f->upvaluesSize = f->upvalueNum;
   lua_assert(luaG_checkcode(f));
   lua_assert(fs->bl == NULL);
   ls->fs = fs->prev;
@@ -560,7 +560,7 @@ static void body(LexState *ls, expdesc *e, int needself, int line) {
   /* body ->  `(' parlist `)' chunk END */
   FuncState new_fs;
   open_func(ls, &new_fs);
-  new_fs.f->linedefined = line;
+  new_fs.f->lineDefined = line;
   checknext(ls, '(');
   if (needself) {
     new_localvarliteral(ls, "self", 0);
@@ -569,7 +569,7 @@ static void body(LexState *ls, expdesc *e, int needself, int line) {
   parlist(ls);
   checknext(ls, ')');
   chunk(ls);
-  new_fs.f->lastlinedefined = ls->linenumber;
+  new_fs.f->lineDefinedLast = ls->linenumber;
   check_match(ls, TK_END, TK_FUNCTION, line);
   close_func(ls);
   pushclosure(ls, &new_fs, e);

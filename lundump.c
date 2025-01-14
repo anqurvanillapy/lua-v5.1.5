@@ -114,13 +114,13 @@ static void LoadConstants(LoadState *S, Proto *f) {
     }
   }
   n = LoadInt(S);
-  f->p = luaM_newvector(S->L, n, Proto *);
+  f->inners = luaM_newvector(S->L, n, Proto *);
   f->pSize = n;
   for (i = 0; i < n; i++) {
-    f->p[i] = NULL;
+    f->inners[i] = NULL;
   }
   for (i = 0; i < n; i++) {
-    f->p[i] = LoadFunction(S, f->source);
+    f->inners[i] = LoadFunction(S, f->source);
   }
 }
 
@@ -143,7 +143,7 @@ static void LoadDebug(LoadState *S, Proto *f) {
   }
   n = LoadInt(S);
   f->upvalues = luaM_newvector(S->L, n, TString *);
-  f->sizeUpvalues = n;
+  f->upvaluesSize = n;
   for (i = 0; i < n; i++) {
     f->upvalues[i] = NULL;
   }
@@ -164,8 +164,8 @@ static Proto *LoadFunction(LoadState *S, TString *p) {
   if (f->source == NULL) {
     f->source = p;
   }
-  f->linedefined = LoadInt(S);
-  f->lastlinedefined = LoadInt(S);
+  f->lineDefined = LoadInt(S);
+  f->lineDefinedLast = LoadInt(S);
   f->upvalueNum = LoadByte(S);
   f->paramNum = LoadByte(S);
   f->varargMode = LoadByte(S);

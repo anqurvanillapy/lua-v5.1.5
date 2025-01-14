@@ -132,7 +132,7 @@ static void PrintCode(const Proto *f) {
       break;
     case OP_GETUPVAL:
     case OP_SETUPVAL:
-      printf("\t; %s", (f->sizeUpvalues > 0) ? getstr(f->upvalues[b]) : "-");
+      printf("\t; %s", (f->upvaluesSize > 0) ? getstr(f->upvalues[b]) : "-");
       break;
     case OP_GETGLOBAL:
     case OP_SETGLOBAL:
@@ -175,7 +175,7 @@ static void PrintCode(const Proto *f) {
       printf("\t; to %d", sbx + pc + 2);
       break;
     case OP_CLOSURE:
-      printf("\t; %p", VOID(f->p[bx]));
+      printf("\t; %p", VOID(f->inners[bx]));
       break;
     case OP_SETLIST:
       if (c == 0) {
@@ -204,8 +204,8 @@ static void PrintHeader(const Proto *f) {
     s = "(string)";
   }
   printf("\n%s <%s:%d,%d> (%d instruction%s, %d bytes at %p)\n",
-         (f->linedefined == 0) ? "main" : "function", s, f->linedefined,
-         f->lastlinedefined, S(f->codeSize), f->codeSize * Sizeof(Instruction),
+         (f->lineDefined == 0) ? "main" : "function", s, f->lineDefined,
+         f->lineDefinedLast, S(f->codeSize), f->codeSize * Sizeof(Instruction),
          VOID(f));
   printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->paramNum,
          f->varargMode ? "+" : "", SS(f->paramNum), S(f->maxStackSize),
@@ -234,7 +234,7 @@ static void PrintLocals(const Proto *f) {
 }
 
 static void PrintUpvalues(const Proto *f) {
-  int i, n = f->sizeUpvalues;
+  int i, n = f->upvaluesSize;
   printf("upvalues (%d) for %p:\n", n, VOID(f));
   if (f->upvalues == NULL) {
     return;
@@ -254,6 +254,6 @@ void PrintFunction(const Proto *f, int full) {
     PrintUpvalues(f);
   }
   for (i = 0; i < n; i++) {
-    PrintFunction(f->p[i], full);
+    PrintFunction(f->inners[i], full);
   }
 }

@@ -240,25 +240,25 @@ typedef struct Proto {
   int codeSize;
 
   // Functions defined inside this function.
-  struct Proto **p;
+  struct Proto **inners;
   int pSize;
 
   // An int-to-int map from opcodes to source lines.
   int *lineInfo;
   int lineInfoSize;
+  int lineDefined;
+  int lineDefinedLast;
 
   struct LocVar *locVars;
   int locVarsSize;
 
   // Upvalue names.
   TString **upvalues;
-  int sizeUpvalues;
+  int upvaluesSize;
 
   TString *source;
 
-  int linedefined;
-  int lastlinedefined;
-  GCObject *gclist;
+  GCObject *gcList;
 
   lu_byte upvalueNum;
   lu_byte paramNum;
@@ -273,9 +273,9 @@ typedef struct Proto {
 
 typedef struct LocVar {
   TString *varname;
-  // first point where variable is active.
+  // First point where variable is active.
   int startPC;
-  // first point where variable is dead.
+  // First point where variable is dead.
   int endPC;
 } LocVar;
 

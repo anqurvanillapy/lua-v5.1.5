@@ -104,12 +104,12 @@ Proto *luaF_newproto(lua_State *L) {
   luaC_link(L, LuaObjectToGCObject(f), LUA_TPROTO);
   f->k = nullptr;
   f->kSize = 0;
-  f->p = nullptr;
+  f->inners = nullptr;
   f->pSize = 0;
   f->code = nullptr;
   f->codeSize = 0;
   f->lineInfoSize = 0;
-  f->sizeUpvalues = 0;
+  f->upvaluesSize = 0;
   f->upvalueNum = 0;
   f->upvalues = nullptr;
   f->paramNum = 0;
@@ -118,19 +118,19 @@ Proto *luaF_newproto(lua_State *L) {
   f->lineInfo = nullptr;
   f->locVarsSize = 0;
   f->locVars = nullptr;
-  f->linedefined = 0;
-  f->lastlinedefined = 0;
+  f->lineDefined = 0;
+  f->lineDefinedLast = 0;
   f->source = nullptr;
   return f;
 }
 
 void luaF_freeproto(lua_State *L, Proto *f) {
   luaM_freearray(L, f->code, f->codeSize, Instruction);
-  luaM_freearray(L, f->p, f->pSize, Proto *);
+  luaM_freearray(L, f->inners, f->pSize, Proto *);
   luaM_freearray(L, f->k, f->kSize, TValue);
   luaM_freearray(L, f->lineInfo, f->lineInfoSize, int);
   luaM_freearray(L, f->locVars, f->locVarsSize, struct LocVar);
-  luaM_freearray(L, f->upvalues, f->sizeUpvalues, TString *);
+  luaM_freearray(L, f->upvalues, f->upvaluesSize, TString *);
   luaM_free(L, f);
 }
 
