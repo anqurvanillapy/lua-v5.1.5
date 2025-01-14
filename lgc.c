@@ -73,7 +73,7 @@ static void reallymarkobject(global_State *g, GCObject *o) {
     return;
   }
   case LUA_TYPE_UPVALUE: {
-    UpVal *uv = gco2uv(o);
+    Upvalue *uv = gco2uv(o);
     markvalue(g, uv->v);
     if (uv->v == &uv->u.value) { /* closed? */
       gray2black(o);             /* open upvalues are never black */
@@ -154,8 +154,8 @@ static int traversetable(global_State *g, Table *h) {
     markobject(g, h->metatable);
   mode = gfasttm(g, h->metatable, TM_MODE);
   if (mode && IS_TYPE_STRING(mode)) { /* is there a weak mode? */
-    weakkey = (strchr(svalue(mode), 'k') != NULL);
-    weakvalue = (strchr(svalue(mode), 'v') != NULL);
+    weakkey = (strchr(GET_STR_VALUE(mode), 'k') != NULL);
+    weakvalue = (strchr(GET_STR_VALUE(mode), 'v') != NULL);
     if (weakkey || weakvalue) {            /* is really weak? */
       h->marked &= ~(KEYWEAK | VALUEWEAK); /* clear bits */
       h->marked |=
@@ -469,7 +469,7 @@ static void GCTM(lua_State *L) {
     lu_mem oldt = g->GCthreshold;
     L->allowHook = 0; /* stop debug hooks during GC tag method */
     g->GCthreshold = 2 * g->totalbytes; /* avoid GC steps */
-    setobj2s(L, L->top, tm);
+    SET_OBJECT_TO_STACK(L, L->top, tm);
     SET_USERDATA(L, L->top + 1, udata);
     L->top += 2;
     luaD_call(L, L->top - 2, 0);
@@ -522,7 +522,7 @@ static void markroot(lua_State *L) {
 }
 
 static void remarkupvals(global_State *g) {
-  UpVal *uv;
+  Upvalue *uv;
   for (uv = g->uvhead.u.l.next; uv != &g->uvhead; uv = uv->u.l.next) {
     lua_assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
     if (isgray(LuaObjectToGCObject(uv)))
@@ -697,7 +697,7 @@ void luaC_link(lua_State *L, GCObject *o, lu_byte tt) {
   o->gch.tt = tt;
 }
 
-void luaC_linkupval(lua_State *L, UpVal *uv) {
+void luaC_linkupval(lua_State *L, Upvalue *uv) {
   global_State *g = G(L);
   GCObject *o = LuaObjectToGCObject(uv);
   o->gch.next = g->rootgc; /* link upvalue into `rootgc' list */

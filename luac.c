@@ -120,7 +120,7 @@ static const Prototype *combine(lua_State *L, int n) {
   } else {
     int i, pc;
     Prototype *f = luaF_newproto(L);
-    setptvalue2s(L, L->top, f);
+    SET_PROTO_TO_STACK(L, L->top, f);
     incr_top(L);
     f->source = luaS_newliteral(L, "=(" PROGNAME ")");
     f->maxStackSize = 1;

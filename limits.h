@@ -30,7 +30,7 @@ typedef unsigned char lu_byte;
 #define IntPoint(p) ((unsigned int)(lu_mem)(p))
 
 /* type to ensure maximum alignment */
-typedef LUAI_USER_ALIGNMENT_T UserMaxAlignment;
+typedef double MaxAlign;
 
 /* result of a 'usual argument conversion' over lua_Number */
 typedef LUAI_UACNUMBER l_uacNumber;

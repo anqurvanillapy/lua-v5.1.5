@@ -102,8 +102,8 @@ lua_State *luaE_newthread(lua_State *L) {
   lua_State *L1 = tostate(luaM_malloc(L, state_size(lua_State)));
   luaC_link(L, LuaObjectToGCObject(L1), LUA_TYPE_THREAD);
   preinit_state(L1, G(L));
-  stack_init(L1, L);          /* init stack */
-  setobj2n(L, gt(L1), gt(L)); /* share table of globals */
+  stack_init(L1, L);                   /* init stack */
+  SET_OBJECT_TO_NEW(L, gt(L1), gt(L)); /* share table of globals */
   L1->hookMask = L->hookMask;
   L1->baseHookCount = L->baseHookCount;
   L1->hook = L->hook;

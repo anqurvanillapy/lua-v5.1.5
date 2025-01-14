@@ -47,25 +47,13 @@ static void setnameval(lua_State *L, const char *name, int val) {
 
 #define MARK 0x55 /* 01010101 (a nice pattern) */
 
-#ifndef EXTERNMEMCHECK
 /* full memory check */
-#define HEADER                                                                 \
-  (sizeof(UserMaxAlignment)) /* ensures maximum alignment for HEADER           \
-                              */
-#define MARKSIZE 16          /* size of marks after each block */
+#define HEADER (sizeof(MaxAlign)) /* ensures maximum alignment for HEADER */
+#define MARKSIZE 16               /* size of marks after each block */
 #define blockhead(b) (cast(char *, b) - HEADER)
 #define setsize(newblock, size) (*cast(size_t *, newblock) = size)
 #define checkblocksize(b, size) (size == (*cast(size_t *, blockhead(b))))
 #define fillmem(mem, size) memset(mem, -MARK, size)
-#else
-/* external memory check: don't do it twice */
-#define HEADER 0
-#define MARKSIZE 0
-#define blockhead(b) (b)
-#define setsize(newblock, size) /* empty */
-#define checkblocksize(b, size) (1)
-#define fillmem(mem, size) /* empty */
-#endif
 
 Memcontrol memcontrol = {0L, 0L, 0L, ULONG_MAX};
 
@@ -249,7 +237,7 @@ static void checkstack(global_State *g, lua_State *L1) {
   GCObject *uvo;
   lua_assert(!IS_DEAD(g, LuaObjectToGCObject(L1)));
   for (uvo = L1->openUpval; uvo != NULL; uvo = uvo->gch.next) {
-    UpVal *uv = gco2uv(uvo);
+    Upvalue *uv = gco2uv(uvo);
     lua_assert(uv->v != &uv->u.value); /* must be open */
     lua_assert(!isblack(uvo));         /* open upvalues cannot be black */
   }
@@ -280,7 +268,7 @@ static void checkobject(global_State *g, GCObject *o) {
       lua_assert(iswhite(o));
     switch (o->gch.tt) {
     case LUA_TYPE_UPVALUE: {
-      UpVal *uv = gco2uv(o);
+      Upvalue *uv = gco2uv(o);
       lua_assert(uv->v == &uv->u.value); /* must be closed */
       lua_assert(!isgray(o));            /* closed upvalues are never gray */
       checkvalref(g, o, uv->v);
@@ -329,7 +317,7 @@ int lua_checkpc(lua_State *L, pCallInfo ci) {
 int lua_checkmemory(lua_State *L) {
   global_State *g = G(L);
   GCObject *o;
-  UpVal *uv;
+  Upvalue *uv;
   checkstack(g, g->mainthread);
   for (o = g->rootgc; o != LuaObjectToGCObject(g->mainthread); o = o->gch.next)
     checkobject(g, o);
@@ -377,17 +365,6 @@ static char *buildop(Prototype *p, int pc, char *buff) {
   }
   return buff;
 }
-
-#if 0
-void luaI_printcode (Prototype *pt, int size) {
-  int pc;
-  for (pc=0; pc<size; pc++) {
-    char buff[100];
-    printf("%s\n", buildop(pt, pc, buff));
-  }
-  printf("-------\n");
-}
-#endif
 
 static int listcode(lua_State *L) {
   int pc;
@@ -563,7 +540,7 @@ static int string_query(lua_State *L) {
     GCObject *ts;
     int n = 0;
     for (ts = tb->hash[s]; ts; ts = ts->gch.next) {
-      setsvalue2s(L, L->top, gco2ts(ts));
+      SET_STRING_TO_STACK(L, L->top, gco2ts(ts));
       incr_top(L);
       n++;
     }

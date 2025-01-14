@@ -16,7 +16,7 @@
 #define VOID(p) ((const void *)(p))
 
 static void PrintString(const TString *ts) {
-  const char *s = getstr(ts);
+  const char *s = GET_STR(ts);
   size_t i, n = ts->tsv.len;
   putchar('"');
   for (i = 0; i < n; i++) {
@@ -132,11 +132,11 @@ static void PrintCode(const Prototype *f) {
       break;
     case OP_GETUPVAL:
     case OP_SETUPVAL:
-      printf("\t; %s", (f->upvaluesSize > 0) ? getstr(f->upvalues[b]) : "-");
+      printf("\t; %s", (f->upvaluesSize > 0) ? GET_STR(f->upvalues[b]) : "-");
       break;
     case OP_GETGLOBAL:
     case OP_SETGLOBAL:
-      printf("\t; %s", svalue(&f->k[bx]));
+      printf("\t; %s", GET_STR_VALUE(&f->k[bx]));
       break;
     case OP_GETTABLE:
     case OP_SELF:
@@ -195,7 +195,7 @@ static void PrintCode(const Prototype *f) {
 #define S(x) x, SS(x)
 
 static void PrintHeader(const Prototype *f) {
-  const char *s = getstr(f->source);
+  const char *s = GET_STR(f->source);
   if (*s == '@' || *s == '=') {
     s++;
   } else if (*s == LUA_SIGNATURE[0]) {
@@ -228,7 +228,7 @@ static void PrintLocals(const Prototype *f) {
   int i, n = f->locVarsSize;
   printf("locals (%d) for %p:\n", n, VOID(f));
   for (i = 0; i < n; i++) {
-    printf("\t%d\t%s\t%d\t%d\n", i, getstr(f->locVars[i].varname),
+    printf("\t%d\t%s\t%d\t%d\n", i, GET_STR(f->locVars[i].varname),
            f->locVars[i].startPC + 1, f->locVars[i].endPC + 1);
   }
 }
@@ -240,7 +240,7 @@ static void PrintUpvalues(const Prototype *f) {
     return;
   }
   for (i = 0; i < n; i++) {
-    printf("\t%d\t%s\n", i, getstr(f->upvalues[i]));
+    printf("\t%d\t%s\n", i, GET_STR(f->upvalues[i]));
   }
 }
 

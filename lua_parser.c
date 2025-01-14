@@ -45,7 +45,7 @@ static void expr(LexState *ls, expdesc *v);
 static void anchor_token(LexState *ls) {
   if (ls->t.token == TK_NAME || ls->t.token == TK_STRING) {
     TString *ts = ls->t.seminfo.ts;
-    luaX_newstring(ls, getstr(ts), ts->tsv.len);
+    luaX_newstring(ls, GET_STR(ts), ts->tsv.len);
   }
 }
 
@@ -336,9 +336,9 @@ static void open_func(LexState *ls, FuncState *fs) {
   f->maxStackSize = 2; /* registers 0/1 are always valid */
   fs->h = luaH_new(L, 0, 0);
   /* anchor table of constants and prototype (to avoid being collected) */
-  sethvalue2s(L, L->top, fs->h);
+  SET_TABLE_TO_STACK(L, L->top, fs->h);
   incr_top(L);
-  setptvalue2s(L, L->top, f);
+  SET_PROTO_TO_STACK(L, L->top, f);
   incr_top(L);
 }
 

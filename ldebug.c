@@ -118,7 +118,7 @@ LUA_API const char *lua_setlocal(lua_State *L, const lua_Debug *ar, int n) {
   const char *name = findlocal(L, ci, n);
   lua_lock(L);
   if (name)
-    setobjs2s(L, ci->base + (n - 1), L->top - 1);
+    SET_OBJECT_TO_SAME_STACK(L, ci->base + (n - 1), L->top - 1);
   L->top--; /* pop value */
   lua_unlock(L);
   return name;
@@ -131,7 +131,7 @@ static void funcinfo(lua_Debug *ar, Closure *cl) {
     ar->lastlinedefined = -1;
     ar->what = "C";
   } else {
-    ar->source = getstr(cl->l.p->source);
+    ar->source = GET_STR(cl->l.p->source);
     ar->linedefined = cl->l.p->lineDefined;
     ar->lastlinedefined = cl->l.p->lineDefinedLast;
     ar->what = (ar->linedefined == 0) ? "main" : "Lua";
@@ -489,7 +489,7 @@ int luaG_checkcode(const Prototype *pt) {
 
 static const char *kname(Prototype *p, int c) {
   if (ISK(c) && IS_TYPE_STRING(&p->k[INDEXK(c)])) {
-    return svalue(&p->k[INDEXK(c)]);
+    return GET_STR_VALUE(&p->k[INDEXK(c)]);
   } else {
     return "?";
   }
@@ -511,7 +511,7 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     case OP_GETGLOBAL: {
       int g = GETARG_Bx(i); /* global index */
       lua_assert(IS_TYPE_STRING(&p->k[g]));
-      *name = svalue(&p->k[g]);
+      *name = GET_STR_VALUE(&p->k[g]);
       return "global";
     }
     case OP_MOVE: {
@@ -529,7 +529,7 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     }
     case OP_GETUPVAL: {
       int u = GETARG_B(i); /* upvalue index */
-      *name = p->upvalues ? getstr(p->upvalues[u]) : "?";
+      *name = p->upvalues ? GET_STR(p->upvalues[u]) : "?";
       return "upvalue";
     }
     case OP_SELF: {
@@ -618,7 +618,7 @@ static void addinfo(lua_State *L, const char *msg) {
   if (isLua(ci)) {         /* is Lua code? */
     char buff[LUA_IDSIZE]; /* add file:line information */
     int line = currentline(L, ci);
-    luaO_chunkid(buff, getstr(getluaproto(ci)->source), LUA_IDSIZE);
+    luaO_chunkid(buff, GET_STR(getluaproto(ci)->source), LUA_IDSIZE);
     luaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
   }
 }
@@ -629,8 +629,8 @@ void luaG_errormsg(lua_State *L) {
     if (!IS_TYPE_FUNCTION(errfunc)) {
       luaD_throw(L, LUA_ERRERR);
     }
-    setobjs2s(L, L->top, L->top - 1);  /* move argument */
-    setobjs2s(L, L->top - 1, errfunc); /* push function */
+    SET_OBJECT_TO_SAME_STACK(L, L->top, L->top - 1);  /* move argument */
+    SET_OBJECT_TO_SAME_STACK(L, L->top - 1, errfunc); /* push function */
     incr_top(L);
     luaD_call(L, L->top - 2, 1); /* call it */
   }

@@ -38,16 +38,18 @@ struct lua_longjmp {
 void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldtop) {
   switch (errcode) {
   case LUA_ERRMEM: {
-    setsvalue2s(L, oldtop, luaS_newliteral(L, MEMERRMSG));
+    SET_STRING_TO_STACK(L, oldtop, luaS_newliteral(L, MEMERRMSG));
     break;
   }
   case LUA_ERRERR: {
-    setsvalue2s(L, oldtop, luaS_newliteral(L, "error in error handling"));
+    SET_STRING_TO_STACK(L, oldtop,
+                        luaS_newliteral(L, "error in error handling"));
     break;
   }
   case LUA_ERRSYNTAX:
   case LUA_ERRRUN: {
-    setobjs2s(L, oldtop, L->top - 1); /* error message on current top */
+    SET_OBJECT_TO_SAME_STACK(L, oldtop,
+                             L->top - 1); /* error message on current top */
     break;
   }
   default:
@@ -201,8 +203,10 @@ static StackIndex adjust_varargs(lua_State *L, Prototype *p, int actual) {
     luaC_checkGC(L);
     luaD_checkstack(L, p->maxStackSize);
     htab = luaH_new(L, nvar, 1); /* create `arg' table */
-    for (i = 0; i < nvar; i++)   /* put extra arguments into `arg' table */
-      setobj2n(L, luaH_setnum(L, htab, i + 1), L->top - nvar + i);
+    for (i = 0; i < nvar; i++) {
+      /* put extra arguments into 'arg' table */
+      SET_OBJECT_TO_NEW(L, luaH_setnum(L, htab, i + 1), L->top - nvar + i);
+    }
     /* store counter in field `n' */
     SET_NUMBER(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
   }
@@ -211,7 +215,7 @@ static StackIndex adjust_varargs(lua_State *L, Prototype *p, int actual) {
   fixed = L->top - actual; /* first fixed argument */
   base = L->top;           /* final position of first argument */
   for (i = 0; i < nfixargs; i++) {
-    setobjs2s(L, L->top++, fixed + i);
+    SET_OBJECT_TO_SAME_STACK(L, L->top++, fixed + i);
     SET_NIL(fixed + i);
   }
   /* add `arg' parameter */
@@ -231,10 +235,11 @@ static StackIndex tryfuncTM(lua_State *L, StackIndex func) {
   }
   /* Open a hole inside the stack at `func' */
   for (p = L->top; p > func; p--)
-    setobjs2s(L, p, p - 1);
+    SET_OBJECT_TO_SAME_STACK(L, p, p - 1);
   incr_top(L);
   func = restorestack(L, funcr); /* previous call may change stack */
-  setobj2s(L, func, tm); /* tag method is the new function to be called */
+  SET_OBJECT_TO_STACK(L, func,
+                      tm); /* tag method is the new function to be called */
   return func;
 }
 
@@ -336,7 +341,7 @@ int luaD_poscall(lua_State *L, StackIndex firstResult) {
   L->savedPC = (ci - 1)->savedpc; /* restore savedPC */
   /* move results to correct place */
   for (i = wanted; i != 0 && firstResult < L->top; i--)
-    setobjs2s(L, res++, firstResult++);
+    SET_OBJECT_TO_SAME_STACK(L, res++, firstResult++);
   while (i-- > 0) {
     SET_NIL(res++);
   }
@@ -393,7 +398,7 @@ static void resume(lua_State *L, void *ud) {
 
 static int resume_error(lua_State *L, const char *msg) {
   L->top = L->ci->base;
-  setsvalue2s(L, L->top, luaS_new(L, msg));
+  SET_STRING_TO_STACK(L, L->top, luaS_new(L, msg));
   incr_top(L);
   lua_unlock(L);
   return LUA_ERRRUN;

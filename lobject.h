@@ -167,28 +167,23 @@ typedef struct TaggedValue {
 
 // Different types of setters, according to the destination.
 
-/* from stack to (same) stack */
-#define setobjs2s SET_OBJECT
-/* to stack (not from same stack) */
-#define setobj2s SET_OBJECT
-#define setsvalue2s SET_STRING
-#define sethvalue2s SET_TABLE
-#define setptvalue2s SET_PROTO
-/* from table to same table */
-#define setobjt2t SET_OBJECT
-/* to table */
-#define setobj2t SET_OBJECT
-/* to new object */
-#define setobj2n SET_OBJECT
-#define setsvalue2n SET_STRING
+#define SET_OBJECT_TO_SAME_STACK SET_OBJECT
+#define SET_OBJECT_TO_STACK SET_OBJECT
+#define SET_STRING_TO_STACK SET_STRING
+#define SET_TABLE_TO_STACK SET_TABLE
+#define SET_PROTO_TO_STACK SET_PROTO
+#define SET_TABLE_TO_TABLE SET_OBJECT
+#define SET_OBJECT_TO_TABLE SET_OBJECT
+#define SET_OBJECT_TO_NEW SET_OBJECT
+#define SET_STRING_TO_NEW SET_STRING
 
-typedef TaggedValue *StackIndex; /* index to stack elements */
+typedef TaggedValue *StackIndex;
 
 /*
 ** String headers for string table
 */
 typedef union TString {
-  UserMaxAlignment dummy; /* ensures maximum alignment for strings */
+  __attribute__((unused)) MaxAlign padding;
   struct {
     GCHeaderFields;
     lu_byte reserved;
@@ -197,11 +192,11 @@ typedef union TString {
   } tsv;
 } TString;
 
-#define getstr(ts) cast(const char *, (ts) + 1)
-#define svalue(o) getstr(RAW_STRING_VALUE(o))
+#define GET_STR(ts) (const char *)((ts) + 1)
+#define GET_STR_VALUE(o) GET_STR(RAW_STRING_VALUE(o))
 
 typedef union Udata {
-  UserMaxAlignment dummy; /* ensures maximum alignment for `local' udata */
+  __attribute__((unused)) MaxAlign padding;
   struct {
     GCHeaderFields;
     struct Table *metatable;
@@ -261,7 +256,7 @@ typedef struct LocVar {
   int endPC;
 } LocVar;
 
-typedef struct UpVal {
+typedef struct Upvalue {
   GCHeaderFields;
   // Points to stack or to its own value.
   TaggedValue *v;
@@ -270,11 +265,11 @@ typedef struct UpVal {
     TaggedValue value;
     // Double linked list (when open).
     struct {
-      struct UpVal *prev;
-      struct UpVal *next;
+      struct Upvalue *prev;
+      struct Upvalue *next;
     } l;
   } u;
-} UpVal;
+} Upvalue;
 
 #define ClosureHeader                                                          \
   GCHeaderFields;                                                              \
@@ -292,7 +287,7 @@ typedef struct CClosure {
 typedef struct LClosure {
   ClosureHeader;
   struct Prototype *p;
-  UpVal *upvalues[1];
+  Upvalue *upvalues[1];
 } LClosure;
 
 typedef union Closure {
@@ -325,7 +320,7 @@ typedef struct Node {
 typedef struct Table {
   GCHeaderFields;
   lu_byte flags;     /* 1<<p means tagmethod(p) is not present */
-  lu_byte lsizenode; /* log2 of size of `node' array */
+  lu_byte lsizenode; /* log2 of size of 'node' array */
   struct Table *metatable;
   TaggedValue *array; /* array part */
   Node *node;

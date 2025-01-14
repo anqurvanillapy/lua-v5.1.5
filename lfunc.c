@@ -31,19 +31,19 @@ Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
   return c;
 }
 
-UpVal *luaF_newupval(lua_State *L) {
-  UpVal *uv = luaM_new(L, UpVal);
+Upvalue *luaF_newupval(lua_State *L) {
+  Upvalue *uv = luaM_new(L, Upvalue);
   luaC_link(L, LuaObjectToGCObject(uv), LUA_TYPE_UPVALUE);
   uv->v = &uv->u.value;
   SET_NIL(uv->v);
   return uv;
 }
 
-UpVal *luaF_findupval(lua_State *L, StackIndex level) {
+Upvalue *luaF_findupval(lua_State *L, StackIndex level) {
   global_State *g = G(L);
   GCObject **pp = &L->openUpval;
-  UpVal *p;
-  UpVal *uv;
+  Upvalue *p;
+  Upvalue *uv;
   while (*pp != nullptr && (p = ngcotouv(*pp))->v >= level) {
     lua_assert(p->v != &p->u.value);
     if (p->v == level) { /* found a corresponding upvalue? */
@@ -54,7 +54,7 @@ UpVal *luaF_findupval(lua_State *L, StackIndex level) {
     }
     pp = &p->next;
   }
-  uv = luaM_new(L, UpVal); /* not found: create a new one */
+  uv = luaM_new(L, Upvalue); /* not found: create a new one */
   uv->tt = LUA_TYPE_UPVALUE;
   uv->marked = luaC_white(g);
   uv->v = level;  /* current value lives in the stack */
@@ -68,13 +68,13 @@ UpVal *luaF_findupval(lua_State *L, StackIndex level) {
   return uv;
 }
 
-static void unlinkupval(UpVal *uv) {
+static void unlinkupval(Upvalue *uv) {
   lua_assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
   uv->u.l.next->u.l.prev = uv->u.l.prev; /* remove from `uvhead' list */
   uv->u.l.prev->u.l.next = uv->u.l.next;
 }
 
-void luaF_freeupval(lua_State *L, UpVal *uv) {
+void luaF_freeupval(lua_State *L, Upvalue *uv) {
   if (uv->v != &uv->u.value) { /* is it open? */
     unlinkupval(uv);           /* remove from open list */
   }
@@ -82,7 +82,7 @@ void luaF_freeupval(lua_State *L, UpVal *uv) {
 }
 
 void luaF_close(lua_State *L, StackIndex level) {
-  UpVal *uv;
+  Upvalue *uv;
   global_State *g = G(L);
   while (L->openUpval != nullptr && (uv = ngcotouv(L->openUpval))->v >= level) {
     GCObject *o = LuaObjectToGCObject(uv);
@@ -150,7 +150,7 @@ const char *luaF_getlocalname(const Prototype *f, int local_number, int pc) {
     if (pc < f->locVars[i].endPC) { /* is variable active? */
       local_number--;
       if (local_number == 0) {
-        return getstr(f->locVars[i].varname);
+        return GET_STR(f->locVars[i].varname);
       }
     }
   }

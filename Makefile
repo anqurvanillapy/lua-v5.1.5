@@ -6,7 +6,8 @@
 
 # FIXME(anqur): I have to use this to suppress IDE warnings, forgive me.
 CC= /opt/homebrew/opt/llvm/bin/clang
-CFLAGS= -std=c23 -g -O2 \
+CFLAGS= -std=c23 \
+	-g -O2 \
 	-Werror -Wall -Wextra -Wpedantic \
 	-DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
 AR= ar rcu

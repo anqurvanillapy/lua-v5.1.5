@@ -71,7 +71,7 @@ static Table *getcurrenv(lua_State *L) {
 }
 
 void luaA_pushobject(lua_State *L, const TaggedValue *o) {
-  setobj2s(L, L->top, o);
+  SET_OBJECT_TO_STACK(L, L->top, o);
   api_incr_top(L);
 }
 
@@ -101,7 +101,7 @@ LUA_API void lua_xmove(lua_State *from, lua_State *to, int n) {
   api_check(from, to->ci->top - to->top >= n);
   from->top -= n;
   for (i = 0; i < n; i++) {
-    setobj2s(to, to->top++, from->top + i);
+    SET_OBJECT_TO_STACK(to, to->top++, from->top + i);
   }
   lua_unlock(to);
 }
@@ -158,7 +158,7 @@ LUA_API void lua_remove(lua_State *L, int idx) {
   p = index2adr(L, idx);
   api_checkvalidindex(L, p);
   while (++p < L->top)
-    setobjs2s(L, p - 1, p);
+    SET_OBJECT_TO_SAME_STACK(L, p - 1, p);
   L->top--;
   lua_unlock(L);
 }
@@ -170,8 +170,8 @@ LUA_API void lua_insert(lua_State *L, int idx) {
   p = index2adr(L, idx);
   api_checkvalidindex(L, p);
   for (q = L->top; q > p; q--)
-    setobjs2s(L, q, q - 1);
-  setobjs2s(L, p, L->top);
+    SET_OBJECT_TO_SAME_STACK(L, q, q - 1);
+  SET_OBJECT_TO_SAME_STACK(L, p, L->top);
   lua_unlock(L);
 }
 
@@ -201,7 +201,7 @@ LUA_API void lua_replace(lua_State *L, int idx) {
 
 LUA_API void lua_pushvalue(lua_State *L, int idx) {
   lua_lock(L);
-  setobj2s(L, L->top, index2adr(L, idx));
+  SET_OBJECT_TO_STACK(L, L->top, index2adr(L, idx));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -318,7 +318,7 @@ LUA_API const char *lua_tolstring(lua_State *L, int idx, size_t *len) {
   if (len != NULL) {
     *len = STRING_VALUE(o)->len;
   }
-  return svalue(o);
+  return GET_STR_VALUE(o);
 }
 
 LUA_API size_t lua_objlen(lua_State *L, int idx) {
@@ -409,7 +409,7 @@ LUA_API void lua_pushinteger(lua_State *L, lua_Integer n) {
 LUA_API void lua_pushlstring(lua_State *L, const char *s, size_t len) {
   lua_lock(L);
   luaC_checkGC(L);
-  setsvalue2s(L, L->top, luaS_newlstr(L, s, len));
+  SET_STRING_TO_STACK(L, L->top, luaS_newlstr(L, s, len));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -452,8 +452,9 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
   cl = luaF_newCclosure(L, n, getcurrenv(L));
   cl->c.f = fn;
   L->top -= n;
-  while (n--)
-    setobj2n(L, &cl->c.upvalue[n], L->top + n);
+  while (n--) {
+    SET_OBJECT_TO_NEW(L, &cl->c.upvalue[n], L->top + n);
+  }
   SET_CLOSURE(L, L->top, cl);
   lua_assert(iswhite(LuaObjectToGCObject(cl)));
   api_incr_top(L);
@@ -512,7 +513,7 @@ LUA_API void lua_rawget(lua_State *L, int idx) {
   lua_lock(L);
   t = index2adr(L, idx);
   api_check(L, IS_TYPE_TABLE(t));
-  setobj2s(L, L->top - 1, luaH_get(TABLE_VALUE(t), L->top - 1));
+  SET_OBJECT_TO_STACK(L, L->top - 1, luaH_get(TABLE_VALUE(t), L->top - 1));
   lua_unlock(L);
 }
 
@@ -521,7 +522,7 @@ LUA_API void lua_rawgeti(lua_State *L, int idx, int n) {
   lua_lock(L);
   o = index2adr(L, idx);
   api_check(L, IS_TYPE_TABLE(o));
-  setobj2s(L, L->top, luaH_getnum(TABLE_VALUE(o), n));
+  SET_OBJECT_TO_STACK(L, L->top, luaH_getnum(TABLE_VALUE(o), n));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -575,7 +576,7 @@ LUA_API void lua_getfenv(lua_State *L, int idx) {
     SET_TABLE(L, L->top, USERDATA_VALUE(o)->env);
     break;
   case LUA_TYPE_THREAD:
-    setobj2s(L, L->top, gt(THREAD_VALUE(o)));
+    SET_OBJECT_TO_STACK(L, L->top, gt(THREAD_VALUE(o)));
     break;
   default:
     SET_NIL(L->top);
@@ -619,7 +620,7 @@ LUA_API void lua_rawset(lua_State *L, int idx) {
   api_checknelems(L, 2);
   t = index2adr(L, idx);
   api_check(L, IS_TYPE_TABLE(t));
-  setobj2t(L, luaH_set(L, TABLE_VALUE(t), L->top - 2), L->top - 1);
+  SET_OBJECT_TO_TABLE(L, luaH_set(L, TABLE_VALUE(t), L->top - 2), L->top - 1);
   luaC_barriert(L, TABLE_VALUE(t), L->top - 1);
   L->top -= 2;
   lua_unlock(L);
@@ -631,7 +632,7 @@ LUA_API void lua_rawseti(lua_State *L, int idx, int n) {
   api_checknelems(L, 1);
   o = index2adr(L, idx);
   api_check(L, IS_TYPE_TABLE(o));
-  setobj2t(L, luaH_setnum(L, TABLE_VALUE(o), n), L->top - 1);
+  SET_OBJECT_TO_TABLE(L, luaH_setnum(L, TABLE_VALUE(o), n), L->top - 1);
   luaC_barriert(L, TABLE_VALUE(o), L->top - 1);
   L->top--;
   lua_unlock(L);
@@ -923,7 +924,7 @@ LUA_API void lua_concat(lua_State *L, int n) {
     luaV_concat(L, n, cast_int(L->top - L->base) - 1);
     L->top -= (n - 1);
   } else if (n == 0) { /* push empty string */
-    setsvalue2s(L, L->top, luaS_newlstr(L, "", 0));
+    SET_STRING_TO_STACK(L, L->top, luaS_newlstr(L, "", 0));
     api_incr_top(L);
   }
   /* else n == 1; nothing to do */
@@ -977,7 +978,7 @@ static const char *aux_upvalue(StackIndex fi, int n, TaggedValue **val) {
       return NULL;
     }
     *val = f->l.upvalues[n - 1]->v;
-    return getstr(p->upvalues[n - 1]);
+    return GET_STR(p->upvalues[n - 1]);
   }
 }
 
@@ -987,7 +988,7 @@ LUA_API const char *lua_getupvalue(lua_State *L, int funcindex, int n) {
   lua_lock(L);
   name = aux_upvalue(index2adr(L, funcindex), n, &val);
   if (name) {
-    setobj2s(L, L->top, val);
+    SET_OBJECT_TO_STACK(L, L->top, val);
     api_incr_top(L);
   }
   lua_unlock(L);

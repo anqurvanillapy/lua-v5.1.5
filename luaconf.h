@@ -268,20 +268,6 @@
 /* }================================================================== */
 
 /*
-@@ LUAI_USER_ALIGNMENT_T is a type that requires maximum alignment.
-** CHANGE it if your system requires alignments larger than double. (For
-** instance, if your system supports long doubles and they must be
-** aligned in 16-byte boundaries, then you should add long double in the
-** union.) Probably you do not need to change this.
-*/
-#define LUAI_USER_ALIGNMENT_T                                                  \
-  union {                                                                      \
-    double u;                                                                  \
-    void *s;                                                                   \
-    long l;                                                                    \
-  }
-
-/*
 @@ LUAI_THROW/LUAI_TRY define how Lua does exception handling.
 ** CHANGE them if you prefer to use longjmp/setjmp even with C++
 ** or if want/don't to use _longjmp/_setjmp instead of regular

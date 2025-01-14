@@ -101,6 +101,6 @@ LUAI_FUNC void luaC_freeall(lua_State *L);
 LUAI_FUNC void luaC_step(lua_State *L);
 LUAI_FUNC void luaC_fullgc(lua_State *L);
 LUAI_FUNC void luaC_link(lua_State *L, GCObject *o, lu_byte tt);
-LUAI_FUNC void luaC_linkupval(lua_State *L, UpVal *uv);
+LUAI_FUNC void luaC_linkupval(lua_State *L, Upvalue *uv);
 LUAI_FUNC void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v);
 LUAI_FUNC void luaC_barrierback(lua_State *L, Table *t);

@@ -106,7 +106,7 @@ static void LoadConstants(LoadState *S, Prototype *f) {
       SET_NUMBER(o, LoadNumber(S));
       break;
     case LUA_TYPE_STRING:
-      setsvalue2n(S->L, o, LoadString(S));
+      SET_STRING_TO_NEW(S->L, o, LoadString(S));
       break;
     default:
       error(S, "bad constant");
@@ -158,7 +158,7 @@ static Prototype *LoadFunction(LoadState *S, TString *p) {
     error(S, "code too deep");
   }
   f = luaF_newproto(S->L);
-  setptvalue2s(S->L, S->L->top, f);
+  SET_PROTO_TO_STACK(S->L, S->L->top, f);
   incr_top(S->L);
   f->source = LoadString(S);
   if (f->source == NULL) {

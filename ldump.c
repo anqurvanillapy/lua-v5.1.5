@@ -42,13 +42,13 @@ static void DumpVector(const void *b, int n, size_t size, DumpState *D) {
 }
 
 static void DumpString(const TString *s, DumpState *D) {
-  if (s == NULL || getstr(s) == NULL) {
+  if (s == NULL || GET_STR(s) == NULL) {
     size_t size = 0;
     DumpVar(size, D);
   } else {
     size_t size = s->tsv.len + 1; /* include trailing '\0' */
     DumpVar(size, D);
-    DumpBlock(getstr(s), size, D);
+    DumpBlock(GET_STR(s), size, D);
   }
 }
 

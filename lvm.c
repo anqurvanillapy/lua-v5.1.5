@@ -25,7 +25,7 @@ const TaggedValue *luaV_tonumber(const TaggedValue *obj, TaggedValue *n) {
   if (IS_TYPE_NUMBER(obj)) {
     return obj;
   }
-  if (IS_TYPE_STRING(obj) && luaO_str2d(svalue(obj), &num)) {
+  if (IS_TYPE_STRING(obj) && luaO_str2d(GET_STR_VALUE(obj), &num)) {
     SET_NUMBER(n, num);
     return n;
   } else {
@@ -39,8 +39,8 @@ int luaV_tostring(lua_State *L, StackIndex obj) {
   } else {
     char s[LUAI_MAXNUMBER2STR];
     lua_Number n = NUMBER_VALUE(obj);
-    lua_number2str(s, n);
-    setsvalue2s(L, obj, luaS_new(L, s));
+    sprintf(s, LUA_NUMBER_FMT, n);
+    SET_STRING_TO_STACK(L, obj, luaS_new(L, s));
     return 1;
   }
 }
@@ -68,23 +68,23 @@ static void traceexec(lua_State *L, const Instruction *pc) {
 static void callTMres(lua_State *L, StackIndex res, const TaggedValue *f,
                       const TaggedValue *p1, const TaggedValue *p2) {
   ptrdiff_t result = savestack(L, res);
-  setobj2s(L, L->top, f);      /* push function */
-  setobj2s(L, L->top + 1, p1); /* 1st argument */
-  setobj2s(L, L->top + 2, p2); /* 2nd argument */
+  SET_OBJECT_TO_STACK(L, L->top, f);      /* push function */
+  SET_OBJECT_TO_STACK(L, L->top + 1, p1); /* 1st argument */
+  SET_OBJECT_TO_STACK(L, L->top + 2, p2); /* 2nd argument */
   luaD_checkstack(L, 3);
   L->top += 3;
   luaD_call(L, L->top - 3, 1);
   res = restorestack(L, result);
   L->top--;
-  setobjs2s(L, res, L->top);
+  SET_OBJECT_TO_SAME_STACK(L, res, L->top);
 }
 
 static void callTM(lua_State *L, const TaggedValue *f, const TaggedValue *p1,
                    const TaggedValue *p2, const TaggedValue *p3) {
-  setobj2s(L, L->top, f);      /* push function */
-  setobj2s(L, L->top + 1, p1); /* 1st argument */
-  setobj2s(L, L->top + 2, p2); /* 2nd argument */
-  setobj2s(L, L->top + 3, p3); /* 3th argument */
+  SET_OBJECT_TO_STACK(L, L->top, f);      /* push function */
+  SET_OBJECT_TO_STACK(L, L->top + 1, p1); /* 1st argument */
+  SET_OBJECT_TO_STACK(L, L->top + 2, p2); /* 2nd argument */
+  SET_OBJECT_TO_STACK(L, L->top + 3, p3); /* 3th argument */
   luaD_checkstack(L, 4);
   L->top += 4;
   luaD_call(L, L->top - 4, 0);
@@ -100,7 +100,7 @@ void luaV_gettable(lua_State *L, const TaggedValue *t, TaggedValue *key,
       const TaggedValue *res = luaH_get(h, key); /* do a primitive get */
       if (!IS_TYPE_NIL(res) ||                   /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
-        setobj2s(L, val, res);
+        SET_OBJECT_TO_STACK(L, val, res);
         return;
       }
       /* else will try the tag method */
@@ -127,7 +127,7 @@ void luaV_settable(lua_State *L, const TaggedValue *t, TaggedValue *key,
       TaggedValue *oldval = luaH_set(L, h, key); /* do a primitive set */
       if (!IS_TYPE_NIL(oldval) ||                /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
-        setobj2t(L, oldval, val);
+        SET_OBJECT_TO_TABLE(L, oldval, val);
         h->flags = 0;
         luaC_barriert(L, h, val);
         return;
@@ -196,9 +196,9 @@ static int call_orderTM(lua_State *L, const TaggedValue *p1,
 }
 
 static int l_strcmp(const TString *ls, const TString *rs) {
-  const char *l = getstr(ls);
+  const char *l = GET_STR(ls);
   size_t ll = ls->tsv.len;
-  const char *r = getstr(rs);
+  const char *r = GET_STR(rs);
   size_t lr = rs->tsv.len;
   for (;;) {
     int temp = strcoll(l, r);
@@ -317,10 +317,10 @@ void luaV_concat(lua_State *L, int total, int last) {
       tl = 0;
       for (i = n; i > 0; i--) { /* concat all strings */
         size_t l = STRING_VALUE(top - i)->len;
-        memcpy(buffer + tl, svalue(top - i), l);
+        memcpy(buffer + tl, GET_STR_VALUE(top - i), l);
         tl += l;
       }
-      setsvalue2s(L, top - n, luaS_newlstr(L, buffer, tl));
+      SET_STRING_TO_STACK(L, top - n, luaS_newlstr(L, buffer, tl));
     }
     total -= n - 1; /* got `n' strings to create 1 new */
     last -= n - 1;
@@ -444,11 +444,11 @@ reentry: /* entry point */
     lua_assert(L->top == L->ci->top || luaG_checkopenop(i));
     switch (GET_OPCODE(i)) {
     case OP_MOVE: {
-      setobjs2s(L, ra, RB(i));
+      SET_OBJECT_TO_SAME_STACK(L, ra, RB(i));
       continue;
     }
     case OP_LOADK: {
-      setobj2s(L, ra, KBx(i));
+      SET_OBJECT_TO_STACK(L, ra, KBx(i));
       continue;
     }
     case OP_LOADBOOL: {
@@ -467,7 +467,7 @@ reentry: /* entry point */
     }
     case OP_GETUPVAL: {
       int b = GETARG_B(i);
-      setobj2s(L, ra, cl->upvalues[b]->v);
+      SET_OBJECT_TO_STACK(L, ra, cl->upvalues[b]->v);
       continue;
     }
     case OP_GETGLOBAL: {
@@ -490,7 +490,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_SETUPVAL: {
-      UpVal *uv = cl->upvalues[GETARG_B(i)];
+      Upvalue *uv = cl->upvalues[GETARG_B(i)];
       SET_OBJECT(L, uv->v, ra);
       luaC_barrier(L, uv, ra);
       continue;
@@ -508,7 +508,7 @@ reentry: /* entry point */
     }
     case OP_SELF: {
       StackIndex rb = RB(i);
-      setobjs2s(L, ra + 1, rb);
+      SET_OBJECT_TO_SAME_STACK(L, ra + 1, rb);
       Protect(luaV_gettable(L, rb, RKC(i), ra));
       continue;
     }
@@ -573,7 +573,7 @@ reentry: /* entry point */
       int b = GETARG_B(i);
       int c = GETARG_C(i);
       Protect(luaV_concat(L, c - b + 1, c); luaC_checkGC(L));
-      setobjs2s(L, RA(i), base + b);
+      SET_OBJECT_TO_SAME_STACK(L, RA(i), base + b);
       continue;
     }
     case OP_JMP: {
@@ -606,7 +606,7 @@ reentry: /* entry point */
     case OP_TESTSET: {
       TaggedValue *rb = RB(i);
       if (IS_FALSE(rb) != GETARG_C(i)) {
-        setobjs2s(L, ra, rb);
+        SET_OBJECT_TO_SAME_STACK(L, ra, rb);
         dojump(L, pc, GETARG_sBx(*pc));
       }
       pc++;
@@ -656,7 +656,7 @@ reentry: /* entry point */
         }
         L->base = ci->base = ci->func + ((ci + 1)->base - pfunc);
         for (aux = 0; pfunc + aux < L->top; aux++) /* move frame down */
-          setobjs2s(L, func + aux, pfunc + aux);
+          SET_OBJECT_TO_SAME_STACK(L, func + aux, pfunc + aux);
         ci->top = L->top = func + aux; /* correct top */
         lua_assert(L->top == L->base + CLOSURE_VALUE(func)->l.p->maxStackSize);
         ci->savedpc = L->savedPC;
@@ -725,16 +725,16 @@ reentry: /* entry point */
     }
     case OP_TFORLOOP: {
       StackIndex cb = ra + 3; /* call base */
-      setobjs2s(L, cb + 2, ra + 2);
-      setobjs2s(L, cb + 1, ra + 1);
-      setobjs2s(L, cb, ra);
+      SET_OBJECT_TO_SAME_STACK(L, cb + 2, ra + 2);
+      SET_OBJECT_TO_SAME_STACK(L, cb + 1, ra + 1);
+      SET_OBJECT_TO_SAME_STACK(L, cb, ra);
       L->top = cb + 3; /* func. + 2 args (state and index) */
       Protect(luaD_call(L, cb, GETARG_C(i)));
       L->top = L->ci->top;
-      cb = RA(i) + 3;                   /* previous call may change the stack */
-      if (!IS_TYPE_NIL(cb)) {           /* continue loop? */
-        setobjs2s(L, cb - 1, cb);       /* save control variable */
-        dojump(L, pc, GETARG_sBx(*pc)); /* jump back */
+      cb = RA(i) + 3;         /* previous call may change the stack */
+      if (!IS_TYPE_NIL(cb)) { /* continue loop? */
+        SET_OBJECT_TO_SAME_STACK(L, cb - 1, cb); /* save control variable */
+        dojump(L, pc, GETARG_sBx(*pc));          /* jump back */
       }
       pc++;
       continue;
@@ -759,7 +759,7 @@ reentry: /* entry point */
       }
       for (; n > 0; n--) {
         TaggedValue *val = ra + n;
-        setobj2t(L, luaH_setnum(L, h, last--), val);
+        SET_OBJECT_TO_TABLE(L, luaH_setnum(L, h, last--), val);
         luaC_barriert(L, h, val);
       }
       continue;
@@ -801,7 +801,7 @@ reentry: /* entry point */
       }
       for (j = 0; j < b; j++) {
         if (j < n) {
-          setobjs2s(L, ra + j, ci->base - n + j);
+          SET_OBJECT_TO_SAME_STACK(L, ra + j, ci->base - n + j);
         } else {
           SET_NIL(ra + j);
         }

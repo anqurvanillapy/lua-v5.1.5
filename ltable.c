@@ -148,14 +148,14 @@ int luaH_next(lua_State *L, Table *t, StackIndex key) {
   for (i++; i < t->sizearray; i++) {  /* try first array part */
     if (!IS_TYPE_NIL(&t->array[i])) { /* a non-nil value? */
       SET_NUMBER(key, cast_num(i + 1));
-      setobj2s(L, key + 1, &t->array[i]);
+      SET_OBJECT_TO_STACK(L, key + 1, &t->array[i]);
       return 1;
     }
   }
   for (i -= t->sizearray; i < sizenode(t); i++) { /* then hash part */
     if (!IS_TYPE_NIL(gval(gnode(t, i)))) {        /* a non-nil value? */
-      setobj2s(L, key, key2tval(gnode(t, i)));
-      setobj2s(L, key + 1, gval(gnode(t, i)));
+      SET_OBJECT_TO_STACK(L, key, key2tval(gnode(t, i)));
+      SET_OBJECT_TO_STACK(L, key + 1, gval(gnode(t, i)));
       return 1;
     }
   }
@@ -290,7 +290,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
     /* re-insert elements from vanishing slice */
     for (i = nasize; i < oldasize; i++) {
       if (!IS_TYPE_NIL(&t->array[i]))
-        setobjt2t(L, luaH_setnum(L, t, i + 1), &t->array[i]);
+        SET_TABLE_TO_TABLE(L, luaH_setnum(L, t, i + 1), &t->array[i]);
     }
     /* shrink array */
     luaM_reallocvector(L, t->array, oldasize, nasize, TaggedValue);
@@ -299,7 +299,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
   for (i = twoto(oldhsize) - 1; i >= 0; i--) {
     Node *old = nold + i;
     if (!IS_TYPE_NIL(gval(old)))
-      setobjt2t(L, luaH_set(L, t, key2tval(old)), gval(old));
+      SET_TABLE_TO_TABLE(L, luaH_set(L, t, key2tval(old)), gval(old));
   }
   if (nold != dummynode) {
     luaM_freearray(L, nold, twoto(oldhsize), Node); /* free old array */
