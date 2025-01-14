@@ -60,7 +60,7 @@
 #define changewhite(x) ((x)->gch.marked ^= WHITEBITS)
 #define gray2black(x) l_setbit((x)->gch.marked, BLACKBIT)
 
-#define valiswhite(x) (iscollectable(x) && iswhite(gcvalue(x)))
+#define valiswhite(x) (iscollectable(x) && iswhite(GC_VALUE(x)))
 
 #define luaC_white(g) cast(lu_byte, (g)->currentwhite &WHITEBITS)
 
@@ -74,7 +74,7 @@
 #define luaC_barrier(L, p, v)                                                  \
   {                                                                            \
     if (valiswhite(v) && isblack(LuaObjectToGCObject(p)))                      \
-      luaC_barrierf(L, LuaObjectToGCObject(p), gcvalue(v));                    \
+      luaC_barrierf(L, LuaObjectToGCObject(p), GC_VALUE(v));                   \
   }
 
 #define luaC_barriert(L, t, v)                                                 \

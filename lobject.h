@@ -15,34 +15,21 @@
 /*
 ** Extra tags for non-values
 */
-#define LUA_TPROTO (LAST_TAG + 1)
-#define LUA_TUPVAL (LAST_TAG + 2)
-#define LUA_TDEADKEY (LAST_TAG + 3)
+#define LUA_TYPE_PROTO (LAST_TAG + 1)
+#define LUA_TYPE_UPVALUE (LAST_TAG + 2)
+#define LUA_TYPE_DEAD (LAST_TAG + 3) // GC-able dead object
 
-/*
-** Union of all collectable objects
-*/
 typedef union GCObject GCObject;
 
-/*
-** Common Header for all collectable objects (in macro form, to be
-** included in other objects)
-*/
-#define CommonHeader                                                           \
+#define GCHeaderFields                                                         \
   GCObject *next;                                                              \
   lu_byte tt;                                                                  \
   lu_byte marked
 
-/*
-** Common header in struct form
-*/
 typedef struct GCHeader {
-  CommonHeader;
+  GCHeaderFields;
 } GCHeader;
 
-/*
-** Union of all Lua values
-*/
 typedef union {
   GCObject *gc;
   void *p;
@@ -59,41 +46,42 @@ typedef struct lua_TValue {
   TValuefields;
 } TValue;
 
-#define IS_TYPE_NIL(o) (ttype(o) == LUA_TYPE_NIL)
-#define IS_TYPE_NUMBER(o) (ttype(o) == LUA_TYPE_NUMBER)
-#define IS_TYPE_STRING(o) (ttype(o) == LUA_TYPE_STRING)
-#define IS_TYPE_TABLE(o) (ttype(o) == LUA_TYPE_TABLE)
-#define IS_TYPE_FUNCTION(o) (ttype(o) == LUA_TYPE_FUNCTION)
-#define IS_TYPE_BOOLEAN(o) (ttype(o) == LUA_TYPE_BOOLEAN)
-#define IS_TYPE_USERDATA(o) (ttype(o) == LUA_TYPE_USERDATA)
-#define IS_TYPE_THREAD(o) (ttype(o) == LUA_TYPE_THREAD)
-#define IS_TYPE_LIGHTUSERDATA(o) (ttype(o) == LUA_TYPE_LIGHTUSERDATA)
+#define IS_TYPE_NIL(o) ((o)->tt == LUA_TYPE_NIL)
+#define IS_TYPE_NUMBER(o) ((o)->tt == LUA_TYPE_NUMBER)
+#define IS_TYPE_STRING(o) ((o)->tt == LUA_TYPE_STRING)
+#define IS_TYPE_TABLE(o) ((o)->tt == LUA_TYPE_TABLE)
+#define IS_TYPE_FUNCTION(o) ((o)->tt == LUA_TYPE_FUNCTION)
+#define IS_TYPE_BOOLEAN(o) ((o)->tt == LUA_TYPE_BOOLEAN)
+#define IS_TYPE_USERDATA(o) ((o)->tt == LUA_TYPE_USERDATA)
+#define IS_TYPE_THREAD(o) ((o)->tt == LUA_TYPE_THREAD)
+#define IS_TYPE_LIGHTUSERDATA(o) ((o)->tt == LUA_TYPE_LIGHTUSERDATA)
 
 /* Macros to access values */
-#define ttype(o) ((o)->tt)
-#define gcvalue(o) check_exp(iscollectable(o), (o)->value.gc)
-#define pvalue(o) check_exp(IS_TYPE_LIGHTUSERDATA(o), (o)->value.p)
-#define nvalue(o) check_exp(IS_TYPE_NUMBER(o), (o)->value.n)
-#define rawtsvalue(o) check_exp(IS_TYPE_STRING(o), &(o)->value.gc->ts)
-#define tsvalue(o) (&rawtsvalue(o)->tsv)
-#define rawuvalue(o) check_exp(IS_TYPE_USERDATA(o), &(o)->value.gc->u)
-#define uvalue(o) (&rawuvalue(o)->uv)
-#define clvalue(o) check_exp(IS_TYPE_FUNCTION(o), &(o)->value.gc->cl)
-#define hvalue(o) check_exp(IS_TYPE_TABLE(o), &(o)->value.gc->h)
-#define bvalue(o) check_exp(IS_TYPE_BOOLEAN(o), (o)->value.b)
-#define thvalue(o) check_exp(IS_TYPE_THREAD(o), &(o)->value.gc->th)
+#define GET_TYPE(o) ((o)->tt)
+#define GC_VALUE(o) CHECK_EXPR(iscollectable(o), (o)->value.gc)
+#define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_LIGHTUSERDATA(o), (o)->value.p)
+#define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->value.n)
+#define RAW_STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->value.gc->ts)
+#define STRING_VALUE(o) (&RAW_STRING_VALUE(o)->tsv)
+#define RAW_USERDATA_VALUE(o) CHECK_EXPR(IS_TYPE_USERDATA(o), &(o)->value.gc->u)
+#define USERDATA_VALUE(o) (&RAW_USERDATA_VALUE(o)->uv)
+#define CLOSURE_VALUE(o) CHECK_EXPR(IS_TYPE_FUNCTION(o), &(o)->value.gc->cl)
+#define TABLE_VALUE(o) CHECK_EXPR(IS_TYPE_TABLE(o), &(o)->value.gc->h)
+#define BOOL_VALUE(o) CHECK_EXPR(IS_TYPE_BOOLEAN(o), (o)->value.b)
+#define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->value.gc->th)
 
-#define l_isfalse(o) (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && bvalue(o) == 0))
+#define l_isfalse(o)                                                           \
+  (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && BOOL_VALUE(o) == 0))
 
 /*
 ** for internal debug only
 */
 #define checkconsistency(obj)                                                  \
-  lua_assert(!iscollectable(obj) || (ttype(obj) == (obj)->value.gc->gch.tt))
+  lua_assert(!iscollectable(obj) || (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
 
 #define checkliveness(g, obj)                                                  \
   lua_assert(!iscollectable(obj) ||                                            \
-             ((ttype(obj) == (obj)->value.gc->gch.tt) &&                       \
+             ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                    \
               !isdead(g, (obj)->value.gc)))
 
 /* Macros to set values */
@@ -164,7 +152,7 @@ typedef struct lua_TValue {
   do {                                                                         \
     TValue *i_o = (obj);                                                       \
     i_o->value.gc = cast(GCObject *, (x));                                     \
-    i_o->tt = LUA_TPROTO;                                                      \
+    i_o->tt = LUA_TYPE_PROTO;                                                  \
     checkliveness(G(L), i_o);                                                  \
   } while (0)
 
@@ -196,9 +184,9 @@ typedef struct lua_TValue {
 #define setobj2n setobj
 #define setsvalue2n setsvalue
 
-#define setttype(obj, tt) (ttype(obj) = (tt))
+#define setttype(obj, tt) (GET_TYPE(obj) = (tt))
 
-#define iscollectable(o) (ttype(o) >= LUA_TYPE_STRING)
+#define iscollectable(o) (GET_TYPE(o) >= LUA_TYPE_STRING)
 
 typedef TValue *StkId; /* index to stack elements */
 
@@ -208,7 +196,7 @@ typedef TValue *StkId; /* index to stack elements */
 typedef union TString {
   L_Umaxalign dummy; /* ensures maximum alignment for strings */
   struct {
-    CommonHeader;
+    GCHeaderFields;
     lu_byte reserved;
     unsigned int hash;
     size_t len;
@@ -216,12 +204,12 @@ typedef union TString {
 } TString;
 
 #define getstr(ts) cast(const char *, (ts) + 1)
-#define svalue(o) getstr(rawtsvalue(o))
+#define svalue(o) getstr(RAW_STRING_VALUE(o))
 
 typedef union Udata {
   L_Umaxalign dummy; /* ensures maximum alignment for `local' udata */
   struct {
-    CommonHeader;
+    GCHeaderFields;
     struct Table *metatable;
     struct Table *env;
     size_t len;
@@ -230,7 +218,7 @@ typedef union Udata {
 
 // Function prototype. A script file is also a function.
 typedef struct Proto {
-  CommonHeader;
+  GCHeaderFields;
 
   // Constant table.
   TValue *k;
@@ -280,7 +268,7 @@ typedef struct LocVar {
 } LocVar;
 
 typedef struct UpVal {
-  CommonHeader;
+  GCHeaderFields;
   // Points to stack or to its own value.
   TValue *v;
   union {
@@ -295,7 +283,7 @@ typedef struct UpVal {
 } UpVal;
 
 #define ClosureHeader                                                          \
-  CommonHeader;                                                                \
+  GCHeaderFields;                                                              \
   lu_byte isC;                                                                 \
   lu_byte nupvalues;                                                           \
   GCObject *gclist;                                                            \
@@ -310,7 +298,7 @@ typedef struct CClosure {
 typedef struct LClosure {
   ClosureHeader;
   struct Proto *p;
-  UpVal *upvals[1];
+  UpVal *upvalues[1];
 } LClosure;
 
 typedef union Closure {
@@ -318,8 +306,10 @@ typedef union Closure {
   LClosure l;
 } Closure;
 
-#define IS_C_FUNCTION(o) (ttype(o) == LUA_TYPE_FUNCTION && clvalue(o)->c.isC)
-#define IS_LUA_FUNCTION(o) (ttype(o) == LUA_TYPE_FUNCTION && !clvalue(o)->c.isC)
+#define IS_C_FUNCTION(o)                                                       \
+  (GET_TYPE(o) == LUA_TYPE_FUNCTION && CLOSURE_VALUE(o)->c.isC)
+#define IS_LUA_FUNCTION(o)                                                     \
+  (GET_TYPE(o) == LUA_TYPE_FUNCTION && !CLOSURE_VALUE(o)->c.isC)
 
 /*
 ** Tables
@@ -339,7 +329,7 @@ typedef struct Node {
 } Node;
 
 typedef struct Table {
-  CommonHeader;
+  GCHeaderFields;
   lu_byte flags;     /* 1<<p means tagmethod(p) is not present */
   lu_byte lsizenode; /* log2 of size of `node' array */
   struct Table *metatable;
@@ -354,7 +344,7 @@ typedef struct Table {
 ** `module' operation for hashing (size is always a power of 2)
 */
 #define lmod(s, size)                                                          \
-  (check_exp((size & (size - 1)) == 0, (cast(int, (s) & ((size) - 1)))))
+  (CHECK_EXPR((size & (size - 1)) == 0, (cast(int, (s) & ((size) - 1)))))
 
 #define twoto(x) (1 << (x))
 #define sizenode(t) (twoto((t)->lsizenode))

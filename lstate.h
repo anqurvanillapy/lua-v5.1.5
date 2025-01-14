@@ -41,8 +41,8 @@ typedef struct CallInfo {
   int tailcalls; /* number of tail calls lost under this entry */
 } CallInfo;
 
-#define curr_func(L) (clvalue(L->ci->func))
-#define ci_func(ci) (clvalue((ci)->func))
+#define curr_func(L) (CLOSURE_VALUE(L->ci->func))
+#define ci_func(ci) (CLOSURE_VALUE((ci)->func))
 #define f_isLua(ci) (!ci_func(ci)->c.isC)
 #define isLua(ci) (IS_TYPE_FUNCTION((ci)->func) && f_isLua(ci))
 
@@ -79,7 +79,7 @@ typedef struct global_State {
 
 // Per-thread state.
 struct lua_State {
-  CommonHeader;
+  GCHeaderFields;
 
   lu_byte status;
 
@@ -149,17 +149,17 @@ union GCObject {
 };
 
 /* macros to convert a GCObject into a specific value */
-#define rawgco2ts(o) check_exp((o)->gch.tt == LUA_TYPE_STRING, &((o)->ts))
+#define rawgco2ts(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_STRING, &((o)->ts))
 #define gco2ts(o) (&rawgco2ts(o)->tsv)
-#define rawgco2u(o) check_exp((o)->gch.tt == LUA_TYPE_USERDATA, &((o)->u))
+#define rawgco2u(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_USERDATA, &((o)->u))
 #define gco2u(o) (&rawgco2u(o)->uv)
-#define gco2cl(o) check_exp((o)->gch.tt == LUA_TYPE_FUNCTION, &((o)->cl))
-#define gco2h(o) check_exp((o)->gch.tt == LUA_TYPE_TABLE, &((o)->h))
-#define gco2p(o) check_exp((o)->gch.tt == LUA_TPROTO, &((o)->p))
-#define gco2uv(o) check_exp((o)->gch.tt == LUA_TUPVAL, &((o)->uv))
+#define gco2cl(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_FUNCTION, &((o)->cl))
+#define gco2h(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_TABLE, &((o)->h))
+#define gco2p(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_PROTO, &((o)->p))
+#define gco2uv(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_UPVALUE, &((o)->uv))
 #define ngcotouv(o)                                                            \
-  check_exp((o) == NULL || (o)->gch.tt == LUA_TUPVAL, &((o)->uv))
-#define gco2th(o) check_exp((o)->gch.tt == LUA_TYPE_THREAD, &((o)->th))
+  CHECK_EXPR((o) == NULL || (o)->gch.tt == LUA_TYPE_UPVALUE, &((o)->uv))
+#define gco2th(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_THREAD, &((o)->th))
 
 /* macro to convert any Lua object into a GCObject */
 #define LuaObjectToGCObject(v) (cast(GCObject *, (v)))

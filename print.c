@@ -62,21 +62,21 @@ static void PrintString(const TString *ts) {
 
 static void PrintConstant(const Proto *f, int i) {
   const TValue *o = &f->k[i];
-  switch (ttype(o)) {
+  switch (GET_TYPE(o)) {
   case LUA_TYPE_NIL:
     printf("nil");
     break;
   case LUA_TYPE_BOOLEAN:
-    printf(bvalue(o) ? "true" : "false");
+    printf(BOOL_VALUE(o) ? "true" : "false");
     break;
   case LUA_TYPE_NUMBER:
-    printf(LUA_NUMBER_FMT, nvalue(o));
+    printf(LUA_NUMBER_FMT, NUMBER_VALUE(o));
     break;
   case LUA_TYPE_STRING:
-    PrintString(rawtsvalue(o));
+    PrintString(RAW_STRING_VALUE(o));
     break;
   default: /* cannot happen */
-    printf("? type=%d", ttype(o));
+    printf("? type=%d", GET_TYPE(o));
     break;
   }
 }

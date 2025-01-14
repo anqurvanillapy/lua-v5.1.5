@@ -61,18 +61,18 @@ static void DumpConstants(const Proto *f, DumpState *D) {
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
     const TValue *o = &f->k[i];
-    DumpChar(ttype(o), D);
-    switch (ttype(o)) {
+    DumpChar(GET_TYPE(o), D);
+    switch (GET_TYPE(o)) {
     case LUA_TYPE_NIL:
       break;
     case LUA_TYPE_BOOLEAN:
-      DumpChar(bvalue(o), D);
+      DumpChar(BOOL_VALUE(o), D);
       break;
     case LUA_TYPE_NUMBER:
-      DumpNumber(nvalue(o), D);
+      DumpNumber(NUMBER_VALUE(o), D);
       break;
     case LUA_TYPE_STRING:
-      DumpString(rawtsvalue(o), D);
+      DumpString(RAW_STRING_VALUE(o), D);
       break;
     default:
       lua_assert(0); /* cannot happen */

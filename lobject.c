@@ -14,7 +14,7 @@
 #include "lstring.h"
 #include "lvm.h"
 
-const TValue luaO_nilobject_ = {{NULL}, LUA_TYPE_NIL};
+const TValue luaO_nilobject_ = {{nullptr}, LUA_TYPE_NIL};
 
 /*
 ** converts an integer to a "floating point byte", represented as
@@ -66,21 +66,21 @@ int luaO_log2(unsigned int x) {
 }
 
 int luaO_rawequalObj(const TValue *t1, const TValue *t2) {
-  if (ttype(t1) != ttype(t2)) {
+  if (GET_TYPE(t1) != GET_TYPE(t2)) {
     return 0;
   } else {
-    switch (ttype(t1)) {
+    switch (GET_TYPE(t1)) {
     case LUA_TYPE_NIL:
       return 1;
     case LUA_TYPE_NUMBER:
-      return luai_numeq(nvalue(t1), nvalue(t2));
+      return luai_numeq(NUMBER_VALUE(t1), NUMBER_VALUE(t2));
     case LUA_TYPE_BOOLEAN:
-      return bvalue(t1) == bvalue(t2); /* boolean true must be 1 !! */
+      return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* boolean true must be 1 !! */
     case LUA_TYPE_LIGHTUSERDATA:
-      return pvalue(t1) == pvalue(t2);
+      return PTR_VALUE(t1) == PTR_VALUE(t2);
     default:
       lua_assert(iscollectable(t1));
-      return gcvalue(t1) == gcvalue(t2);
+      return GC_VALUE(t1) == GC_VALUE(t2);
     }
   }
 }

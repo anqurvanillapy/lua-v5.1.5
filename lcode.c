@@ -215,8 +215,8 @@ static int addk(FuncState *fs, TValue *k, TValue *v) {
   Proto *f = fs->f;
   int oldsize = f->kSize;
   if (IS_TYPE_NUMBER(idx)) {
-    lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(nvalue(idx))], v));
-    return cast_int(nvalue(idx));
+    lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(NUMBER_VALUE(idx))], v));
+    return cast_int(NUMBER_VALUE(idx));
   } else { /* constant not found; create a new entry */
     setnvalue(idx, cast_num(fs->nk));
     luaM_growvector(L, f->k, fs->nk, f->kSize, TValue, MAXARG_Bx,

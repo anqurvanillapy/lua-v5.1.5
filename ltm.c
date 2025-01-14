@@ -46,15 +46,15 @@ const TValue *luaT_gettm(Table *events, TMS event, TString *ename) {
 
 const TValue *luaT_gettmbyobj(lua_State *L, const TValue *o, TMS event) {
   Table *mt;
-  switch (ttype(o)) {
+  switch (GET_TYPE(o)) {
   case LUA_TYPE_TABLE:
-    mt = hvalue(o)->metatable;
+    mt = TABLE_VALUE(o)->metatable;
     break;
   case LUA_TYPE_USERDATA:
-    mt = uvalue(o)->metatable;
+    mt = USERDATA_VALUE(o)->metatable;
     break;
   default:
-    mt = G(L)->mt[ttype(o)];
+    mt = G(L)->mt[GET_TYPE(o)];
   }
   return (mt ? luaH_getstr(mt, G(L)->tmname[event]) : luaO_nilobject);
 }

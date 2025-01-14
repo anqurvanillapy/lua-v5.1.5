@@ -112,7 +112,7 @@ static int doargs(int argc, const char *argv[]) {
   return i;
 }
 
-#define toproto(L, i) (clvalue(L->top + (i))->l.p)
+#define toproto(L, i) (CLOSURE_VALUE(L->top + (i))->l.p)
 
 static const Proto *combine(lua_State *L, int n) {
   if (n == 1) {
@@ -140,8 +140,7 @@ static const Proto *combine(lua_State *L, int n) {
   }
 }
 
-static int writer(lua_State *L, const void *p, size_t size, void *u) {
-  UNUSED(L);
+static int writer(lua_State *, const void *p, size_t size, void *u) {
   return (fwrite(p, size, 1, (FILE *)u) != 1) && (size != 0);
 }
 

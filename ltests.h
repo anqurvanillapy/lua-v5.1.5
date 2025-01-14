@@ -9,11 +9,6 @@
 #define LUA_DEBUG
 
 #undef NDEBUG
-#include <assert.h>
-#define lua_assert(c) assert(c)
-
-/* to avoid warnings, and to make sure value is really unused */
-#define UNUSED(x) (x = 0, (void)(x))
 
 /* memory allocator control variables */
 typedef struct Memcontrol {

@@ -81,17 +81,17 @@ static Node *hashnum(const Table *t, lua_Number n) {
 ** of its hash value)
 */
 static Node *mainposition(const Table *t, const TValue *key) {
-  switch (ttype(key)) {
+  switch (GET_TYPE(key)) {
   case LUA_TYPE_NUMBER:
-    return hashnum(t, nvalue(key));
+    return hashnum(t, NUMBER_VALUE(key));
   case LUA_TYPE_STRING:
-    return hashstr(t, rawtsvalue(key));
+    return hashstr(t, RAW_STRING_VALUE(key));
   case LUA_TYPE_BOOLEAN:
-    return hashboolean(t, bvalue(key));
+    return hashboolean(t, BOOL_VALUE(key));
   case LUA_TYPE_LIGHTUSERDATA:
-    return hashpointer(t, pvalue(key));
+    return hashpointer(t, PTR_VALUE(key));
   default:
-    return hashpointer(t, gcvalue(key));
+    return hashpointer(t, GC_VALUE(key));
   }
 }
 
@@ -101,7 +101,7 @@ static Node *mainposition(const Table *t, const TValue *key) {
 */
 static int arrayindex(const TValue *key) {
   if (IS_TYPE_NUMBER(key)) {
-    lua_Number n = nvalue(key);
+    lua_Number n = NUMBER_VALUE(key);
     int k;
     lua_number2int(k, n);
     if (luai_numeq(cast_num(k), n)) {
@@ -129,8 +129,8 @@ static int findindex(lua_State *L, Table *t, StkId key) {
     do { /* check whether `key' is somewhere in the chain */
       /* key may be dead already, but it is ok to use it in `next' */
       if (luaO_rawequalObj(key2tval(n), key) ||
-          (ttype(gkey(n)) == LUA_TDEADKEY && iscollectable(key) &&
-           gcvalue(gkey(n)) == gcvalue(key))) {
+          (GET_TYPE(gkey(n)) == LUA_TYPE_DEAD && iscollectable(key) &&
+           GC_VALUE(gkey(n)) == GC_VALUE(key))) {
         i = cast_int(n - gnode(t, 0)); /* key index in hash table */
         /* hash elements are numbered after array ones */
         return i + t->sizearray;
@@ -419,7 +419,7 @@ const TValue *luaH_getnum(Table *t, int key) {
     lua_Number nk = cast_num(key);
     Node *n = hashnum(t, nk);
     do { /* check whether `key' is somewhere in the chain */
-      if (IS_TYPE_NUMBER(gkey(n)) && luai_numeq(nvalue(gkey(n)), nk)) {
+      if (IS_TYPE_NUMBER(gkey(n)) && luai_numeq(NUMBER_VALUE(gkey(n)), nk)) {
         return gval(n); /* that's it */
       } else {
         n = gnext(n);
@@ -435,7 +435,7 @@ const TValue *luaH_getnum(Table *t, int key) {
 const TValue *luaH_getstr(Table *t, TString *key) {
   Node *n = hashstr(t, key);
   do { /* check whether `key' is somewhere in the chain */
-    if (IS_TYPE_STRING(gkey(n)) && rawtsvalue(gkey(n)) == key) {
+    if (IS_TYPE_STRING(gkey(n)) && RAW_STRING_VALUE(gkey(n)) == key) {
       return gval(n); /* that's it */
     } else {
       n = gnext(n);
@@ -448,17 +448,17 @@ const TValue *luaH_getstr(Table *t, TString *key) {
 ** main search function
 */
 const TValue *luaH_get(Table *t, const TValue *key) {
-  switch (ttype(key)) {
+  switch (GET_TYPE(key)) {
   case LUA_TYPE_NIL:
     return luaO_nilobject;
   case LUA_TYPE_STRING:
-    return luaH_getstr(t, rawtsvalue(key));
+    return luaH_getstr(t, RAW_STRING_VALUE(key));
   case LUA_TYPE_NUMBER: {
     int k;
-    lua_Number n = nvalue(key);
+    lua_Number n = NUMBER_VALUE(key);
     lua_number2int(k, n);
-    if (luai_numeq(cast_num(k), nvalue(key))) { /* index is int? */
-      return luaH_getnum(t, k);                 /* use specialized version */
+    if (luai_numeq(cast_num(k), NUMBER_VALUE(key))) { /* index is int? */
+      return luaH_getnum(t, k); /* use specialized version */
     }
     /* else go through */
   }
@@ -484,7 +484,7 @@ TValue *luaH_set(lua_State *L, Table *t, const TValue *key) {
   } else {
     if (IS_TYPE_NIL(key)) {
       luaG_runerror(L, "table index is nil");
-    } else if (IS_TYPE_NUMBER(key) && luai_numisnan(nvalue(key))) {
+    } else if (IS_TYPE_NUMBER(key) && luai_numisnan(NUMBER_VALUE(key))) {
       luaG_runerror(L, "table index is NaN");
     }
     return newkey(L, t, key);

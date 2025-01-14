@@ -6,12 +6,14 @@
 #include "lobject.h"
 #include "ltm.h"
 
-#define tostring(L, o) ((ttype(o) == LUA_TYPE_STRING) || (luaV_tostring(L, o)))
+#define tostring(L, o)                                                         \
+  ((GET_TYPE(o) == LUA_TYPE_STRING) || (luaV_tostring(L, o)))
 
 #define tonumber(o, n)                                                         \
-  (ttype(o) == LUA_TYPE_NUMBER || (((o) = luaV_tonumber(o, n)) != NULL))
+  (GET_TYPE(o) == LUA_TYPE_NUMBER || (((o) = luaV_tonumber(o, n)) != NULL))
 
-#define equalobj(L, o1, o2) (ttype(o1) == ttype(o2) && luaV_equalval(L, o1, o2))
+#define equalobj(L, o1, o2)                                                    \
+  (GET_TYPE(o1) == GET_TYPE(o2) && luaV_equalval(L, o1, o2))
 
 LUAI_FUNC int luaV_lessthan(lua_State *L, const TValue *l, const TValue *r);
 LUAI_FUNC int luaV_equalval(lua_State *L, const TValue *t1, const TValue *t2);

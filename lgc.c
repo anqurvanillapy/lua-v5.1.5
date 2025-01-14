@@ -38,8 +38,8 @@
 #define markvalue(g, o)                                                        \
   {                                                                            \
     checkconsistency(o);                                                       \
-    if (iscollectable(o) && iswhite(gcvalue(o)))                               \
-      reallymarkobject(g, gcvalue(o));                                         \
+    if (iscollectable(o) && iswhite(GC_VALUE(o)))                              \
+      reallymarkobject(g, GC_VALUE(o));                                        \
   }
 
 #define markobject(g, t)                                                       \
@@ -53,7 +53,7 @@
 static void removeentry(Node *n) {
   lua_assert(IS_TYPE_NIL(gval(n)));
   if (iscollectable(gkey(n))) {
-    setttype(gkey(n), LUA_TDEADKEY); /* dead key; remove it */
+    setttype(gkey(n), LUA_TYPE_DEAD); /* dead key; remove it */
   }
 }
 
@@ -72,7 +72,7 @@ static void reallymarkobject(global_State *g, GCObject *o) {
     markobject(g, gco2u(o)->env);
     return;
   }
-  case LUA_TUPVAL: {
+  case LUA_TYPE_UPVALUE: {
     UpVal *uv = gco2uv(o);
     markvalue(g, uv->v);
     if (uv->v == &uv->u.value) { /* closed? */
@@ -95,7 +95,7 @@ static void reallymarkobject(global_State *g, GCObject *o) {
     g->gray = o;
     break;
   }
-  case LUA_TPROTO: {
+  case LUA_TYPE_PROTO: {
     gco2p(o)->gcList = g->gray;
     g->gray = o;
     break;
@@ -175,7 +175,7 @@ static int traversetable(global_State *g, Table *h) {
   i = sizenode(h);
   while (i--) {
     Node *n = gnode(h, i);
-    lua_assert(ttype(gkey(n)) != LUA_TDEADKEY || IS_TYPE_NIL(gval(n)));
+    lua_assert(GET_TYPE(gkey(n)) != LUA_TYPE_DEAD || IS_TYPE_NIL(gval(n)));
     if (IS_TYPE_NIL(gval(n))) {
       removeentry(n); /* remove empty entries */
     } else {
@@ -227,7 +227,7 @@ static void traverseclosure(global_State *g, Closure *cl) {
     lua_assert(cl->l.nupvalues == cl->l.p->upvalueNum);
     markobject(g, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) /* mark its upvalues */
-      markobject(g, cl->l.upvals[i]);
+      markobject(g, cl->l.upvalues[i]);
   }
 }
 
@@ -302,7 +302,7 @@ static l_mem propagatemark(global_State *g) {
     return sizeof(lua_State) + sizeof(TValue) * th->stackSize +
            sizeof(CallInfo) * th->ciSize;
   }
-  case LUA_TPROTO: {
+  case LUA_TYPE_PROTO: {
     Proto *p = gco2p(o);
     g->gray = p->gcList;
     traverseproto(g, p);
@@ -337,11 +337,12 @@ static int iscleared(const TValue *o, int iskey) {
     return 0;
   }
   if (IS_TYPE_STRING(o)) {
-    stringmark(rawtsvalue(o)); /* strings are `values', so are never weak */
+    stringmark(
+        RAW_STRING_VALUE(o)); /* strings are `values', so are never weak */
     return 0;
   }
-  return iswhite(gcvalue(o)) ||
-         (IS_TYPE_USERDATA(o) && (!iskey && isfinalized(uvalue(o))));
+  return iswhite(GC_VALUE(o)) ||
+         (IS_TYPE_USERDATA(o) && (!iskey && isfinalized(USERDATA_VALUE(o))));
 }
 
 /*
@@ -376,13 +377,13 @@ static void cleartable(GCObject *l) {
 
 static void freeobj(lua_State *L, GCObject *o) {
   switch (o->gch.tt) {
-  case LUA_TPROTO:
+  case LUA_TYPE_PROTO:
     luaF_freeproto(L, gco2p(o));
     break;
   case LUA_TYPE_FUNCTION:
     luaF_freeclosure(L, gco2cl(o));
     break;
-  case LUA_TUPVAL:
+  case LUA_TYPE_UPVALUE:
     luaF_freeupval(L, gco2uv(o));
     break;
   case LUA_TYPE_TABLE:
@@ -669,7 +670,7 @@ void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v) {
   global_State *g = G(L);
   lua_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
   lua_assert(g->gcstate != GCSfinalize && g->gcstate != GCSpause);
-  lua_assert(ttype(&o->gch) != LUA_TYPE_TABLE);
+  lua_assert(GET_TYPE(&o->gch) != LUA_TYPE_TABLE);
   /* must keep invariant? */
   if (g->gcstate == GCSpropagate) {
     reallymarkobject(g, v); /* restore invariant */

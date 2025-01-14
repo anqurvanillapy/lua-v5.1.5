@@ -26,14 +26,14 @@ Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
   c->l.env = e;
   c->l.nupvalues = cast_byte(nelems);
   while (nelems--) {
-    c->l.upvals[nelems] = nullptr;
+    c->l.upvalues[nelems] = nullptr;
   }
   return c;
 }
 
 UpVal *luaF_newupval(lua_State *L) {
   UpVal *uv = luaM_new(L, UpVal);
-  luaC_link(L, LuaObjectToGCObject(uv), LUA_TUPVAL);
+  luaC_link(L, LuaObjectToGCObject(uv), LUA_TYPE_UPVALUE);
   uv->v = &uv->u.value;
   setnilvalue(uv->v);
   return uv;
@@ -55,7 +55,7 @@ UpVal *luaF_findupval(lua_State *L, StkId level) {
     pp = &p->next;
   }
   uv = luaM_new(L, UpVal); /* not found: create a new one */
-  uv->tt = LUA_TUPVAL;
+  uv->tt = LUA_TYPE_UPVALUE;
   uv->marked = luaC_white(g);
   uv->v = level;  /* current value lives in the stack */
   uv->next = *pp; /* chain it in the proper position */
@@ -101,7 +101,7 @@ void luaF_close(lua_State *L, StkId level) {
 
 Proto *luaF_newproto(lua_State *L) {
   Proto *f = luaM_new(L, Proto);
-  luaC_link(L, LuaObjectToGCObject(f), LUA_TPROTO);
+  luaC_link(L, LuaObjectToGCObject(f), LUA_TYPE_PROTO);
   f->k = nullptr;
   f->kSize = 0;
   f->inners = nullptr;

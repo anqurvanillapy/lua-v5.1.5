@@ -250,7 +250,7 @@ int luaD_precall(lua_State *L, StkId func, int nresults) {
     func = tryfuncTM(L, func);   /* check the `function' tag method */
   }
   funcr = savestack(L, func);
-  cl = &clvalue(func)->l;
+  cl = &CLOSURE_VALUE(func)->l;
   L->ci->savedpc = L->savedPC;
   if (!cl->isC) { /* Lua function? prepare its call */
     CallInfo *ci;
@@ -479,10 +479,10 @@ static void f_parser(lua_State *L, void *ud) {
   luaC_checkGC(L);
   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
                                                              p->name);
-  cl = luaF_newLclosure(L, tf->upvalueNum, hvalue(gt(L)));
+  cl = luaF_newLclosure(L, tf->upvalueNum, TABLE_VALUE(gt(L)));
   cl->l.p = tf;
   for (i = 0; i < tf->upvalueNum; i++) { /* initialize eventual upvalues */
-    cl->l.upvals[i] = luaF_newupval(L);
+    cl->l.upvalues[i] = luaF_newupval(L);
   }
   setclvalue(L, L->top, cl);
   incr_top(L);

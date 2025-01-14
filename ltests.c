@@ -174,8 +174,8 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
   lua_assert(testobjref(g, f, LuaObjectToGCObject(t)))
 
 #define checkvalref(g, f, t)                                                   \
-  lua_assert(!iscollectable(t) || ((ttype(t) == (t)->value.gc->gch.tt) &&      \
-                                   testobjref(g, f, gcvalue(t))))
+  lua_assert(!iscollectable(t) || ((GET_TYPE(t) == (t)->value.gc->gch.tt) &&   \
+                                   testobjref(g, f, GC_VALUE(t))))
 
 static void checktable(global_State *g, Table *h) {
   int i;
@@ -207,7 +207,7 @@ static void checkproto(global_State *g, Proto *f) {
     checkobjref(g, fgc, f->source);
   for (i = 0; i < f->kSize; i++) {
     if (IS_TYPE_STRING(f->k + i))
-      checkobjref(g, fgc, rawtsvalue(f->k + i));
+      checkobjref(g, fgc, RAW_STRING_VALUE(f->k + i));
   }
   for (i = 0; i < f->upvaluesSize; i++) {
     if (f->upvalues[i])
@@ -235,9 +235,9 @@ static void checkclosure(global_State *g, Closure *cl) {
     lua_assert(cl->l.nupvalues == cl->l.p->upvalueNum);
     checkobjref(g, clgc, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) {
-      if (cl->l.upvals[i]) {
-        lua_assert(cl->l.upvals[i]->tt == LUA_TUPVAL);
-        checkobjref(g, clgc, cl->l.upvals[i]);
+      if (cl->l.upvalues[i]) {
+        lua_assert(cl->l.upvalues[i]->tt == LUA_TYPE_UPVALUE);
+        checkobjref(g, clgc, cl->l.upvalues[i]);
       }
     }
   }
@@ -279,7 +279,7 @@ static void checkobject(global_State *g, GCObject *o) {
     if (g->gcstate == GCSfinalize)
       lua_assert(iswhite(o));
     switch (o->gch.tt) {
-    case LUA_TUPVAL: {
+    case LUA_TYPE_UPVALUE: {
       UpVal *uv = gco2uv(o);
       lua_assert(uv->v == &uv->u.value); /* must be closed */
       lua_assert(!isgray(o));            /* closed upvalues are never gray */
@@ -304,7 +304,7 @@ static void checkobject(global_State *g, GCObject *o) {
       checkclosure(g, gco2cl(o));
       break;
     }
-    case LUA_TPROTO: {
+    case LUA_TYPE_PROTO: {
       checkproto(g, gco2p(o));
       break;
     }
@@ -394,7 +394,7 @@ static int listcode(lua_State *L) {
   Proto *p;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
-  p = clvalue(obj_at(L, 1))->l.p;
+  p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
   lua_newtable(L);
   setnameval(L, "maxstack", p->maxStackSize);
   setnameval(L, "paramNum", p->paramNum);
@@ -412,7 +412,7 @@ static int listk(lua_State *L) {
   int i;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
-  p = clvalue(obj_at(L, 1))->l.p;
+  p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
   lua_createtable(L, p->kSize, 0);
   for (i = 0; i < p->kSize; i++) {
     luaA_pushobject(L, p->k + i);
@@ -428,7 +428,7 @@ static int listlocals(lua_State *L) {
   const char *name;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
-  p = clvalue(obj_at(L, 1))->l.p;
+  p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
   while ((name = luaF_getlocalname(p, ++i, pc)) != NULL)
     lua_pushstring(L, name);
   return i - 1;
@@ -476,9 +476,9 @@ static int get_gccolor(lua_State *L) {
   if (!iscollectable(o))
     lua_pushstring(L, "no collectable");
   else
-    lua_pushstring(L, iswhite(gcvalue(o))   ? "white"
-                      : isblack(gcvalue(o)) ? "black"
-                                            : "grey");
+    lua_pushstring(L, iswhite(GC_VALUE(o))   ? "white"
+                      : isblack(GC_VALUE(o)) ? "black"
+                                             : "grey");
   return 1;
 }
 
@@ -503,12 +503,12 @@ static int gcstate(lua_State *L) {
 static int hash_query(lua_State *L) {
   if (lua_isnone(L, 2)) {
     luaL_argcheck(L, lua_type(L, 1) == LUA_TYPE_STRING, 1, "string expected");
-    lua_pushinteger(L, tsvalue(obj_at(L, 1))->hash);
+    lua_pushinteger(L, STRING_VALUE(obj_at(L, 1))->hash);
   } else {
     TValue *o = obj_at(L, 1);
     Table *t;
     luaL_checktype(L, 2, LUA_TYPE_TABLE);
-    t = hvalue(obj_at(L, 2));
+    t = TABLE_VALUE(obj_at(L, 2));
     lua_pushinteger(L, luaH_mainposition(t, o) - t->node);
   }
   return 1;
@@ -528,7 +528,7 @@ static int table_query(lua_State *L) {
   const Table *t;
   int i = luaL_optint(L, 2, -1);
   luaL_checktype(L, 1, LUA_TYPE_TABLE);
-  t = hvalue(obj_at(L, 1));
+  t = TABLE_VALUE(obj_at(L, 1));
   if (i == -1) {
     lua_pushinteger(L, t->sizearray);
     lua_pushinteger(L, luaH_isdummy(t->node) ? 0 : sizenode(t));

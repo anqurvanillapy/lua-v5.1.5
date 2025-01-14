@@ -32,26 +32,14 @@ typedef unsigned char lu_byte;
 /* type to ensure maximum alignment */
 typedef LUAI_USER_ALIGNMENT_T L_Umaxalign;
 
-/* result of a `usual argument conversion' over lua_Number */
+/* result of a 'usual argument conversion' over lua_Number */
 typedef LUAI_UACNUMBER l_uacNumber;
 
 /* internal assertions for in-house debugging */
-#ifdef lua_assert
-
-#define check_exp(c, e) (lua_assert(c), (e))
+#include <assert.h>
+#define lua_assert(c) assert(c)
+#define CHECK_EXPR(c, e) (lua_assert(c), (e))
 #define api_check(l, e) lua_assert(e)
-
-#else
-
-#define lua_assert(c) ((void)0)
-#define check_exp(c, e) (e)
-#define api_check luai_apicheck
-
-#endif
-
-#ifndef UNUSED
-#define UNUSED(x) ((void)(x)) /* to avoid warnings */
-#endif
 
 #ifndef cast
 #define cast(t, exp) ((t)(exp))
