@@ -343,25 +343,32 @@ int lua_checkmemory(lua_State *L) {
 ** =======================================================
 */
 
-static char *buildop(Prototype *p, int pc, char *buff) {
+static char *buildop(Prototype *p, int pc, char *buff, size_t size) {
   Instruction i = p->code[pc];
   OpCode o = GET_OPCODE(i);
   const char *name = luaP_opnames[o];
   int line = getline(p, pc);
-  sprintf(buff, "(%4d) %4d - ", line, pc);
+
+  snprintf(buff, size, "(%4d) %4d - ", line, pc);
   switch (getOpMode(o)) {
-  case iABC:
-    sprintf(buff + strlen(buff), "%-12s%4d %4d %4d", name, GETARG_A(i),
-            GETARG_B(i), GETARG_C(i));
+  case iABC: {
+    size_t written = strlen(buff);
+    snprintf(buff + written, size - written, "%-12s%4d %4d %4d", name,
+             GETARG_A(i), GETARG_B(i), GETARG_C(i));
     break;
-  case iABx:
-    sprintf(buff + strlen(buff), "%-12s%4d %4d", name, GETARG_A(i),
-            GETARG_Bx(i));
+  }
+  case iABx: {
+    size_t written = strlen(buff);
+    snprintf(buff + written, size - written, "%-12s%4d %4d", name, GETARG_A(i),
+             GETARG_Bx(i));
     break;
-  case iAsBx:
-    sprintf(buff + strlen(buff), "%-12s%4d %4d", name, GETARG_A(i),
-            GETARG_sBx(i));
+  }
+  case iAsBx: {
+    size_t written = strlen(buff);
+    snprintf(buff + written, size - written, "%-12s%4d %4d", name, GETARG_A(i),
+             GETARG_sBx(i));
     break;
+  }
   }
   return buff;
 }
@@ -378,7 +385,7 @@ static int listcode(lua_State *L) {
   for (pc = 0; pc < p->codeSize; pc++) {
     char buff[100];
     lua_pushinteger(L, pc + 1);
-    lua_pushstring(L, buildop(p, pc, buff));
+    lua_pushstring(L, buildop(p, pc, buff, sizeof(buff)));
     lua_settable(L, -3);
   }
   return 1;

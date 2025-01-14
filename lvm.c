@@ -28,21 +28,19 @@ const TaggedValue *luaV_tonumber(const TaggedValue *obj, TaggedValue *n) {
   if (IS_TYPE_STRING(obj) && luaO_str2d(GET_STR_VALUE(obj), &num)) {
     SET_NUMBER(n, num);
     return n;
-  } else {
-    return NULL;
   }
+  return nullptr;
 }
 
 int luaV_tostring(lua_State *L, StackIndex obj) {
   if (!IS_TYPE_NUMBER(obj)) {
     return 0;
-  } else {
-    char s[LUAI_MAXNUMBER2STR];
-    lua_Number n = NUMBER_VALUE(obj);
-    sprintf(s, LUA_NUMBER_FMT, n);
-    SET_STRING_TO_STACK(L, obj, luaS_new(L, s));
-    return 1;
   }
+  char s[LUAI_MAXNUMBER2STR];
+  lua_Number n = NUMBER_VALUE(obj);
+  snprintf(s, sizeof(s), LUA_NUMBER_FMT, n);
+  SET_STRING_TO_STACK(L, obj, luaS_new(L, s));
+  return 1;
 }
 
 static void traceexec(lua_State *L, const Instruction *pc) {

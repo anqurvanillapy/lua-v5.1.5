@@ -8,12 +8,14 @@
 CC= /opt/homebrew/opt/llvm/bin/clang
 CFLAGS= -std=c23 \
 	-g -O2 \
+	-fsanitize=address \
 	-Werror -Wall -Wextra -Wpedantic \
 	-DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
 AR= ar rcu
 RANLIB= ranlib
 RM= rm -f
-LIBS= -lm -lreadline
+LIBS= -fsanitize=address \
+	-lm -lreadline
 
 # == END OF USER SETTINGS. NO NEED TO CHANGE ANYTHING BELOW THIS LINE =========
 
