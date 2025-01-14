@@ -209,7 +209,7 @@ static void PrintHeader(const Proto *f) {
          VOID(f));
   printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->numparams,
          f->is_vararg ? "+" : "", SS(f->numparams), S(f->maxstacksize),
-         S(f->nups));
+         S(f->upNum));
   printf("%d local%s, %d constant%s, %d function%s\n", S(f->locVarsSize),
          S(f->kSize), S(f->pSize));
 }

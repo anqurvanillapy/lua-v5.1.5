@@ -22,10 +22,10 @@
 
 const TValue *luaV_tonumber(const TValue *obj, TValue *n) {
   lua_Number num;
-  if (ttisnumber(obj)) {
+  if (IS_TYPE_NUMBER(obj)) {
     return obj;
   }
-  if (ttisstring(obj) && luaO_str2d(svalue(obj), &num)) {
+  if (IS_TYPE_STRING(obj) && luaO_str2d(svalue(obj), &num)) {
     setnvalue(n, num);
     return n;
   } else {
@@ -34,7 +34,7 @@ const TValue *luaV_tonumber(const TValue *obj, TValue *n) {
 }
 
 int luaV_tostring(lua_State *L, StkId obj) {
-  if (!ttisnumber(obj)) {
+  if (!IS_TYPE_NUMBER(obj)) {
     return 0;
   } else {
     char s[LUAI_MAXNUMBER2STR];
@@ -94,19 +94,19 @@ void luaV_gettable(lua_State *L, const TValue *t, TValue *key, StkId val) {
   int loop;
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
     const TValue *tm;
-    if (ttistable(t)) { /* `t' is a table? */
+    if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = hvalue(t);
       const TValue *res = luaH_get(h, key); /* do a primitive get */
-      if (!ttisnil(res) ||                  /* result is no nil? */
+      if (!IS_TYPE_NIL(res) ||                  /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
         setobj2s(L, val, res);
         return;
       }
       /* else will try the tag method */
-    } else if (ttisnil(tm = luaT_gettmbyobj(L, t, TM_INDEX))) {
+    } else if (IS_TYPE_NIL(tm = luaT_gettmbyobj(L, t, TM_INDEX))) {
       luaG_typeerror(L, t, "index");
     }
-    if (ttisfunction(tm)) {
+    if (IS_TYPE_FUNCTION(tm)) {
       callTMres(L, val, tm, t, key);
       return;
     }
@@ -120,10 +120,10 @@ void luaV_settable(lua_State *L, const TValue *t, TValue *key, StkId val) {
   TValue temp;
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
     const TValue *tm;
-    if (ttistable(t)) { /* `t' is a table? */
+    if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = hvalue(t);
       TValue *oldval = luaH_set(L, h, key); /* do a primitive set */
-      if (!ttisnil(oldval) ||               /* result is no nil? */
+      if (!IS_TYPE_NIL(oldval) ||               /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
         setobj2t(L, oldval, val);
         h->flags = 0;
@@ -131,10 +131,10 @@ void luaV_settable(lua_State *L, const TValue *t, TValue *key, StkId val) {
         return;
       }
       /* else will try the tag method */
-    } else if (ttisnil(tm = luaT_gettmbyobj(L, t, TM_NEWINDEX))) {
+    } else if (IS_TYPE_NIL(tm = luaT_gettmbyobj(L, t, TM_NEWINDEX))) {
       luaG_typeerror(L, t, "index");
     }
-    if (ttisfunction(tm)) {
+    if (IS_TYPE_FUNCTION(tm)) {
       callTM(L, tm, t, key, val);
       return;
     }
@@ -148,10 +148,10 @@ void luaV_settable(lua_State *L, const TValue *t, TValue *key, StkId val) {
 static int call_binTM(lua_State *L, const TValue *p1, const TValue *p2,
                       StkId res, TMS event) {
   const TValue *tm = luaT_gettmbyobj(L, p1, event); /* try first operand */
-  if (ttisnil(tm)) {
+  if (IS_TYPE_NIL(tm)) {
     tm = luaT_gettmbyobj(L, p2, event); /* try second operand */
   }
-  if (ttisnil(tm)) {
+  if (IS_TYPE_NIL(tm)) {
     return 0;
   }
   callTMres(L, res, tm, p1, p2);
@@ -182,7 +182,7 @@ static int call_orderTM(lua_State *L, const TValue *p1, const TValue *p2,
                         TMS event) {
   const TValue *tm1 = luaT_gettmbyobj(L, p1, event);
   const TValue *tm2;
-  if (ttisnil(tm1)) {
+  if (IS_TYPE_NIL(tm1)) {
     return -1; /* no metamethod? */
   }
   tm2 = luaT_gettmbyobj(L, p2, event);
@@ -223,9 +223,9 @@ int luaV_lessthan(lua_State *L, const TValue *l, const TValue *r) {
   int res;
   if (ttype(l) != ttype(r)) {
     return luaG_ordererror(L, l, r);
-  } else if (ttisnumber(l)) {
+  } else if (IS_TYPE_NUMBER(l)) {
     return luai_numlt(nvalue(l), nvalue(r));
-  } else if (ttisstring(l)) {
+  } else if (IS_TYPE_STRING(l)) {
     return l_strcmp(rawtsvalue(l), rawtsvalue(r)) < 0;
   } else if ((res = call_orderTM(L, l, r, TM_LT)) != -1) {
     return res;
@@ -237,9 +237,9 @@ static int lessequal(lua_State *L, const TValue *l, const TValue *r) {
   int res;
   if (ttype(l) != ttype(r)) {
     return luaG_ordererror(L, l, r);
-  } else if (ttisnumber(l)) {
+  } else if (IS_TYPE_NUMBER(l)) {
     return luai_numle(nvalue(l), nvalue(r));
-  } else if (ttisstring(l)) {
+  } else if (IS_TYPE_STRING(l)) {
     return l_strcmp(rawtsvalue(l), rawtsvalue(r)) <= 0;
   } else if ((res = call_orderTM(L, l, r, TM_LE)) != -1) { /* first try `le' */
     return res;
@@ -289,7 +289,7 @@ void luaV_concat(lua_State *L, int total, int last) {
   do {
     StkId top = L->base + last + 1;
     int n = 2; /* number of elements handled in this pass (at least 2) */
-    if (!(ttisstring(top - 2) || ttisnumber(top - 2)) ||
+    if (!(IS_TYPE_STRING(top - 2) || IS_TYPE_NUMBER(top - 2)) ||
         !tostring(L, top - 1)) {
       if (!call_binTM(L, top - 2, top - 1, top - 2, TM_CONCAT)) {
         luaG_concaterror(L, top - 2, top - 1);
@@ -402,7 +402,7 @@ static void Arith(lua_State *L, StkId ra, const TValue *rb, const TValue *rc,
   {                                                                            \
     TValue *rb = RKB(i);                                                       \
     TValue *rc = RKC(i);                                                       \
-    if (ttisnumber(rb) && ttisnumber(rc)) {                                    \
+    if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                                    \
       lua_Number nb = nvalue(rb), nc = nvalue(rc);                             \
       setnvalue(ra, op(nb, nc));                                               \
     } else                                                                     \
@@ -470,7 +470,7 @@ reentry: /* entry point */
       TValue g;
       TValue *rb = KBx(i);
       sethvalue(L, &g, cl->env);
-      lua_assert(ttisstring(rb));
+      lua_assert(IS_TYPE_STRING(rb));
       Protect(luaV_gettable(L, &g, rb, ra));
       continue;
     }
@@ -481,7 +481,7 @@ reentry: /* entry point */
     case OP_SETGLOBAL: {
       TValue g;
       sethvalue(L, &g, cl->env);
-      lua_assert(ttisstring(KBx(i)));
+      lua_assert(IS_TYPE_STRING(KBx(i)));
       Protect(luaV_settable(L, &g, KBx(i), ra));
       continue;
     }
@@ -534,7 +534,7 @@ reentry: /* entry point */
     }
     case OP_UNM: {
       TValue *rb = RB(i);
-      if (ttisnumber(rb)) {
+      if (IS_TYPE_NUMBER(rb)) {
         lua_Number nb = nvalue(rb);
         setnvalue(ra, luai_numunm(nb));
       } else {
@@ -727,7 +727,7 @@ reentry: /* entry point */
       Protect(luaD_call(L, cb, GETARG_C(i)));
       L->top = L->ci->top;
       cb = RA(i) + 3;                   /* previous call may change the stack */
-      if (!ttisnil(cb)) {               /* continue loop? */
+      if (!IS_TYPE_NIL(cb)) {               /* continue loop? */
         setobjs2s(L, cb - 1, cb);       /* save control variable */
         dojump(L, pc, GETARG_sBx(*pc)); /* jump back */
       }
@@ -746,7 +746,7 @@ reentry: /* entry point */
       if (c == 0) {
         c = cast_int(*pc++);
       }
-      runtime_check(L, ttistable(ra));
+      runtime_check(L, IS_TYPE_TABLE(ra));
       h = hvalue(ra);
       last = ((c - 1) * LFIELDS_PER_FLUSH) + n;
       if (last > h->sizearray) {      /* needs more space? */
@@ -768,7 +768,7 @@ reentry: /* entry point */
       Closure *ncl;
       int nup, j;
       p = cl->p->p[GETARG_Bx(i)];
-      nup = p->nups;
+      nup = p->upNum;
       ncl = luaF_newLclosure(L, nup, cl->env);
       ncl->l.p = p;
       for (j = 0; j < nup; j++, pc++) {

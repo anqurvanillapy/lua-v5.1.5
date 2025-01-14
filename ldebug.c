@@ -208,13 +208,13 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
   lua_lock(L);
   if (*what == '>') {
     StkId func = L->top - 1;
-    luai_apicheck(L, ttisfunction(func));
+    luai_apicheck(L, IS_TYPE_FUNCTION(func));
     what++; /* skip the '>' */
     f = clvalue(func);
     L->top--;                 /* pop function */
   } else if (ar->i_ci != 0) { /* no tail call? */
     ci = L->baseCI + ar->i_ci;
-    lua_assert(ttisfunction(ci->func));
+    lua_assert(IS_TYPE_FUNCTION(ci->func));
     f = clvalue(ci->func);
   }
   status = auxgetinfo(L, what, ar, f, ci);
@@ -253,7 +253,7 @@ static int precheck(const Proto *pt) {
   check(pt->maxstacksize <= MAXSTACK);
   check(pt->numparams + (pt->is_vararg & VARARG_HASARG) <= pt->maxstacksize);
   check(!(pt->is_vararg & VARARG_NEEDSARG) || (pt->is_vararg & VARARG_HASARG));
-  check(pt->sizeUpvalues <= pt->nups);
+  check(pt->sizeUpvalues <= pt->upNum);
   check(pt->lineInfoSize == pt->codeSize || pt->lineInfoSize == 0);
   check(pt->codeSize > 0 &&
         GET_OPCODE(pt->code[pt->codeSize - 1]) == OP_RETURN);
@@ -373,12 +373,12 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
     }
     case OP_GETUPVAL:
     case OP_SETUPVAL: {
-      check(b < pt->nups);
+      check(b < pt->upNum);
       break;
     }
     case OP_GETGLOBAL:
     case OP_SETGLOBAL: {
-      check(ttisstring(&pt->k[b]));
+      check(IS_TYPE_STRING(&pt->k[b]));
       break;
     }
     case OP_SELF: {
@@ -448,7 +448,7 @@ static Instruction symbexec(const Proto *pt, int lastpc, int reg) {
     case OP_CLOSURE: {
       int nup, j;
       check(b < pt->pSize);
-      nup = pt->p[b]->nups;
+      nup = pt->p[b]->upNum;
       check(pc + nup < pt->codeSize);
       for (j = 1; j <= nup; j++) {
         OpCode op1 = GET_OPCODE(pt->code[pc + j]);
@@ -487,7 +487,7 @@ int luaG_checkcode(const Proto *pt) {
 }
 
 static const char *kname(Proto *p, int c) {
-  if (ISK(c) && ttisstring(&p->k[INDEXK(c)])) {
+  if (ISK(c) && IS_TYPE_STRING(&p->k[INDEXK(c)])) {
     return svalue(&p->k[INDEXK(c)]);
   } else {
     return "?";
@@ -509,7 +509,7 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     switch (GET_OPCODE(i)) {
     case OP_GETGLOBAL: {
       int g = GETARG_Bx(i); /* global index */
-      lua_assert(ttisstring(&p->k[g]));
+      lua_assert(IS_TYPE_STRING(&p->k[g]));
       *name = svalue(&p->k[g]);
       return "global";
     }
@@ -584,10 +584,10 @@ void luaG_typeerror(lua_State *L, const TValue *o, const char *op) {
 }
 
 void luaG_concaterror(lua_State *L, StkId p1, StkId p2) {
-  if (ttisstring(p1) || ttisnumber(p1)) {
+  if (IS_TYPE_STRING(p1) || IS_TYPE_NUMBER(p1)) {
     p1 = p2;
   }
-  lua_assert(!ttisstring(p1) && !ttisnumber(p1));
+  lua_assert(!IS_TYPE_STRING(p1) && !IS_TYPE_NUMBER(p1));
   luaG_typeerror(L, p1, "concatenate");
 }
 
@@ -623,7 +623,7 @@ static void addinfo(lua_State *L, const char *msg) {
 void luaG_errormsg(lua_State *L) {
   if (L->errFunc != 0) { /* is there an error handling function? */
     StkId errfunc = restorestack(L, L->errFunc);
-    if (!ttisfunction(errfunc)) {
+    if (!IS_TYPE_FUNCTION(errfunc)) {
       luaD_throw(L, LUA_ERRERR);
     }
     setobjs2s(L, L->top, L->top - 1);  /* move argument */

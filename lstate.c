@@ -42,7 +42,7 @@ static void stack_init(lua_State *L1, lua_State *L) {
   L1->ci->func = L1->top;
   setnilvalue(L1->top++); /* `function' entry for this `ci' */
   L1->base = L1->ci->base = L1->top;
-  L1->ci->top = L1->top + LUA_MINSTACK;
+  L1->ci->top = L1->top + LUA_MIN_STACK;
 }
 
 static void freestack(lua_State *L, lua_State *L1) {

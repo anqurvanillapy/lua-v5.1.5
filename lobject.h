@@ -36,9 +36,9 @@ typedef union GCObject GCObject;
 /*
 ** Common header in struct form
 */
-typedef struct GCheader {
+typedef struct GCHeader {
   CommonHeader;
-} GCheader;
+} GCHeader;
 
 /*
 ** Union of all Lua values
@@ -50,44 +50,40 @@ typedef union {
   int b;
 } Value;
 
-/*
-** Tagged Values
-*/
-
 #define TValuefields                                                           \
   Value value;                                                                 \
   int tt
 
+// Tagged Values.
 typedef struct lua_TValue {
   TValuefields;
 } TValue;
 
-/* Macros to test type */
-#define ttisnil(o) (ttype(o) == LUA_TYPE_NIL)
-#define ttisnumber(o) (ttype(o) == LUA_TYPE_NUMBER)
-#define ttisstring(o) (ttype(o) == LUA_TYPE_STRING)
-#define ttistable(o) (ttype(o) == LUA_TYPE_TABLE)
-#define ttisfunction(o) (ttype(o) == LUA_TYPE_FUNCTION)
-#define ttisboolean(o) (ttype(o) == LUA_TYPE_BOOLEAN)
-#define ttisuserdata(o) (ttype(o) == LUA_TYPE_USERDATA)
-#define ttisthread(o) (ttype(o) == LUA_TYPE_THREAD)
-#define ttislightuserdata(o) (ttype(o) == LUA_TYPE_LIGHTUSERDATA)
+#define IS_TYPE_NIL(o) (ttype(o) == LUA_TYPE_NIL)
+#define IS_TYPE_NUMBER(o) (ttype(o) == LUA_TYPE_NUMBER)
+#define IS_TYPE_STRING(o) (ttype(o) == LUA_TYPE_STRING)
+#define IS_TYPE_TABLE(o) (ttype(o) == LUA_TYPE_TABLE)
+#define IS_TYPE_FUNCTION(o) (ttype(o) == LUA_TYPE_FUNCTION)
+#define IS_TYPE_BOOLEAN(o) (ttype(o) == LUA_TYPE_BOOLEAN)
+#define IS_TYPE_USERDATA(o) (ttype(o) == LUA_TYPE_USERDATA)
+#define IS_TYPE_THREAD(o) (ttype(o) == LUA_TYPE_THREAD)
+#define IS_TYPE_LIGHTUSERDATA(o) (ttype(o) == LUA_TYPE_LIGHTUSERDATA)
 
 /* Macros to access values */
 #define ttype(o) ((o)->tt)
 #define gcvalue(o) check_exp(iscollectable(o), (o)->value.gc)
-#define pvalue(o) check_exp(ttislightuserdata(o), (o)->value.p)
-#define nvalue(o) check_exp(ttisnumber(o), (o)->value.n)
-#define rawtsvalue(o) check_exp(ttisstring(o), &(o)->value.gc->ts)
+#define pvalue(o) check_exp(IS_TYPE_LIGHTUSERDATA(o), (o)->value.p)
+#define nvalue(o) check_exp(IS_TYPE_NUMBER(o), (o)->value.n)
+#define rawtsvalue(o) check_exp(IS_TYPE_STRING(o), &(o)->value.gc->ts)
 #define tsvalue(o) (&rawtsvalue(o)->tsv)
-#define rawuvalue(o) check_exp(ttisuserdata(o), &(o)->value.gc->u)
+#define rawuvalue(o) check_exp(IS_TYPE_USERDATA(o), &(o)->value.gc->u)
 #define uvalue(o) (&rawuvalue(o)->uv)
-#define clvalue(o) check_exp(ttisfunction(o), &(o)->value.gc->cl)
-#define hvalue(o) check_exp(ttistable(o), &(o)->value.gc->h)
-#define bvalue(o) check_exp(ttisboolean(o), (o)->value.b)
-#define thvalue(o) check_exp(ttisthread(o), &(o)->value.gc->th)
+#define clvalue(o) check_exp(IS_TYPE_FUNCTION(o), &(o)->value.gc->cl)
+#define hvalue(o) check_exp(IS_TYPE_TABLE(o), &(o)->value.gc->h)
+#define bvalue(o) check_exp(IS_TYPE_BOOLEAN(o), (o)->value.b)
+#define thvalue(o) check_exp(IS_TYPE_THREAD(o), &(o)->value.gc->th)
 
-#define l_isfalse(o) (ttisnil(o) || (ttisboolean(o) && bvalue(o) == 0))
+#define l_isfalse(o) (IS_TYPE_NIL(o) || (IS_TYPE_BOOLEAN(o) && bvalue(o) == 0))
 
 /*
 ** for internal debug only
@@ -264,7 +260,8 @@ typedef struct Proto {
   int lastlinedefined;
   GCObject *gclist;
 
-  lu_byte nups; /* number of upvalues */
+  // Number of upvalues.
+  lu_byte upNum;
   lu_byte numparams;
   lu_byte is_vararg;
   lu_byte maxstacksize;
@@ -322,8 +319,8 @@ typedef union Closure {
   LClosure l;
 } Closure;
 
-#define iscfunction(o) (ttype(o) == LUA_TYPE_FUNCTION && clvalue(o)->c.isC)
-#define isLfunction(o) (ttype(o) == LUA_TYPE_FUNCTION && !clvalue(o)->c.isC)
+#define IS_C_FUNCTION(o) (ttype(o) == LUA_TYPE_FUNCTION && clvalue(o)->c.isC)
+#define IS_LUA_FUNCTION(o) (ttype(o) == LUA_TYPE_FUNCTION && !clvalue(o)->c.isC)
 
 /*
 ** Tables

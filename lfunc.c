@@ -110,7 +110,7 @@ Proto *luaF_newproto(lua_State *L) {
   f->codeSize = 0;
   f->lineInfoSize = 0;
   f->sizeUpvalues = 0;
-  f->nups = 0;
+  f->upNum = 0;
   f->upvalues = nullptr;
   f->numparams = 0;
   f->is_vararg = false;

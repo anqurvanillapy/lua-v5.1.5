@@ -100,7 +100,7 @@ static Node *mainposition(const Table *t, const TValue *key) {
 ** the array part of the table, -1 otherwise.
 */
 static int arrayindex(const TValue *key) {
-  if (ttisnumber(key)) {
+  if (IS_TYPE_NUMBER(key)) {
     lua_Number n = nvalue(key);
     int k;
     lua_number2int(k, n);
@@ -118,7 +118,7 @@ static int arrayindex(const TValue *key) {
 */
 static int findindex(lua_State *L, Table *t, StkId key) {
   int i;
-  if (ttisnil(key)) {
+  if (IS_TYPE_NIL(key)) {
     return -1; /* first iteration */
   }
   i = arrayindex(key);
@@ -146,14 +146,14 @@ static int findindex(lua_State *L, Table *t, StkId key) {
 int luaH_next(lua_State *L, Table *t, StkId key) {
   int i = findindex(L, t, key);      /* find original element */
   for (i++; i < t->sizearray; i++) { /* try first array part */
-    if (!ttisnil(&t->array[i])) {    /* a non-nil value? */
+    if (!IS_TYPE_NIL(&t->array[i])) {    /* a non-nil value? */
       setnvalue(key, cast_num(i + 1));
       setobj2s(L, key + 1, &t->array[i]);
       return 1;
     }
   }
   for (i -= t->sizearray; i < sizenode(t); i++) { /* then hash part */
-    if (!ttisnil(gval(gnode(t, i)))) {            /* a non-nil value? */
+    if (!IS_TYPE_NIL(gval(gnode(t, i)))) {            /* a non-nil value? */
       setobj2s(L, key, key2tval(gnode(t, i)));
       setobj2s(L, key + 1, gval(gnode(t, i)));
       return 1;
@@ -217,7 +217,7 @@ static int numusearray(const Table *t, int *nums) {
     }
     /* count elements in range (2^(lg-1), 2^lg] */
     for (; i <= lim; i++) {
-      if (!ttisnil(&t->array[i - 1])) {
+      if (!IS_TYPE_NIL(&t->array[i - 1])) {
         lc++;
       }
     }
@@ -233,7 +233,7 @@ static int numusehash(const Table *t, int *nums, int *pnasize) {
   int i = sizenode(t);
   while (i--) {
     Node *n = &t->node[i];
-    if (!ttisnil(gval(n))) {
+    if (!IS_TYPE_NIL(gval(n))) {
       ause += countint(key2tval(n), nums);
       totaluse++;
     }
@@ -289,7 +289,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
     t->sizearray = nasize;
     /* re-insert elements from vanishing slice */
     for (i = nasize; i < oldasize; i++) {
-      if (!ttisnil(&t->array[i]))
+      if (!IS_TYPE_NIL(&t->array[i]))
         setobjt2t(L, luaH_setnum(L, t, i + 1), &t->array[i]);
     }
     /* shrink array */
@@ -298,7 +298,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
   /* re-insert elements from hash part */
   for (i = twoto(oldhsize) - 1; i >= 0; i--) {
     Node *old = nold + i;
-    if (!ttisnil(gval(old)))
+    if (!IS_TYPE_NIL(gval(old)))
       setobjt2t(L, luaH_set(L, t, key2tval(old)), gval(old));
   }
   if (nold != dummynode) {
@@ -360,7 +360,7 @@ void luaH_free(lua_State *L, Table *t) {
 
 static Node *getfreepos(Table *t) {
   while (t->lastfree-- > t->node) {
-    if (ttisnil(gkey(t->lastfree))) {
+    if (IS_TYPE_NIL(gkey(t->lastfree))) {
       return t->lastfree;
     }
   }
@@ -376,7 +376,7 @@ static Node *getfreepos(Table *t) {
 */
 static TValue *newkey(lua_State *L, Table *t, const TValue *key) {
   Node *mp = mainposition(t, key);
-  if (!ttisnil(gval(mp)) || mp == dummynode) {
+  if (!IS_TYPE_NIL(gval(mp)) || mp == dummynode) {
     Node *othern;
     Node *n = getfreepos(t);      /* get a free place */
     if (n == NULL) {              /* cannot find a free place? */
@@ -404,7 +404,7 @@ static TValue *newkey(lua_State *L, Table *t, const TValue *key) {
   gkey(mp)->value = key->value;
   gkey(mp)->tt = key->tt;
   luaC_barriert(L, t, key);
-  lua_assert(ttisnil(gval(mp)));
+  lua_assert(IS_TYPE_NIL(gval(mp)));
   return gval(mp);
 }
 
@@ -419,7 +419,7 @@ const TValue *luaH_getnum(Table *t, int key) {
     lua_Number nk = cast_num(key);
     Node *n = hashnum(t, nk);
     do { /* check whether `key' is somewhere in the chain */
-      if (ttisnumber(gkey(n)) && luai_numeq(nvalue(gkey(n)), nk)) {
+      if (IS_TYPE_NUMBER(gkey(n)) && luai_numeq(nvalue(gkey(n)), nk)) {
         return gval(n); /* that's it */
       } else {
         n = gnext(n);
@@ -435,7 +435,7 @@ const TValue *luaH_getnum(Table *t, int key) {
 const TValue *luaH_getstr(Table *t, TString *key) {
   Node *n = hashstr(t, key);
   do { /* check whether `key' is somewhere in the chain */
-    if (ttisstring(gkey(n)) && rawtsvalue(gkey(n)) == key) {
+    if (IS_TYPE_STRING(gkey(n)) && rawtsvalue(gkey(n)) == key) {
       return gval(n); /* that's it */
     } else {
       n = gnext(n);
@@ -482,9 +482,9 @@ TValue *luaH_set(lua_State *L, Table *t, const TValue *key) {
   if (p != luaO_nilobject) {
     return cast(TValue *, p);
   } else {
-    if (ttisnil(key)) {
+    if (IS_TYPE_NIL(key)) {
       luaG_runerror(L, "table index is nil");
-    } else if (ttisnumber(key) && luai_numisnan(nvalue(key))) {
+    } else if (IS_TYPE_NUMBER(key) && luai_numisnan(nvalue(key))) {
       luaG_runerror(L, "table index is NaN");
     }
     return newkey(L, t, key);
@@ -517,13 +517,13 @@ static int unbound_search(Table *t, unsigned int j) {
   unsigned int i = j; /* i is zero or a present index */
   j++;
   /* find `i' and `j' such that i is present and j is not */
-  while (!ttisnil(luaH_getnum(t, j))) {
+  while (!IS_TYPE_NIL(luaH_getnum(t, j))) {
     i = j;
     j *= 2;
     if (j > cast(unsigned int, MAX_INT)) { /* overflow? */
       /* table was built with bad purposes: resort to linear search */
       i = 1;
-      while (!ttisnil(luaH_getnum(t, i))) {
+      while (!IS_TYPE_NIL(luaH_getnum(t, i))) {
         i++;
       }
       return i - 1;
@@ -532,7 +532,7 @@ static int unbound_search(Table *t, unsigned int j) {
   /* now do a binary search between them */
   while (j - i > 1) {
     unsigned int m = (i + j) / 2;
-    if (ttisnil(luaH_getnum(t, m))) {
+    if (IS_TYPE_NIL(luaH_getnum(t, m))) {
       j = m;
     } else {
       i = m;
@@ -547,12 +547,12 @@ static int unbound_search(Table *t, unsigned int j) {
 */
 int luaH_getn(Table *t) {
   unsigned int j = t->sizearray;
-  if (j > 0 && ttisnil(&t->array[j - 1])) {
+  if (j > 0 && IS_TYPE_NIL(&t->array[j - 1])) {
     /* there is a boundary in the array part: (binary) search for it */
     unsigned int i = 0;
     while (j - i > 1) {
       unsigned int m = (i + j) / 2;
-      if (ttisnil(&t->array[m - 1])) {
+      if (IS_TYPE_NIL(&t->array[m - 1])) {
         j = m;
       } else {
         i = m;

@@ -166,7 +166,7 @@ static Proto *LoadFunction(LoadState *S, TString *p) {
   }
   f->linedefined = LoadInt(S);
   f->lastlinedefined = LoadInt(S);
-  f->nups = LoadByte(S);
+  f->upNum = LoadByte(S);
   f->numparams = LoadByte(S);
   f->is_vararg = LoadByte(S);
   f->maxstacksize = LoadByte(S);

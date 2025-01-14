@@ -21,7 +21,7 @@ struct lua_longjmp; /* defined in ldo.c */
 
 #define BASIC_CI_SIZE 8
 
-#define BASIC_STACK_SIZE (2 * LUA_MINSTACK)
+#define BASIC_STACK_SIZE (2 * LUA_MIN_STACK)
 
 typedef struct stringtable {
   GCObject **hash;
@@ -44,7 +44,7 @@ typedef struct CallInfo {
 #define curr_func(L) (clvalue(L->ci->func))
 #define ci_func(ci) (clvalue((ci)->func))
 #define f_isLua(ci) (!ci_func(ci)->c.isC)
-#define isLua(ci) (ttisfunction((ci)->func) && f_isLua(ci))
+#define isLua(ci) (IS_TYPE_FUNCTION((ci)->func) && f_isLua(ci))
 
 /*
 ** `global state', shared by all threads of this state
@@ -138,7 +138,7 @@ struct lua_State {
 ** Union of all collectable objects
 */
 union GCObject {
-  GCheader gch;
+  GCHeader gch;
   union TString ts;
   union Udata u;
   union Closure cl;

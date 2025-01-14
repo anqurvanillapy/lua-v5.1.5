@@ -191,7 +191,7 @@ LUA_API void lua_replace(lua_State *L, int idx) {
   api_checkvalidindex(L, o);
   if (idx == LUA_ENVIRONINDEX) {
     Closure *func = curr_func(L);
-    api_check(L, ttistable(L->top - 1));
+    api_check(L, IS_TYPE_TABLE(L->top - 1));
     func->c.env = hvalue(L->top - 1);
     luaC_barrier(L, func, L->top - 1);
   } else {
@@ -226,7 +226,7 @@ LUA_API const char *lua_typename(lua_State *L, int t) {
 
 LUA_API int lua_iscfunction(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
-  return iscfunction(o);
+  return IS_C_FUNCTION(o);
 }
 
 LUA_API int lua_isnumber(lua_State *L, int idx) {
@@ -242,7 +242,7 @@ LUA_API int lua_isstring(lua_State *L, int idx) {
 
 LUA_API int lua_isuserdata(lua_State *L, int idx) {
   const TValue *o = index2adr(L, idx);
-  return (ttisuserdata(o) || ttislightuserdata(o));
+  return (IS_TYPE_USERDATA(o) || IS_TYPE_LIGHTUSERDATA(o));
 }
 
 LUA_API int lua_rawequal(lua_State *L, int index1, int index2) {
@@ -306,7 +306,7 @@ LUA_API int lua_toboolean(lua_State *L, int idx) {
 
 LUA_API const char *lua_tolstring(lua_State *L, int idx, size_t *len) {
   StkId o = index2adr(L, idx);
-  if (!ttisstring(o)) {
+  if (!IS_TYPE_STRING(o)) {
     lua_lock(L);                /* `luaV_tostring' may create a new string */
     if (!luaV_tostring(L, o)) { /* conversion failed? */
       if (len != NULL) {
@@ -348,7 +348,7 @@ LUA_API size_t lua_objlen(lua_State *L, int idx) {
 
 LUA_API lua_CFunction lua_tocfunction(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
-  return (!iscfunction(o)) ? NULL : clvalue(o)->c.f;
+  return (!IS_C_FUNCTION(o)) ? NULL : clvalue(o)->c.f;
 }
 
 LUA_API void *lua_touserdata(lua_State *L, int idx) {
@@ -365,7 +365,7 @@ LUA_API void *lua_touserdata(lua_State *L, int idx) {
 
 LUA_API lua_State *lua_tothread(lua_State *L, int idx) {
   StkId o = index2adr(L, idx);
-  return (!ttisthread(o)) ? NULL : thvalue(o);
+  return (!IS_TYPE_THREAD(o)) ? NULL : thvalue(o);
 }
 
 LUA_API const void *lua_topointer(lua_State *L, int idx) {
@@ -515,7 +515,7 @@ LUA_API void lua_rawget(lua_State *L, int idx) {
   StkId t;
   lua_lock(L);
   t = index2adr(L, idx);
-  api_check(L, ttistable(t));
+  api_check(L, IS_TYPE_TABLE(t));
   setobj2s(L, L->top - 1, luaH_get(hvalue(t), L->top - 1));
   lua_unlock(L);
 }
@@ -524,7 +524,7 @@ LUA_API void lua_rawgeti(lua_State *L, int idx, int n) {
   StkId o;
   lua_lock(L);
   o = index2adr(L, idx);
-  api_check(L, ttistable(o));
+  api_check(L, IS_TYPE_TABLE(o));
   setobj2s(L, L->top, luaH_getnum(hvalue(o), n));
   api_incr_top(L);
   lua_unlock(L);
@@ -622,7 +622,7 @@ LUA_API void lua_rawset(lua_State *L, int idx) {
   lua_lock(L);
   api_checknelems(L, 2);
   t = index2adr(L, idx);
-  api_check(L, ttistable(t));
+  api_check(L, IS_TYPE_TABLE(t));
   setobj2t(L, luaH_set(L, hvalue(t), L->top - 2), L->top - 1);
   luaC_barriert(L, hvalue(t), L->top - 1);
   L->top -= 2;
@@ -634,7 +634,7 @@ LUA_API void lua_rawseti(lua_State *L, int idx, int n) {
   lua_lock(L);
   api_checknelems(L, 1);
   o = index2adr(L, idx);
-  api_check(L, ttistable(o));
+  api_check(L, IS_TYPE_TABLE(o));
   setobj2t(L, luaH_setnum(L, hvalue(o), n), L->top - 1);
   luaC_barriert(L, hvalue(o), L->top - 1);
   L->top--;
@@ -648,10 +648,10 @@ LUA_API int lua_setmetatable(lua_State *L, int objindex) {
   api_checknelems(L, 1);
   obj = index2adr(L, objindex);
   api_checkvalidindex(L, obj);
-  if (ttisnil(L->top - 1)) {
+  if (IS_TYPE_NIL(L->top - 1)) {
     mt = NULL;
   } else {
-    api_check(L, ttistable(L->top - 1));
+    api_check(L, IS_TYPE_TABLE(L->top - 1));
     mt = hvalue(L->top - 1);
   }
   switch (ttype(obj)) {
@@ -684,7 +684,7 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
   api_checknelems(L, 1);
   o = index2adr(L, idx);
   api_checkvalidindex(L, o);
-  api_check(L, ttistable(L->top - 1));
+  api_check(L, IS_TYPE_TABLE(L->top - 1));
   switch (ttype(o)) {
   case LUA_TYPE_FUNCTION:
     clvalue(o)->c.env = hvalue(L->top - 1);
@@ -816,7 +816,7 @@ LUA_API int lua_dump(lua_State *L, lua_Writer writer, void *data) {
   lua_lock(L);
   api_checknelems(L, 1);
   o = L->top - 1;
-  if (isLfunction(o)) {
+  if (IS_LUA_FUNCTION(o)) {
     status = luaU_dump(L, clvalue(o)->l.p, writer, data, 0);
   } else {
     status = 1;
@@ -908,7 +908,7 @@ LUA_API int lua_next(lua_State *L, int idx) {
   int more;
   lua_lock(L);
   t = index2adr(L, idx);
-  api_check(L, ttistable(t));
+  api_check(L, IS_TYPE_TABLE(t));
   more = luaH_next(L, hvalue(t), L->top - 1);
   if (more) {
     api_incr_top(L);
@@ -965,7 +965,7 @@ LUA_API void *lua_newuserdata(lua_State *L, size_t size) {
 
 static const char *aux_upvalue(StkId fi, int n, TValue **val) {
   Closure *f;
-  if (!ttisfunction(fi)) {
+  if (!IS_TYPE_FUNCTION(fi)) {
     return NULL;
   }
   f = clvalue(fi);

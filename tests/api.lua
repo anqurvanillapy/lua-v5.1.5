@@ -106,7 +106,7 @@ function count (x, n)
     isnumber %d;
     isstring %d;
     isfunction %d;
-    iscfunction %d;
+    IS_C_FUNCTION %d;
     istable %d;
     isuserdata %d;
     isnil %d;
@@ -708,4 +708,3 @@ assert(T.gsub("...", "...", "") == "")
 
 
 print'OK'
-

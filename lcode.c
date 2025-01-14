@@ -214,7 +214,7 @@ static int addk(FuncState *fs, TValue *k, TValue *v) {
   TValue *idx = luaH_set(L, fs->h, k);
   Proto *f = fs->f;
   int oldsize = f->kSize;
-  if (ttisnumber(idx)) {
+  if (IS_TYPE_NUMBER(idx)) {
     lua_assert(luaO_rawequalObj(&fs->f->k[cast_int(nvalue(idx))], v));
     return cast_int(nvalue(idx));
   } else { /* constant not found; create a new entry */

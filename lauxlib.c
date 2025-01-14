@@ -304,7 +304,7 @@ LUALIB_API const char *luaL_findtable(lua_State *L, int idx, const char *fname,
 #define bufflen(B) ((B)->p - (B)->buffer)
 #define bufffree(B) ((size_t)(LUAL_BUFFER_SIZE - bufflen(B)))
 
-#define LIMIT (LUA_MINSTACK / 2)
+#define LIMIT (LUA_MIN_STACK / 2)
 
 static int emptybuffer(luaL_Buffer *B) {
   size_t l = bufflen(B);

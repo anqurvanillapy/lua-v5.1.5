@@ -496,4 +496,3 @@ assert(type(debug.getregistry()) == "table")
 
 
 print"OK"
-

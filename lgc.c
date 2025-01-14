@@ -51,7 +51,7 @@
 #define setthreshold(g) (g->GCthreshold = (g->estimate / 100) * g->gcpause)
 
 static void removeentry(Node *n) {
-  lua_assert(ttisnil(gval(n)));
+  lua_assert(IS_TYPE_NIL(gval(n)));
   if (iscollectable(gkey(n))) {
     setttype(gkey(n), LUA_TDEADKEY); /* dead key; remove it */
   }
@@ -153,7 +153,7 @@ static int traversetable(global_State *g, Table *h) {
   if (h->metatable)
     markobject(g, h->metatable);
   mode = gfasttm(g, h->metatable, TM_MODE);
-  if (mode && ttisstring(mode)) { /* is there a weak mode? */
+  if (mode && IS_TYPE_STRING(mode)) { /* is there a weak mode? */
     weakkey = (strchr(svalue(mode), 'k') != NULL);
     weakvalue = (strchr(svalue(mode), 'v') != NULL);
     if (weakkey || weakvalue) {            /* is really weak? */
@@ -175,11 +175,11 @@ static int traversetable(global_State *g, Table *h) {
   i = sizenode(h);
   while (i--) {
     Node *n = gnode(h, i);
-    lua_assert(ttype(gkey(n)) != LUA_TDEADKEY || ttisnil(gval(n)));
-    if (ttisnil(gval(n))) {
+    lua_assert(ttype(gkey(n)) != LUA_TDEADKEY || IS_TYPE_NIL(gval(n)));
+    if (IS_TYPE_NIL(gval(n))) {
       removeentry(n); /* remove empty entries */
     } else {
-      lua_assert(!ttisnil(gkey(n)));
+      lua_assert(!IS_TYPE_NIL(gkey(n)));
       if (!weakkey)
         markvalue(g, gkey(n));
       if (!weakvalue)
@@ -224,7 +224,7 @@ static void traverseclosure(global_State *g, Closure *cl) {
       markvalue(g, &cl->c.upvalue[i]);
   } else {
     int i;
-    lua_assert(cl->l.nupvalues == cl->l.p->nups);
+    lua_assert(cl->l.nupvalues == cl->l.p->upNum);
     markobject(g, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) /* mark its upvalues */
       markobject(g, cl->l.upvals[i]);
@@ -336,12 +336,12 @@ static int iscleared(const TValue *o, int iskey) {
   if (!iscollectable(o)) {
     return 0;
   }
-  if (ttisstring(o)) {
+  if (IS_TYPE_STRING(o)) {
     stringmark(rawtsvalue(o)); /* strings are `values', so are never weak */
     return 0;
   }
   return iswhite(gcvalue(o)) ||
-         (ttisuserdata(o) && (!iskey && isfinalized(uvalue(o))));
+         (IS_TYPE_USERDATA(o) && (!iskey && isfinalized(uvalue(o))));
 }
 
 /*
@@ -364,7 +364,7 @@ static void cleartable(GCObject *l) {
     i = sizenode(h);
     while (i--) {
       Node *n = gnode(h, i);
-      if (!ttisnil(gval(n)) && /* non-empty entry? */
+      if (!IS_TYPE_NIL(gval(n)) && /* non-empty entry? */
           (iscleared(key2tval(n), 1) || iscleared(gval(n), 0))) {
         setnilvalue(gval(n)); /* remove value ... */
         removeentry(n);       /* remove entry from table */

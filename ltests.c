@@ -188,8 +188,8 @@ static void checktable(global_State *g, Table *h) {
   i = sizenode(h);
   while (i--) {
     Node *n = gnode(h, i);
-    if (!ttisnil(gval(n))) {
-      lua_assert(!ttisnil(gkey(n)));
+    if (!IS_TYPE_NIL(gval(n))) {
+      lua_assert(!IS_TYPE_NIL(gkey(n)));
       checkvalref(g, hgc, gkey(n));
       checkvalref(g, hgc, gval(n));
     }
@@ -206,7 +206,7 @@ static void checkproto(global_State *g, Proto *f) {
   if (f->source)
     checkobjref(g, fgc, f->source);
   for (i = 0; i < f->kSize; i++) {
-    if (ttisstring(f->k + i))
+    if (IS_TYPE_STRING(f->k + i))
       checkobjref(g, fgc, rawtsvalue(f->k + i));
   }
   for (i = 0; i < f->sizeUpvalues; i++) {
@@ -232,7 +232,7 @@ static void checkclosure(global_State *g, Closure *cl) {
       checkvalref(g, clgc, &cl->c.upvalue[i]);
   } else {
     int i;
-    lua_assert(cl->l.nupvalues == cl->l.p->nups);
+    lua_assert(cl->l.nupvalues == cl->l.p->upNum);
     checkobjref(g, clgc, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) {
       if (cl->l.upvals[i]) {
@@ -538,8 +538,8 @@ static int table_query(lua_State *L) {
     luaA_pushobject(L, &t->array[i]);
     lua_pushnil(L);
   } else if ((i -= t->sizearray) < sizenode(t)) {
-    if (!ttisnil(gval(gnode(t, i))) || ttisnil(gkey(gnode(t, i))) ||
-        ttisnumber(gkey(gnode(t, i)))) {
+    if (!IS_TYPE_NIL(gval(gnode(t, i))) || IS_TYPE_NIL(gkey(gnode(t, i))) ||
+        IS_TYPE_NUMBER(gkey(gnode(t, i)))) {
       luaA_pushobject(L, key2tval(gnode(t, i)));
     } else
       lua_pushliteral(L, "<undef>");
@@ -809,7 +809,7 @@ static int testC(lua_State *L) {
       lua_pushinteger(L1, lua_isstring(L1, getindex));
     } else if EQ ("istable") {
       lua_pushinteger(L1, lua_istable(L1, getindex));
-    } else if EQ ("iscfunction") {
+    } else if EQ ("IS_C_FUNCTION") {
       lua_pushinteger(L1, lua_iscfunction(L1, getindex));
     } else if EQ ("isfunction") {
       lua_pushinteger(L1, lua_isfunction(L1, getindex));

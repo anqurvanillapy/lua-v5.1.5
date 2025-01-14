@@ -167,25 +167,25 @@ static int indexupvalue(FuncState *fs, TString *name, expdesc *v) {
   int i;
   Proto *f = fs->f;
   int oldsize = f->sizeUpvalues;
-  for (i = 0; i < f->nups; i++) {
+  for (i = 0; i < f->upNum; i++) {
     if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
       lua_assert(f->upvalues[i] == name);
       return i;
     }
   }
   /* new one */
-  luaY_checklimit(fs, f->nups + 1, LUAI_MAX_UPVALUES, "upvalues");
-  luaM_growvector(fs->L, f->upvalues, f->nups, f->sizeUpvalues, TString *,
+  luaY_checklimit(fs, f->upNum + 1, LUAI_MAX_UPVALUES, "upvalues");
+  luaM_growvector(fs->L, f->upvalues, f->upNum, f->sizeUpvalues, TString *,
                   MAX_INT, "");
   while (oldsize < f->sizeUpvalues) {
     f->upvalues[oldsize++] = nullptr;
   }
-  f->upvalues[f->nups] = name;
+  f->upvalues[f->upNum] = name;
   luaC_objbarrier(fs->L, f, name);
   lua_assert(v->k == VLOCAL || v->k == VUPVAL);
-  fs->upvalues[f->nups].k = cast_byte(v->k);
-  fs->upvalues[f->nups].info = cast_byte(v->u.s.info);
-  return f->nups++;
+  fs->upvalues[f->upNum].k = cast_byte(v->k);
+  fs->upvalues[f->upNum].info = cast_byte(v->u.s.info);
+  return f->upNum++;
 }
 
 static int searchvar(FuncState *fs, TString *n) {
@@ -309,7 +309,7 @@ static void pushclosure(LexState *ls, FuncState *func, expdesc *v) {
   f->p[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
   init_exp(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
-  for (i = 0; i < func->f->nups; i++) {
+  for (i = 0; i < func->f->upNum; i++) {
     OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
     luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
   }
@@ -358,8 +358,8 @@ static void close_func(LexState *ls) {
   f->pSize = fs->np;
   luaM_reallocvector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
-  luaM_reallocvector(L, f->upvalues, f->sizeUpvalues, f->nups, TString *);
-  f->sizeUpvalues = f->nups;
+  luaM_reallocvector(L, f->upvalues, f->sizeUpvalues, f->upNum, TString *);
+  f->sizeUpvalues = f->upNum;
   lua_assert(luaG_checkcode(f));
   lua_assert(fs->bl == NULL);
   ls->fs = fs->prev;
@@ -380,7 +380,7 @@ Proto *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
   check(&lexstate, TK_EOS);
   close_func(&lexstate);
   lua_assert(funcstate.prev == NULL);
-  lua_assert(funcstate.f->nups == 0);
+  lua_assert(funcstate.f->upNum == 0);
   lua_assert(lexstate.fs == NULL);
   return funcstate.f;
 }

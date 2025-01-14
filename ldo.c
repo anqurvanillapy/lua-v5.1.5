@@ -171,8 +171,8 @@ void luaD_callhook(lua_State *L, int event, int line) {
     } else {
       ar.i_ci = cast_int(L->ci - L->baseCI);
     }
-    luaD_checkstack(L, LUA_MINSTACK); /* ensure minimum stack size */
-    L->ci->top = L->top + LUA_MINSTACK;
+    luaD_checkstack(L, LUA_MIN_STACK); /* ensure minimum stack size */
+    L->ci->top = L->top + LUA_MIN_STACK;
     lua_assert(L->ci->top <= L->stackLast);
     L->allowHook = 0; /* cannot call hooks inside a hook */
     lua_unlock(L);
@@ -225,7 +225,7 @@ static StkId tryfuncTM(lua_State *L, StkId func) {
   const TValue *tm = luaT_gettmbyobj(L, func, TM_CALL);
   StkId p;
   ptrdiff_t funcr = savestack(L, func);
-  if (!ttisfunction(tm)) {
+  if (!IS_TYPE_FUNCTION(tm)) {
     luaG_typeerror(L, func, "call");
   }
   /* Open a hole inside the stack at `func' */
@@ -245,7 +245,7 @@ static StkId tryfuncTM(lua_State *L, StkId func) {
 int luaD_precall(lua_State *L, StkId func, int nresults) {
   LClosure *cl;
   ptrdiff_t funcr;
-  if (!ttisfunction(func)) {   /* `func' is not a function? */
+  if (!IS_TYPE_FUNCTION(func)) {   /* `func' is not a function? */
     func = tryfuncTM(L, func); /* check the `function' tag method */
   }
   funcr = savestack(L, func);
@@ -288,11 +288,11 @@ int luaD_precall(lua_State *L, StkId func, int nresults) {
   } else { /* if is a C function, call it */
     CallInfo *ci;
     int n;
-    luaD_checkstack(L, LUA_MINSTACK); /* ensure minimum stack size */
+    luaD_checkstack(L, LUA_MIN_STACK); /* ensure minimum stack size */
     ci = inc_ci(L);                   /* now `enter' new function */
     ci->func = restorestack(L, funcr);
     L->base = ci->base = ci->func + 1;
-    ci->top = L->top + LUA_MINSTACK;
+    ci->top = L->top + LUA_MIN_STACK;
     lua_assert(ci->top <= L->stackLast);
     ci->nresults = nresults;
     if (L->hookMask & LUA_MASKCALL) {
@@ -478,9 +478,9 @@ static void f_parser(lua_State *L, void *ud) {
   luaC_checkGC(L);
   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
                                                              p->name);
-  cl = luaF_newLclosure(L, tf->nups, hvalue(gt(L)));
+  cl = luaF_newLclosure(L, tf->upNum, hvalue(gt(L)));
   cl->l.p = tf;
-  for (i = 0; i < tf->nups; i++) { /* initialize eventual upvalues */
+  for (i = 0; i < tf->upNum; i++) { /* initialize eventual upvalues */
     cl->l.upvals[i] = luaF_newupval(L);
   }
   setclvalue(L, L->top, cl);
