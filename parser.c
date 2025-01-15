@@ -104,26 +104,36 @@ static void check_match(LexState *ls, int what, int who, int where) {
 }
 
 static TString *str_checkname(LexState *ls) {
-  TString *ts;
   check(ls, TK_NAME);
-  ts = ls->t.literal.str;
+  TString *ts = ls->t.literal.str;
   luaX_next(ls);
   return ts;
 }
 
-static void exprInit(ExprInfo *e, ExprKind k, int i) {
+static void exprSetInfo(ExprInfo *e, ExprKind k, int info) {
   e->f = NO_JUMP;
   e->t = NO_JUMP;
   e->k = k;
-  e->u.s.info = i;
+  e->u.s.info = info;
 }
 
-static void codestring(LexState *ls, ExprInfo *e, TString *s) {
-  exprInit(e, VK, luaK_stringK(ls->fs, s));
+static void exprSetKind(ExprInfo *e, ExprKind k) {
+  e->f = NO_JUMP;
+  e->t = NO_JUMP;
+  e->k = k;
+}
+
+static void numberLiteral(ExprInfo *e, lua_Number value) {
+  exprSetKind(e, VKNUM);
+  e->u.value = value;
+}
+
+static void stringLiteral(LexState *ls, ExprInfo *e, TString *s) {
+  exprSetInfo(e, VK, Codegen_addString(ls->fs, s));
 }
 
 static void checkname(LexState *ls, ExprInfo *e) {
-  codestring(ls, e, str_checkname(ls));
+  stringLiteral(ls, e, str_checkname(ls));
 }
 
 static int registerlocalvar(LexState *ls, TString *varname) {
@@ -211,13 +221,13 @@ static void markupval(FuncState *fs, int level) {
 }
 
 static int singlevaraux(FuncState *fs, TString *n, ExprInfo *var, int base) {
-  if (fs == nullptr) {              /* no more levels? */
-    exprInit(var, VGLOBAL, NO_REG); /* default is global variable */
+  if (fs == nullptr) {                 /* no more levels? */
+    exprSetInfo(var, VGLOBAL, NO_REG); /* default is global variable */
     return VGLOBAL;
   } else {
     int v = searchvar(fs, n); /* look up at current level */
     if (v >= 0) {
-      exprInit(var, VLOCAL, v);
+      exprSetInfo(var, VLOCAL, v);
       if (!base) {
         markupval(fs, v); /* local will be used as an upval */
       }
@@ -237,7 +247,8 @@ static void singlevar(LexState *ls, ExprInfo *var) {
   TString *varname = str_checkname(ls);
   FuncState *fs = ls->fs;
   if (singlevaraux(fs, varname, var, 1) == VGLOBAL) {
-    var->u.s.info = luaK_stringK(fs, varname); /* info points to global name */
+    // Info points to global name.
+    var->u.s.info = Codegen_addString(fs, varname);
   }
 }
 
@@ -311,7 +322,7 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   }
   f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
-  exprInit(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
+  exprSetInfo(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
   for (i = 0; i < func->f->upvaluesNum; i++) {
     OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
     luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
@@ -478,9 +489,9 @@ static void constructor(LexState *ls, ExprInfo *t) {
   struct ConsControl cc;
   cc.na = cc.nh = cc.tostore = 0;
   cc.t = t;
-  exprInit(t, VRELOCABLE, pc);
-  exprInit(&cc.v, VVOID, 0);   /* no value (yet) */
-  luaK_exp2nextreg(ls->fs, t); /* fix it at stack top (for gc) */
+  exprSetInfo(t, VRELOCABLE, pc);
+  exprSetInfo(&cc.v, VVOID, 0); /* no value (yet) */
+  luaK_exp2nextreg(ls->fs, t);  /* fix it at stack top (for gc) */
   checknext(ls, '{');
   do {
     DEBUG_ASSERT(cc.v.k == VVOID || cc.tostore > 0);
@@ -608,7 +619,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     break;
   }
   case TK_STRING: { /* funcargs -> STRING */
-    codestring(ls, &args, ls->t.literal.str);
+    stringLiteral(ls, &args, ls->t.literal.str);
     luaX_next(ls); /* must use `literal' before `next' */
     break;
   }
@@ -627,7 +638,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     }
     nparams = fs->freereg - (base + 1);
   }
-  exprInit(f, VCALL, luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2));
+  exprSetInfo(f, VCALL, luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2));
   luaK_fixline(fs, line);
   fs->freereg = base + 1; /* call remove function and arguments and leaves
                              (unless changed) one result */
@@ -710,20 +721,19 @@ static void primaryexp(LexState *ls, ExprInfo *v) {
 static void simpleexp(LexState *ls, ExprInfo *v) {
   switch (ls->t.token) {
   case TK_NUMBER:
-    exprInit(v, VKNUM, 0);
-    v->u.value = ls->t.literal.num;
+    numberLiteral(v, ls->t.literal.num);
     break;
   case TK_STRING:
-    codestring(ls, v, ls->t.literal.str);
+    stringLiteral(ls, v, ls->t.literal.str);
     break;
   case TK_NIL:
-    exprInit(v, VNIL, 0);
+    exprSetKind(v, VNIL);
     break;
   case TK_TRUE:
-    exprInit(v, VTRUE, 0);
+    exprSetKind(v, VTRUE);
     break;
   case TK_FALSE:
-    exprInit(v, VFALSE, 0);
+    exprSetKind(v, VFALSE);
     break;
   case TK_DOTS: {
     // Vararg.
@@ -733,7 +743,7 @@ static void simpleexp(LexState *ls, ExprInfo *v) {
           ls, "cannot use " LUA_QL("...") " outside a vararg function");
     }
     fs->f->varargMode &= ~VARARG_NEEDS_ARG; /* don't need 'arg' */
-    exprInit(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
+    exprSetInfo(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
     break;
   }
   case '{':
@@ -960,7 +970,7 @@ static void assignment(LexState *ls, struct LHS_assign *lh, int nvars) {
       return; /* avoid default */
     }
   }
-  exprInit(&e, VNONRELOC, ls->fs->freereg - 1); /* default assignment */
+  exprSetInfo(&e, VNONRELOC, ls->fs->freereg - 1); /* default assignment */
   luaK_storevar(ls->fs, &lh->v, &e);
 }
 
@@ -1168,7 +1178,7 @@ static void localFuncStmt(LexState *ls) {
   ExprInfo v, b;
   FuncState *fs = ls->fs;
   new_localvar(ls, str_checkname(ls), 0);
-  exprInit(&v, VLOCAL, fs->freereg);
+  exprSetInfo(&v, VLOCAL, fs->freereg);
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
   body(ls, &b, 0, ls->linenumber);

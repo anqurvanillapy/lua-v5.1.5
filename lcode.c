@@ -209,43 +209,45 @@ static void freeexp(FuncState *fs, ExprInfo *e) {
   }
 }
 
-static int addk(FuncState *fs, TaggedValue *k, TaggedValue *v) {
+static int addConstant(FuncState *fs, TaggedValue *k, TaggedValue *v) {
   lua_State *L = fs->L;
   TaggedValue *idx = luaH_set(L, fs->h, k);
   Prototype *f = fs->f;
-  int oldsize = f->kSize;
+
   if (IS_TYPE_NUMBER(idx)) {
-    DEBUG_ASSERT(luaO_rawequalObj(&fs->f->k[cast_int(NUMBER_VALUE(idx))], v));
+    DEBUG_ASSERT(luaO_rawequalObj(&f->k[cast_int(NUMBER_VALUE(idx))], v));
     return cast_int(NUMBER_VALUE(idx));
-  } else { /* constant not found; create a new entry */
-    SET_NUMBER(idx, cast_num(fs->nk));
-    luaM_growvector(L, f->k, fs->nk, f->kSize, TaggedValue, MAXARG_Bx,
-                    "constant table overflow");
-    while (oldsize < f->kSize) {
-      SET_NIL(&f->k[oldsize++]);
-    }
-    SET_OBJECT(L, &f->k[fs->nk], v);
-    luaC_barrier(L, f, v);
-    return fs->nk++;
   }
+
+  // Constant not found, create a new entry.
+  int oldsize = f->kSize;
+  SET_NUMBER(idx, cast_num(fs->nk));
+  luaM_growvector(L, f->k, fs->nk, f->kSize, TaggedValue, MAXARG_Bx,
+                  "constant table overflow");
+  while (oldsize < f->kSize) {
+    SET_NIL(&f->k[oldsize++]);
+  }
+  SET_OBJECT(L, &f->k[fs->nk], v);
+  luaC_barrier(L, f, v);
+  return fs->nk++;
 }
 
-int luaK_stringK(FuncState *fs, TString *s) {
+int Codegen_addString(FuncState *fs, TString *s) {
   TaggedValue o;
   SET_STRING(fs->L, &o, s);
-  return addk(fs, &o, &o);
+  return addConstant(fs, &o, &o);
 }
 
 int luaK_numberK(FuncState *fs, lua_Number r) {
   TaggedValue o;
   SET_NUMBER(&o, r);
-  return addk(fs, &o, &o);
+  return addConstant(fs, &o, &o);
 }
 
 static int boolK(FuncState *fs, int b) {
   TaggedValue o;
   SET_BOOL(&o, b);
-  return addk(fs, &o, &o);
+  return addConstant(fs, &o, &o);
 }
 
 static int nilK(FuncState *fs) {
@@ -253,7 +255,7 @@ static int nilK(FuncState *fs) {
   SET_NIL(&v);
   /* cannot use nil as key; instead use table itself to represent nil */
   SET_TABLE(fs->L, &k, fs->h);
-  return addk(fs, &k, &v);
+  return addConstant(fs, &k, &v);
 }
 
 void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
