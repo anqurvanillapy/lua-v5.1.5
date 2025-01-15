@@ -232,13 +232,13 @@ typedef struct Prototype {
   // Upvalue names.
   TString **upvalues;
   int upvaluesSize;
+  lu_byte upvaluesNum;
 
   TString *source;
 
   GCObject *gcList;
 
-  lu_byte upvalueNum;
-  lu_byte paramNum;
+  lu_byte paramsNum;
   lu_byte varargMode;
   lu_byte maxStackSize;
 } Prototype;

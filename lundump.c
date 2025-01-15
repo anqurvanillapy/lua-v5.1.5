@@ -154,7 +154,7 @@ static void LoadDebug(LoadState *S, Prototype *f) {
 
 static Prototype *LoadFunction(LoadState *S, TString *p) {
   Prototype *f;
-  if (++S->L->nestedCCallNum > LUAI_MAX_C_CALLS) {
+  if (++S->L->nestedCCallsNum > LUAI_MAX_C_CALLS) {
     error(S, "code too deep");
   }
   f = luaF_newproto(S->L);
@@ -166,8 +166,8 @@ static Prototype *LoadFunction(LoadState *S, TString *p) {
   }
   f->lineDefined = LoadInt(S);
   f->lineDefinedLast = LoadInt(S);
-  f->upvalueNum = LoadByte(S);
-  f->paramNum = LoadByte(S);
+  f->upvaluesNum = LoadByte(S);
+  f->paramsNum = LoadByte(S);
   f->varargMode = LoadByte(S);
   f->maxStackSize = LoadByte(S);
   LoadCode(S, f);
@@ -175,7 +175,7 @@ static Prototype *LoadFunction(LoadState *S, TString *p) {
   LoadDebug(S, f);
   IF(!luaG_checkcode(f), "bad code");
   S->L->top--;
-  S->L->nestedCCallNum--;
+  S->L->nestedCCallsNum--;
   return f;
 }
 

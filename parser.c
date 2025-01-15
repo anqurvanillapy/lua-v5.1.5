@@ -167,25 +167,25 @@ static int indexupvalue(FuncState *fs, TString *name, expdesc *v) {
   int i;
   Prototype *f = fs->f;
   int oldsize = f->upvaluesSize;
-  for (i = 0; i < f->upvalueNum; i++) {
+  for (i = 0; i < f->upvaluesNum; i++) {
     if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
       lua_assert(f->upvalues[i] == name);
       return i;
     }
   }
   /* new one */
-  luaY_checklimit(fs, f->upvalueNum + 1, LUAI_MAX_UPVALUES, "upvalues");
-  luaM_growvector(fs->L, f->upvalues, f->upvalueNum, f->upvaluesSize, TString *,
-                  MAX_INT, "");
+  luaY_checklimit(fs, f->upvaluesNum + 1, LUAI_MAX_UPVALUES, "upvalues");
+  luaM_growvector(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize,
+                  TString *, MAX_INT, "");
   while (oldsize < f->upvaluesSize) {
     f->upvalues[oldsize++] = nullptr;
   }
-  f->upvalues[f->upvalueNum] = name;
+  f->upvalues[f->upvaluesNum] = name;
   luaC_objbarrier(fs->L, f, name);
   lua_assert(v->k == VLOCAL || v->k == VUPVAL);
-  fs->upvalues[f->upvalueNum].k = cast_byte(v->k);
-  fs->upvalues[f->upvalueNum].info = cast_byte(v->u.s.info);
-  return f->upvalueNum++;
+  fs->upvalues[f->upvaluesNum].k = cast_byte(v->k);
+  fs->upvalues[f->upvaluesNum].info = cast_byte(v->u.s.info);
+  return f->upvaluesNum++;
 }
 
 static int searchvar(FuncState *fs, TString *n) {
@@ -264,13 +264,13 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, expdesc *e) {
 }
 
 static void enterLevel(LexState *ls) {
-  ls->L->nestedCCallNum++;
-  if (ls->L->nestedCCallNum > LUAI_MAX_C_CALLS) {
+  ls->L->nestedCCallsNum++;
+  if (ls->L->nestedCCallsNum > LUAI_MAX_C_CALLS) {
     luaX_lexerror(ls, "chunk has too many syntax levels", 0);
   }
 }
 
-#define leaveLevel(ls) ((ls)->L->nestedCCallNum--)
+#define leaveLevel(ls) ((ls)->L->nestedCCallsNum--)
 
 static void enterBlock(FuncState *fs, BlockCnt *bl, lu_byte isbreakable) {
   bl->breaklist = NO_JUMP;
@@ -309,7 +309,7 @@ static void pushclosure(LexState *ls, FuncState *func, expdesc *v) {
   f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
   init_exp(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
-  for (i = 0; i < func->f->upvalueNum; i++) {
+  for (i = 0; i < func->f->upvaluesNum; i++) {
     OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
     luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
   }
@@ -358,8 +358,9 @@ static void close_func(LexState *ls) {
   f->pSize = fs->np;
   luaM_reallocvector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
-  luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvalueNum, TString *);
-  f->upvaluesSize = f->upvalueNum;
+  luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum,
+                     TString *);
+  f->upvaluesSize = f->upvaluesNum;
   lua_assert(luaG_checkcode(f));
   lua_assert(fs->bl == NULL);
   ls->fs = fs->prev;
@@ -380,7 +381,7 @@ Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
   check(&lexstate, TK_EOS);
   close_func(&lexstate);
   lua_assert(funcstate.prev == NULL);
-  lua_assert(funcstate.f->upvalueNum == 0);
+  lua_assert(funcstate.f->upvaluesNum == 0);
   lua_assert(lexstate.fs == NULL);
   return funcstate.f;
 }
@@ -552,7 +553,7 @@ static void parlist(LexState *ls) {
     } while (!f->varargMode && testNext(ls, ','));
   }
   adjustlocalvars(ls, nparams);
-  f->paramNum = cast_byte(fs->nactvar - (f->varargMode & VARARG_HAS_ARG));
+  f->paramsNum = cast_byte(fs->nactvar - (f->varargMode & VARARG_HAS_ARG));
   luaK_reserveregs(fs, fs->nactvar); /* reserve register for parameters */
 }
 
@@ -930,7 +931,7 @@ static void assignment(LexState *ls, struct LHS_assign *lh, int nvars) {
     if (nv.v.k == VLOCAL) {
       check_conflict(ls, lh, &nv.v);
     }
-    luaY_checklimit(ls->fs, nvars, LUAI_MAX_C_CALLS - ls->L->nestedCCallNum,
+    luaY_checklimit(ls->fs, nvars, LUAI_MAX_C_CALLS - ls->L->nestedCCallsNum,
                     "variables in assignment");
     assignment(ls, &nv, nvars + 1);
   } else { /* assignment -> `=' explist1 */

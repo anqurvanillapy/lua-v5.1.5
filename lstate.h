@@ -107,9 +107,9 @@ struct lua_State {
   int ciSize;
 
   // Number of nested C calls.
-  unsigned short nestedCCallNum;
+  unsigned short nestedCCallsNum;
   // Nested C calls when resuming coroutine.
-  unsigned short nestedCCallBaseNum;
+  unsigned short nestedCCallsBaseNum;
 
   lu_byte hookMask;
   lu_byte allowHook;

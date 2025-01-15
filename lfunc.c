@@ -110,9 +110,9 @@ Prototype *luaF_newproto(lua_State *L) {
   f->codeSize = 0;
   f->lineInfoSize = 0;
   f->upvaluesSize = 0;
-  f->upvalueNum = 0;
+  f->upvaluesNum = 0;
   f->upvalues = nullptr;
-  f->paramNum = 0;
+  f->paramsNum = 0;
   f->varargMode = 0;
   f->maxStackSize = 0;
   f->lineInfo = nullptr;

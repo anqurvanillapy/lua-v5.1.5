@@ -771,7 +771,7 @@ reentry: /* entry point */
       Closure *ncl;
       int nup, j;
       p = cl->p->inners[GETARG_Bx(i)];
-      nup = p->upvalueNum;
+      nup = p->upvaluesNum;
       ncl = luaF_newLclosure(L, nup, cl->env);
       ncl->l.p = p;
       for (j = 0; j < nup; j++, pc++) {
@@ -790,7 +790,7 @@ reentry: /* entry point */
       int b = GETARG_B(i) - 1;
       int j;
       CallInfo *ci = L->ci;
-      int n = cast_int(ci->base - ci->func) - cl->p->paramNum - 1;
+      int n = cast_int(ci->base - ci->func) - cl->p->paramsNum - 1;
       if (b == LUA_MULTRET) {
         Protect(luaD_checkstack(L, n));
         ra = RA(i); /* previous call may change the stack */

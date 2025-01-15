@@ -13,7 +13,7 @@ typedef LUAI_UMEM lu_mem;
 
 typedef LUAI_MEM l_mem;
 
-/* chars used as small naturals (so that `char' is reserved for characters) */
+// Unsigned chars as small naturals (so that `char` is reserved for characters).
 typedef unsigned char lu_byte;
 
 #define MAX_SIZET ((size_t)(~(size_t)0) - 2)

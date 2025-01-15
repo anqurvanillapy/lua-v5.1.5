@@ -77,7 +77,7 @@ static void preinit_state(lua_State *L, global_State *g) {
   resethookcount(L);
   L->openUpval = NULL;
   L->ciSize = 0;
-  L->nestedCCallNum = L->nestedCCallBaseNum = 0;
+  L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
   L->status = 0;
   L->baseCI = L->ci = NULL;
   L->savedPC = NULL;
@@ -186,7 +186,7 @@ LUA_API void lua_close(lua_State *L) {
   do {                      /* repeat until no more errors */
     L->ci = L->baseCI;
     L->base = L->top = L->ci->base;
-    L->nestedCCallNum = L->nestedCCallBaseNum = 0;
+    L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
   } while (luaD_rawrunprotected(L, callallgcTM, NULL) != 0);
   lua_assert(G(L)->tmudata == NULL);
   luai_userstateclose(L);

@@ -24,8 +24,11 @@
   cast(t *, luaM_reallocv(L, NULL, 0, n, sizeof(t)))
 
 #define luaM_growvector(L, v, nelems, size, t, limit, e)                       \
-  if ((nelems) + 1 > (size))                                                   \
-  ((v) = cast(t *, luaM_growaux_(L, v, &(size), sizeof(t), limit, e)))
+  do {                                                                         \
+    if ((nelems) + 1 > (size)) {                                               \
+      ((v) = cast(t *, luaM_growaux_(L, v, &(size), sizeof(t), limit, e)));    \
+    }                                                                          \
+  } while (false)
 
 #define luaM_reallocvector(L, v, oldn, n, t)                                   \
   ((v) = cast(t *, luaM_reallocv(L, v, oldn, n, sizeof(t))))

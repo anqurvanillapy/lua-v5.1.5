@@ -251,10 +251,10 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
 
 static int precheck(const Prototype *pt) {
   check(pt->maxStackSize <= MAXSTACK);
-  check(pt->paramNum + (pt->varargMode & VARARG_HAS_ARG) <= pt->maxStackSize);
+  check(pt->paramsNum + (pt->varargMode & VARARG_HAS_ARG) <= pt->maxStackSize);
   check(!(pt->varargMode & VARARG_NEEDS_ARG) ||
         (pt->varargMode & VARARG_HAS_ARG));
-  check(pt->upvaluesSize <= pt->upvalueNum);
+  check(pt->upvaluesSize <= pt->upvaluesNum);
   check(pt->lineInfoSize == pt->codeSize || pt->lineInfoSize == 0);
   check(pt->codeSize > 0 &&
         GET_OPCODE(pt->code[pt->codeSize - 1]) == OP_RETURN);
@@ -374,7 +374,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     }
     case OP_GETUPVAL:
     case OP_SETUPVAL: {
-      check(b < pt->upvalueNum);
+      check(b < pt->upvaluesNum);
       break;
     }
     case OP_GETGLOBAL:
@@ -449,7 +449,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     case OP_CLOSURE: {
       int nup, j;
       check(b < pt->pSize);
-      nup = pt->inners[b]->upvalueNum;
+      nup = pt->inners[b]->upvaluesNum;
       check(pc + nup < pt->codeSize);
       for (j = 1; j <= nup; j++) {
         OpCode op1 = GET_OPCODE(pt->code[pc + j]);

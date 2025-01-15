@@ -108,8 +108,8 @@ static void DumpFunction(const Prototype *f, const TString *p, DumpState *D) {
   DumpString((f->source == p || D->strip) ? NULL : f->source, D);
   DumpInt(f->lineDefined, D);
   DumpInt(f->lineDefinedLast, D);
-  DumpChar(f->upvalueNum, D);
-  DumpChar(f->paramNum, D);
+  DumpChar(f->upvaluesNum, D);
+  DumpChar(f->paramsNum, D);
   DumpChar(f->varargMode, D);
   DumpChar(f->maxStackSize, D);
   DumpCode(f, D);
