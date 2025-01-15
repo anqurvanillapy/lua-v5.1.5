@@ -15,7 +15,7 @@
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
-#include "lua_parser.h"
+#include "parser.h"
 
 #define hasmultret(k) ((k) == VCALL || (k) == VVARARG)
 

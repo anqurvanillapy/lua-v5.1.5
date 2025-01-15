@@ -5,7 +5,7 @@
 #include "llex.h"
 #include "lobject.h"
 #include "lopcodes.h"
-#include "lua_parser.h"
+#include "parser.h"
 
 /*
 ** Marks the end of a patch list. It is an invalid value both as an absolute

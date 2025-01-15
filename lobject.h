@@ -195,7 +195,7 @@ typedef union TString {
 #define GET_STR(ts) (const char *)((ts) + 1)
 #define GET_STR_VALUE(o) GET_STR(RAW_STRING_VALUE(o))
 
-typedef union Udata {
+typedef union Userdata {
   __attribute__((unused)) MaxAlign padding;
   struct {
     GCHeaderFields;
@@ -203,7 +203,7 @@ typedef union Udata {
     struct Table *env;
     size_t len;
   } uv;
-} Udata;
+} Userdata;
 
 // Function prototype. A script file is also a function.
 typedef struct Prototype {
@@ -273,7 +273,7 @@ typedef struct Upvalue {
 
 #define ClosureHeader                                                          \
   GCHeaderFields;                                                              \
-  lu_byte isC;                                                                 \
+  bool isC;                                                                    \
   lu_byte nupvalues;                                                           \
   GCObject *gclist;                                                            \
   struct Table *env

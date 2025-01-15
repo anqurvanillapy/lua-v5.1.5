@@ -140,7 +140,7 @@ struct lua_State {
 union GCObject {
   GCHeader gch;
   union TString ts;
-  union Udata u;
+  union Userdata u;
   union Closure cl;
   struct Table h;
   struct Prototype p;

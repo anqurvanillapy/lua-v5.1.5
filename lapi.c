@@ -950,7 +950,7 @@ LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud) {
 }
 
 LUA_API void *lua_newuserdata(lua_State *L, size_t size) {
-  Udata *u;
+  Userdata *u;
   lua_lock(L);
   luaC_checkGC(L);
   u = luaS_newudata(L, size, getcurrenv(L));

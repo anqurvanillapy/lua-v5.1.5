@@ -12,8 +12,8 @@
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
-#include "lua_parser.h"
 #include "lzio.h"
+#include "parser.h"
 
 #define next(ls) (ls->current = zgetc(ls->z))
 

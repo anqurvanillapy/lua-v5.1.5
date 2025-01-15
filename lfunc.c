@@ -13,7 +13,7 @@
 Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
   Closure *c = cast(Closure *, luaM_malloc(L, sizeCclosure(nelems)));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
-  c->c.isC = 1;
+  c->c.isC = true;
   c->c.env = e;
   c->c.nupvalues = cast_byte(nelems);
   return c;
@@ -22,7 +22,7 @@ Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
 Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
   Closure *c = cast(Closure *, luaM_malloc(L, sizeLclosure(nelems)));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
-  c->l.isC = 0;
+  c->l.isC = false;
   c->l.env = e;
   c->l.nupvalues = cast_byte(nelems);
   while (nelems--) {

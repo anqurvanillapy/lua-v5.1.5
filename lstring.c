@@ -89,12 +89,12 @@ TString *luaS_newlstr(lua_State *L, const char *str, size_t l) {
   return newlstr(L, str, l, h); /* not found */
 }
 
-Udata *luaS_newudata(lua_State *L, size_t s, Table *e) {
-  Udata *u;
-  if (s > MAX_SIZET - sizeof(Udata)) {
+Userdata *luaS_newudata(lua_State *L, size_t s, Table *e) {
+  Userdata *u;
+  if (s > MAX_SIZET - sizeof(Userdata)) {
     luaM_toobig(L);
   }
-  u = cast(Udata *, luaM_malloc(L, s + sizeof(Udata)));
+  u = cast(Userdata *, luaM_malloc(L, s + sizeof(Userdata)));
   u->uv.marked = luaC_white(G(L)); /* is not finalized */
   u->uv.tt = LUA_TYPE_USERDATA;
   u->uv.len = s;

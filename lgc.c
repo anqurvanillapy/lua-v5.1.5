@@ -452,7 +452,7 @@ static void checkSizes(lua_State *L) {
 static void GCTM(lua_State *L) {
   global_State *g = G(L);
   GCObject *o = g->tmudata->gch.next; /* get first element */
-  Udata *udata = rawgco2u(o);
+  Userdata *udata = rawgco2u(o);
   const TaggedValue *tm;
   /* remove udata from `tmudata' */
   if (o == g->tmudata) { /* last element? */

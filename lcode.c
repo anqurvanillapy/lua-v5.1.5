@@ -12,7 +12,7 @@
 #include "lobject.h"
 #include "lopcodes.h"
 #include "ltable.h"
-#include "lua_parser.h"
+#include "parser.h"
 
 #define hasjumps(e) ((e)->t != (e)->f)
 

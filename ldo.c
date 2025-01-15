@@ -17,10 +17,10 @@
 #include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
-#include "lua_parser.h"
 #include "lundump.h"
 #include "lvm.h"
 #include "lzio.h"
+#include "parser.h"
 
 /*
 ** {======================================================
