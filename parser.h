@@ -6,11 +6,7 @@
 #include "lobject.h"
 #include "lzio.h"
 
-/*
-** Expression descriptor
-*/
-
-typedef enum {
+typedef enum ExprKind {
   VVOID, /* no value */
   VNIL,
   VTRUE,
@@ -26,10 +22,10 @@ typedef enum {
   VNONRELOC,  /* info = result register */
   VCALL,      /* info = instruction pc */
   VVARARG     /* info = instruction pc */
-} expkind;
+} ExprKind;
 
-typedef struct expdesc {
-  expkind k;
+typedef struct ExprInfo {
+  ExprKind k;
   union {
     struct {
       int info, aux;
@@ -38,12 +34,12 @@ typedef struct expdesc {
   } u;
   int t; /* patch list of `exit when true' */
   int f; /* patch list of `exit when false' */
-} expdesc;
+} ExprInfo;
 
-typedef struct upvaldesc {
-  lu_byte k;
-  lu_byte info;
-} upvaldesc;
+typedef struct UpvalueInfo {
+  ExprKind k;
+  int info;
+} UpvalueInfo;
 
 struct BlockCnt; /* defined in lparser.c */
 
@@ -63,8 +59,8 @@ typedef struct FuncState {
   int np;                 /* number of elements in `p' */
   short nlocvars;         /* number of elements in `locVars' */
   lu_byte nactvar;        /* number of active local variables */
-  upvaldesc upvalues[LUAI_MAX_UPVALUES]; /* upvalues */
-  unsigned short actvar[LUAI_MAX_VARS];  /* declared-variable stack */
+  UpvalueInfo upvalues[LUAI_MAX_UPVALUES]; /* upvalues */
+  unsigned short actvar[LUAI_MAX_VARS];    /* declared-variable stack */
 } FuncState;
 
 LUAI_FUNC Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,

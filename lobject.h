@@ -220,6 +220,7 @@ typedef struct Prototype {
   struct Prototype **inners;
   int pSize;
 
+  TString *source;
   // An int-to-int map from opcodes to source lines.
   int *lineInfo;
   int lineInfoSize;
@@ -233,8 +234,6 @@ typedef struct Prototype {
   TString **upvalues;
   int upvaluesSize;
   lu_byte upvaluesNum;
-
-  TString *source;
 
   GCObject *gcList;
 
