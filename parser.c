@@ -44,7 +44,7 @@ static void expr(LexState *ls, ExprInfo *v);
 
 static void anchor_token(LexState *ls) {
   if (ls->t.token == TK_NAME || ls->t.token == TK_STRING) {
-    TString *ts = ls->t.seminfo.ts;
+    TString *ts = ls->t.literal.str;
     luaX_newstring(ls, GET_STR(ts), ts->tsv.len);
   }
 }
@@ -84,10 +84,11 @@ static void checknext(LexState *ls, int c) {
 }
 
 #define check_condition(ls, c, msg)                                            \
-  {                                                                            \
-    if (!(c))                                                                  \
+  do {                                                                         \
+    if (!(c)) {                                                                \
       luaX_syntaxerror(ls, msg);                                               \
-  }
+    }                                                                          \
+  } while (false)
 
 static void check_match(LexState *ls, int what, int who, int where) {
   if (!testNext(ls, what)) {
@@ -105,19 +106,20 @@ static void check_match(LexState *ls, int what, int who, int where) {
 static TString *str_checkname(LexState *ls) {
   TString *ts;
   check(ls, TK_NAME);
-  ts = ls->t.seminfo.ts;
+  ts = ls->t.literal.str;
   luaX_next(ls);
   return ts;
 }
 
-static void init_exp(ExprInfo *e, ExprKind k, int i) {
-  e->f = e->t = NO_JUMP;
+static void exprInit(ExprInfo *e, ExprKind k, int i) {
+  e->f = NO_JUMP;
+  e->t = NO_JUMP;
   e->k = k;
   e->u.s.info = i;
 }
 
 static void codestring(LexState *ls, ExprInfo *e, TString *s) {
-  init_exp(e, VK, luaK_stringK(ls->fs, s));
+  exprInit(e, VK, luaK_stringK(ls->fs, s));
 }
 
 static void checkname(LexState *ls, ExprInfo *e) {
@@ -210,12 +212,12 @@ static void markupval(FuncState *fs, int level) {
 
 static int singlevaraux(FuncState *fs, TString *n, ExprInfo *var, int base) {
   if (fs == nullptr) {              /* no more levels? */
-    init_exp(var, VGLOBAL, NO_REG); /* default is global variable */
+    exprInit(var, VGLOBAL, NO_REG); /* default is global variable */
     return VGLOBAL;
   } else {
     int v = searchvar(fs, n); /* look up at current level */
     if (v >= 0) {
-      init_exp(var, VLOCAL, v);
+      exprInit(var, VLOCAL, v);
       if (!base) {
         markupval(fs, v); /* local will be used as an upval */
       }
@@ -247,7 +249,8 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, ExprInfo *e) {
     if (extra < 0) {
       extra = 0;
     }
-    luaK_setreturns(fs, e, extra); /* last exp. provides the difference */
+    Codegen_setReturnMulti(fs, e,
+                           extra); /* last exp. provides the difference */
     if (extra > 1) {
       luaK_reserveregs(fs, extra - 1);
     }
@@ -308,7 +311,7 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   }
   f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
-  init_exp(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
+  exprInit(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
   for (i = 0; i < func->f->upvaluesNum; i++) {
     OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
     luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
@@ -449,7 +452,7 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
     return;
   }
   if (HAS_MULTI_RETURN(cc->v.k)) {
-    luaK_setreturns(fs, &cc->v, LUA_MULTRET);
+    Codegen_setReturnMulti(fs, &cc->v, LUA_MULTRET);
     luaK_setlist(fs, cc->t->u.s.info, cc->na, LUA_MULTRET);
     cc->na--; /* do not count last expression (unknown number of elements) */
   } else {
@@ -475,8 +478,8 @@ static void constructor(LexState *ls, ExprInfo *t) {
   struct ConsControl cc;
   cc.na = cc.nh = cc.tostore = 0;
   cc.t = t;
-  init_exp(t, VRELOCABLE, pc);
-  init_exp(&cc.v, VVOID, 0);   /* no value (yet) */
+  exprInit(t, VRELOCABLE, pc);
+  exprInit(&cc.v, VVOID, 0);   /* no value (yet) */
   luaK_exp2nextreg(ls->fs, t); /* fix it at stack top (for gc) */
   checknext(ls, '{');
   do {
@@ -595,7 +598,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
       args.k = VVOID;
     } else {
       exprList1(ls, &args);
-      luaK_setreturns(fs, &args, LUA_MULTRET);
+      Codegen_setReturnMulti(fs, &args, LUA_MULTRET);
     }
     check_match(ls, ')', '(', line);
     break;
@@ -605,8 +608,8 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     break;
   }
   case TK_STRING: { /* funcargs -> STRING */
-    codestring(ls, &args, ls->t.seminfo.ts);
-    luaX_next(ls); /* must use `seminfo' before `next' */
+    codestring(ls, &args, ls->t.literal.str);
+    luaX_next(ls); /* must use `literal' before `next' */
     break;
   }
   default: {
@@ -624,7 +627,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     }
     nparams = fs->freereg - (base + 1);
   }
-  init_exp(f, VCALL, luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2));
+  exprInit(f, VCALL, luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2));
   luaK_fixline(fs, line);
   fs->freereg = base + 1; /* call remove function and arguments and leaves
                              (unless changed) one result */
@@ -691,52 +694,59 @@ static void primaryexp(LexState *ls, ExprInfo *v) {
   }
 }
 
+/// \code
+/// simpleexp
+///     : NUMBER
+///     | STRING
+///     | NIL
+///     | true
+///     | false
+///     | ... # vararg
+///     | constructor
+///     | FUNCTION body
+///     | primaryexp
+///     ;
+/// \endcode
 static void simpleexp(LexState *ls, ExprInfo *v) {
-  /* simpleexp -> NUMBER | STRING | NIL | true | false | ... |
-                  constructor | FUNCTION body | primaryexp */
   switch (ls->t.token) {
-  case TK_NUMBER: {
-    init_exp(v, VKNUM, 0);
-    v->u.nval = ls->t.seminfo.r;
+  case TK_NUMBER:
+    exprInit(v, VKNUM, 0);
+    v->u.value = ls->t.literal.num;
     break;
-  }
-  case TK_STRING: {
-    codestring(ls, v, ls->t.seminfo.ts);
+  case TK_STRING:
+    codestring(ls, v, ls->t.literal.str);
     break;
-  }
-  case TK_NIL: {
-    init_exp(v, VNIL, 0);
+  case TK_NIL:
+    exprInit(v, VNIL, 0);
     break;
-  }
-  case TK_TRUE: {
-    init_exp(v, VTRUE, 0);
+  case TK_TRUE:
+    exprInit(v, VTRUE, 0);
     break;
-  }
-  case TK_FALSE: {
-    init_exp(v, VFALSE, 0);
+  case TK_FALSE:
+    exprInit(v, VFALSE, 0);
     break;
-  }
-  case TK_DOTS: { /* vararg */
+  case TK_DOTS: {
+    // Vararg.
     FuncState *fs = ls->fs;
-    check_condition(ls, fs->f->varargMode,
-                    "cannot use " LUA_QL("...") " outside a vararg function");
+    if (!fs->f->varargMode) {
+      luaX_syntaxerror(
+          ls, "cannot use " LUA_QL("...") " outside a vararg function");
+    }
     fs->f->varargMode &= ~VARARG_NEEDS_ARG; /* don't need 'arg' */
-    init_exp(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
+    exprInit(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
     break;
   }
-  case '{': { /* constructor */
+  case '{':
+    // Constructor.
     constructor(ls, v);
     return;
-  }
-  case TK_FUNCTION: {
+  case TK_FUNCTION:
     luaX_next(ls);
     body(ls, v, 0, ls->linenumber);
     return;
-  }
-  default: {
+  default:
     primaryexp(ls, v);
     return;
-  }
   }
   luaX_next(ls);
 }
@@ -795,25 +805,46 @@ static const struct {
   lu_byte left;  /* left priority for each binary operator */
   lu_byte right; /* right priority */
 } priority[] = {
-    /* ORDER OPR */
-    {6, 6},  {6, 6}, {7, 7}, {7, 7}, {7, 7}, /* `+' `-' `/' `%' */
-    {10, 9}, {5, 4},                 /* power and concat (right associative) */
-    {3, 3},  {3, 3},                 /* equality and inequality */
-    {3, 3},  {3, 3}, {3, 3}, {3, 3}, /* order */
-    {2, 2},  {1, 1}                  /* logical (and/or) */
+    // Arithmetic.
+    [OPR_ADD] = {6, 6},
+    [OPR_SUB] = {6, 6},
+    [OPR_MUL] = {7, 7},
+    [OPR_DIV] = {7, 7},
+    [OPR_MOD] = {7, 7},
+
+    // Power and concat.
+    [OPR_POW] = {10, 9},
+    [OPR_CONCAT] = {5, 4},
+
+    // Equality and inequality.
+    [OPR_NE] = {3, 3},
+    [OPR_EQ] = {3, 3},
+
+    // Ordering.
+    [OPR_LT] = {3, 3},
+    [OPR_LE] = {3, 3},
+    [OPR_GT] = {3, 3},
+    [OPR_GE] = {3, 3},
+
+    // Logical and/or.
+    [OPR_AND] = {2, 2},
+    [OPR_OR] = {1, 1},
 };
 
 #define UNARY_PRIORITY 8 /* priority for unary operators */
 
-/*
-** subexpr -> (simpleexp | unop subexpr) { binop subexpr }
-** where `binop' is any binary operator with a priority higher than `limit'
-*/
-static BinOpr subexpr(LexState *ls, ExprInfo *v, unsigned int limit) {
-  BinOpr op;
-  UnOpr uop;
+/// \code
+/// subexpr
+///     : (simpleexp | unop subexpr) (binop subexpr)*
+///     ;
+/// \endcode
+///
+/// Where `binop` is any binary operator with a priority higher than
+/// `minPriority`.
+static BinOpr subexpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
   enterLevel(ls);
-  uop = getunopr(ls->t.token);
+
+  UnOpr uop = getunopr(ls->t.token);
   if (uop != OPR_NOUNOPR) {
     luaX_next(ls);
     subexpr(ls, v, UNARY_PRIORITY);
@@ -821,9 +852,10 @@ static BinOpr subexpr(LexState *ls, ExprInfo *v, unsigned int limit) {
   } else {
     simpleexp(ls, v);
   }
-  /* expand while operators have priorities higher than `limit' */
-  op = getbinopr(ls->t.token);
-  while (op != OPR_NOBINOPR && priority[op].left > limit) {
+
+  /* expand while operators have priorities higher than `minPriority' */
+  BinOpr op = getbinopr(ls->t.token);
+  while (op != OPR_NOBINOPR && priority[op].left > minPriority) {
     ExprInfo v2;
     BinOpr nextop;
     luaX_next(ls);
@@ -833,13 +865,14 @@ static BinOpr subexpr(LexState *ls, ExprInfo *v, unsigned int limit) {
     luaK_posfix(ls->fs, op, v, &v2);
     op = nextop;
   }
+
   leaveLevel(ls);
   return op; /* return first untreated operator */
 }
 
 static void expr(LexState *ls, ExprInfo *v) { subexpr(ls, v, 0); }
 
-static bool block_follow(int token) {
+static bool isBlockEnded(int token) {
   switch (token) {
   case TK_ELSE:
   case TK_ELSEIF:
@@ -922,12 +955,12 @@ static void assignment(LexState *ls, struct LHS_assign *lh, int nvars) {
         ls->fs->freereg -= nexps - nvars; /* remove extra values */
       }
     } else {
-      luaK_setoneret(ls->fs, &e); /* close last expression */
+      Codegen_setReturn(ls->fs, &e); /* close last expression */
       luaK_storevar(ls->fs, &lh->v, &e);
       return; /* avoid default */
     }
   }
-  init_exp(&e, VNONRELOC, ls->fs->freereg - 1); /* default assignment */
+  exprInit(&e, VNONRELOC, ls->fs->freereg - 1); /* default assignment */
   luaK_storevar(ls->fs, &lh->v, &e);
 }
 
@@ -1135,7 +1168,7 @@ static void localFuncStmt(LexState *ls) {
   ExprInfo v, b;
   FuncState *fs = ls->fs;
   new_localvar(ls, str_checkname(ls), 0);
-  init_exp(&v, VLOCAL, fs->freereg);
+  exprInit(&v, VLOCAL, fs->freereg);
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
   body(ls, &b, 0, ls->linenumber);
@@ -1208,7 +1241,7 @@ static void exprStmt(LexState *ls) {
 static void returnStmt(LexState *ls) {
   luaX_next(ls); // skip RETURN
 
-  if (block_follow(ls->t.token) || ls->t.token == ';') {
+  if (isBlockEnded(ls->t.token) || ls->t.token == ';') {
     // Returns no values.
     luaK_ret(ls->fs, 0, 0);
     return;
@@ -1219,7 +1252,7 @@ static void returnStmt(LexState *ls) {
   int nret = exprList1(ls, &e);
 
   if (HAS_MULTI_RETURN(e.k)) {
-    luaK_setreturns(fs, &e, LUA_MULTRET);
+    Codegen_setReturnMulti(fs, &e, LUA_MULTRET);
     if (e.k == VCALL && nret == 1) {
       SET_OPCODE(getcode(fs, &e), OP_TAILCALL);
       DEBUG_ASSERT(GETARG_A(getcode(fs, &e)) == fs->nactvar);
@@ -1308,7 +1341,7 @@ static bool stmt(LexState *ls) {
 static void chunk(LexState *ls) {
   bool isLast = false;
   enterLevel(ls);
-  while (!isLast && !block_follow(ls->t.token)) {
+  while (!isLast && !isBlockEnded(ls->t.token)) {
     isLast = stmt(ls);
     testNext(ls, ';');
     DEBUG_ASSERT(ls->fs->f->maxStackSize >= ls->fs->freereg &&

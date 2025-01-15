@@ -58,8 +58,9 @@ LUAI_FUNC void luaK_self(FuncState *fs, ExprInfo *e, ExprInfo *key);
 LUAI_FUNC void luaK_indexed(FuncState *fs, ExprInfo *t, ExprInfo *k);
 LUAI_FUNC void luaK_goiftrue(FuncState *fs, ExprInfo *e);
 LUAI_FUNC void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *e);
-LUAI_FUNC void luaK_setreturns(FuncState *fs, ExprInfo *e, int nresults);
-LUAI_FUNC void luaK_setoneret(FuncState *fs, ExprInfo *e);
+LUAI_FUNC void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e,
+                                      int resultsNum);
+LUAI_FUNC void Codegen_setReturn(FuncState *fs, ExprInfo *e);
 LUAI_FUNC int luaK_jump(FuncState *fs);
 LUAI_FUNC void luaK_ret(FuncState *fs, int first, int nret);
 LUAI_FUNC void luaK_patchlist(FuncState *fs, int list, int target);

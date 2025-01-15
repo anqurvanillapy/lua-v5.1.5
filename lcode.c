@@ -256,17 +256,25 @@ static int nilK(FuncState *fs) {
   return addk(fs, &k, &v);
 }
 
-void luaK_setreturns(FuncState *fs, ExprInfo *e, int nresults) {
-  if (e->k == VCALL) { /* expression is an open function call? */
-    SETARG_C(getcode(fs, e), nresults + 1);
-  } else if (e->k == VVARARG) {
-    SETARG_B(getcode(fs, e), nresults + 1);
+void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
+  switch (e->k) {
+  case VCALL:
+    // Expression is an open function call?.
+    SETARG_C(getcode(fs, e), resultsNum + 1);
+    return;
+
+  case VVARARG:
+    SETARG_B(getcode(fs, e), resultsNum + 1);
     SETARG_A(getcode(fs, e), fs->freereg);
     luaK_reserveregs(fs, 1);
+    return;
+
+  default:
+    return;
   }
 }
 
-void luaK_setoneret(FuncState *fs, ExprInfo *e) {
+void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
   if (e->k == VCALL) { /* expression is an open function call? */
     e->k = VNONRELOC;
     e->u.s.info = GETARG_A(getcode(fs, e));
@@ -301,7 +309,7 @@ void luaK_dischargevars(FuncState *fs, ExprInfo *e) {
   }
   case VVARARG:
   case VCALL: {
-    luaK_setoneret(fs, e);
+    Codegen_setReturn(fs, e);
     break;
   }
   default:
@@ -331,7 +339,7 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     break;
   }
   case VKNUM: {
-    luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.nval));
+    luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.value));
     break;
   }
   case VRELOCABLE: {
@@ -424,7 +432,7 @@ int luaK_exp2RK(FuncState *fs, ExprInfo *e) {
   case VNIL: {
     if (fs->nk <= MAXINDEXRK) { /* constant fit in RK operand? */
       e->u.s.info = (e->k == VNIL)    ? nilK(fs)
-                    : (e->k == VKNUM) ? luaK_numberK(fs, e->u.nval)
+                    : (e->k == VKNUM) ? luaK_numberK(fs, e->u.value)
                                       : boolK(fs, (e->k == VTRUE));
       e->k = VK;
       return RKASK(e->u.s.info);
@@ -608,8 +616,8 @@ static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
   if (!isnumeral(e1) || !isnumeral(e2)) {
     return 0;
   }
-  v1 = e1->u.nval;
-  v2 = e2->u.nval;
+  v1 = e1->u.value;
+  v2 = e2->u.value;
   switch (op) {
   case OP_ADD:
     r = luai_numadd(v1, v2);
@@ -648,7 +656,7 @@ static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
   if (luai_numisnan(r)) {
     return 0; /* do not attempt to produce NaN */
   }
-  e1->u.nval = r;
+  e1->u.value = r;
   return 1;
 }
 
@@ -691,7 +699,7 @@ void luaK_prefix(FuncState *fs, UnOpr op, ExprInfo *e) {
   ExprInfo e2;
   e2.t = e2.f = NO_JUMP;
   e2.k = VKNUM;
-  e2.u.nval = 0;
+  e2.u.value = 0;
   switch (op) {
   case OPR_MINUS: {
     if (!isnumeral(e)) {

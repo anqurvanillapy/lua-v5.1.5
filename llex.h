@@ -53,14 +53,14 @@ enum RESERVED {
 /* number of reserved words */
 #define NUM_RESERVED (cast(int, TK_WHILE - FIRST_RESERVED + 1))
 
-typedef union {
-  lua_Number r;
-  TString *ts;
-} SemInfo; /* semantics information */
+typedef union Literal {
+  lua_Number num;
+  TString *str;
+} Literal;
 
 typedef struct Token {
   int token;
-  SemInfo seminfo;
+  Literal literal;
 } Token;
 
 typedef struct LexState {

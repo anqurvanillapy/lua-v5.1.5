@@ -151,13 +151,13 @@ static void buffreplace(LexState *ls, char from, char to) {
   }
 }
 
-static void trydecpoint(LexState *ls, SemInfo *seminfo) {
+static void trydecpoint(LexState *ls, Literal *seminfo) {
   /* format error: try to update decimal point separator */
   struct lconv *cv = localeconv();
   char old = ls->decpoint;
   ls->decpoint = (cv ? cv->decimal_point[0] : '.');
   buffreplace(ls, old, ls->decpoint); /* try updated decimal separator */
-  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r)) {
+  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->num)) {
     /* format error with correct decimal point: no more options */
     buffreplace(ls, ls->decpoint, '.'); /* undo change (for error message) */
     luaX_lexerror(ls, "malformed number", TK_NUMBER);
@@ -165,7 +165,7 @@ static void trydecpoint(LexState *ls, SemInfo *seminfo) {
 }
 
 /* LUA_NUMBER */
-static void read_numeral(LexState *ls, SemInfo *seminfo) {
+static void read_numeral(LexState *ls, Literal *seminfo) {
   DEBUG_ASSERT(isdigit(ls->current));
   do {
     saveAndNext(ls);
@@ -178,7 +178,7 @@ static void read_numeral(LexState *ls, SemInfo *seminfo) {
   }
   save(ls, '\0');
   buffreplace(ls, '.', ls->decpoint); /* follow locale for decimal point */
-  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->r)) { /* format error? */
+  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->num)) { /* format error? */
     trydecpoint(ls, seminfo); /* try to update decimal point separator */
   }
 }
@@ -195,7 +195,7 @@ static int skip_sep(LexState *ls) {
   return (ls->current == s) ? count : (-count) - 1;
 }
 
-static void read_long_string(LexState *ls, SemInfo *seminfo, int sep) {
+static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
   int cont = 0;
   (void)(cont);            /* avoid warnings when `cont' is not used */
   saveAndNext(ls);         /* skip 2nd `[' */
@@ -246,12 +246,12 @@ static void read_long_string(LexState *ls, SemInfo *seminfo, int sep) {
   }
 endloop:
   if (seminfo) {
-    seminfo->ts = luaX_newstring(ls, luaZ_buffer(ls->buff) + (2 + sep),
-                                 luaZ_bufflen(ls->buff) - 2 * (2 + sep));
+    seminfo->str = luaX_newstring(ls, luaZ_buffer(ls->buff) + (2 + sep),
+                                  luaZ_bufflen(ls->buff) - 2 * (2 + sep));
   }
 }
 
-static void read_string(LexState *ls, int del, SemInfo *seminfo) {
+static void read_string(LexState *ls, int del, Literal *seminfo) {
   saveAndNext(ls);
   while (ls->current != del) {
     switch (ls->current) {
@@ -321,11 +321,11 @@ static void read_string(LexState *ls, int del, SemInfo *seminfo) {
     }
   }
   saveAndNext(ls); /* skip delimiter */
-  seminfo->ts =
+  seminfo->str =
       luaX_newstring(ls, luaZ_buffer(ls->buff) + 1, luaZ_bufflen(ls->buff) - 2);
 }
 
-static int llex(LexState *ls, SemInfo *seminfo) {
+static int llex(LexState *ls, Literal *seminfo) {
   luaZ_resetbuffer(ls->buff);
   for (;;) {
     switch (ls->current) {
@@ -444,7 +444,7 @@ static int llex(LexState *ls, SemInfo *seminfo) {
         if (ts->tsv.reserved > 0) { /* reserved word? */
           return ts->tsv.reserved - 1 + FIRST_RESERVED;
         } else {
-          seminfo->ts = ts;
+          seminfo->str = ts;
           return TK_NAME;
         }
       } else {
@@ -463,11 +463,11 @@ void luaX_next(LexState *ls) {
     ls->t = ls->lookahead;             /* use this one */
     ls->lookahead.token = TK_EOS;      /* and discharge it */
   } else {
-    ls->t.token = llex(ls, &ls->t.seminfo); /* read next token */
+    ls->t.token = llex(ls, &ls->t.literal); /* read next token */
   }
 }
 
 void luaX_lookahead(LexState *ls) {
   DEBUG_ASSERT(ls->lookahead.token == TK_EOS);
-  ls->lookahead.token = llex(ls, &ls->lookahead.seminfo);
+  ls->lookahead.token = llex(ls, &ls->lookahead.literal);
 }

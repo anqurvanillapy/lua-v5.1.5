@@ -11,8 +11,8 @@ typedef enum ExprKind {
   VNIL,
   VTRUE,
   VFALSE,
-  VK,         /* info = index of constant in `k' */
-  VKNUM,      /* nval = numerical value */
+  VK, /* info = index of constant in `k' */
+  VKNUM,
   VLOCAL,     /* info = local register */
   VUPVAL,     /* info = index of upvalue in `upvalues' */
   VGLOBAL,    /* info = index of table; aux = index of global name in `k' */
@@ -28,9 +28,10 @@ typedef struct ExprInfo {
   ExprKind k;
   union {
     struct {
-      int info, aux;
+      int info;
+      int aux;
     } s;
-    lua_Number nval;
+    lua_Number value;
   } u;
   int t; /* patch list of `exit when true' */
   int f; /* patch list of `exit when false' */
