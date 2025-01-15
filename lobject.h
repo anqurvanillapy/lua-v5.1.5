@@ -77,11 +77,12 @@ typedef struct TaggedValue {
 #define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->value.gc->th)
 
 #define DEBUG_CHECK_CONSISTENCY(obj)                                           \
-  lua_assert(!IS_COLLECTABLE(obj) || (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
+  DEBUG_ASSERT(!IS_COLLECTABLE(obj) ||                                         \
+               (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
 #define DEBUG_CHECK_LIVENESS(g, obj)                                           \
-  lua_assert(!IS_COLLECTABLE(obj) ||                                           \
-             ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                    \
-              !IS_DEAD(g, (obj)->value.gc)))
+  DEBUG_ASSERT(!IS_COLLECTABLE(obj) ||                                         \
+               ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                  \
+                !IS_DEAD(g, (obj)->value.gc)))
 
 // Setter macros.
 

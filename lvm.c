@@ -251,7 +251,7 @@ static int lessequal(lua_State *L, const TaggedValue *l, const TaggedValue *r) {
 
 int luaV_equalval(lua_State *L, const TaggedValue *t1, const TaggedValue *t2) {
   const TaggedValue *tm;
-  lua_assert(GET_TYPE(t1) == GET_TYPE(t2));
+  DEBUG_ASSERT(GET_TYPE(t1) == GET_TYPE(t2));
   switch (GET_TYPE(t1)) {
   case LUA_TYPE_NIL:
     return 1;
@@ -355,7 +355,7 @@ static void Arith(lua_State *L, StackIndex ra, const TaggedValue *rb,
       SET_NUMBER(ra, luai_numunm(nb));
       break;
     default:
-      lua_assert(0);
+      DEBUG_ASSERT(0);
       break;
     }
   } else if (!call_binTM(L, rb, rc, ra, op)) {
@@ -417,7 +417,7 @@ void luaV_execute(lua_State *L, int nexeccalls) {
   TaggedValue *k;
   const Instruction *pc;
 reentry: /* entry point */
-  lua_assert(isLua(L->ci));
+  DEBUG_ASSERT(isLua(L->ci));
   pc = L->savedPC;
   cl = &CLOSURE_VALUE(L->ci->func)->l;
   base = L->base;
@@ -437,9 +437,9 @@ reentry: /* entry point */
     }
     /* warning!! several calls may realloc the stack and invalidate `ra' */
     ra = RA(i);
-    lua_assert(base == L->base && L->base == L->ci->base);
-    lua_assert(base <= L->top && L->top <= L->stack + L->stackSize);
-    lua_assert(L->top == L->ci->top || luaG_checkopenop(i));
+    DEBUG_ASSERT(base == L->base && L->base == L->ci->base);
+    DEBUG_ASSERT(base <= L->top && L->top <= L->stack + L->stackSize);
+    DEBUG_ASSERT(L->top == L->ci->top || luaG_checkopenop(i));
     switch (GET_OPCODE(i)) {
     case OP_MOVE: {
       SET_OBJECT_TO_SAME_STACK(L, ra, RB(i));
@@ -472,7 +472,7 @@ reentry: /* entry point */
       TaggedValue g;
       TaggedValue *rb = KBx(i);
       SET_TABLE(L, &g, cl->env);
-      lua_assert(IS_TYPE_STRING(rb));
+      DEBUG_ASSERT(IS_TYPE_STRING(rb));
       Protect(luaV_gettable(L, &g, rb, ra));
       continue;
     }
@@ -483,7 +483,7 @@ reentry: /* entry point */
     case OP_SETGLOBAL: {
       TaggedValue g;
       SET_TABLE(L, &g, cl->env);
-      lua_assert(IS_TYPE_STRING(KBx(i)));
+      DEBUG_ASSERT(IS_TYPE_STRING(KBx(i)));
       Protect(luaV_settable(L, &g, KBx(i), ra));
       continue;
     }
@@ -641,7 +641,7 @@ reentry: /* entry point */
         L->top = ra + b; /* else previous instruction set top */
       }
       L->savedPC = pc;
-      lua_assert(GETARG_C(i) - 1 == LUA_MULTRET);
+      DEBUG_ASSERT(GETARG_C(i) - 1 == LUA_MULTRET);
       switch (luaD_precall(L, ra, LUA_MULTRET)) {
       case PCRLUA: {
         /* tail call: put new frame in place of previous one */
@@ -656,7 +656,8 @@ reentry: /* entry point */
         for (aux = 0; pfunc + aux < L->top; aux++) /* move frame down */
           SET_OBJECT_TO_SAME_STACK(L, func + aux, pfunc + aux);
         ci->top = L->top = func + aux; /* correct top */
-        lua_assert(L->top == L->base + CLOSURE_VALUE(func)->l.p->maxStackSize);
+        DEBUG_ASSERT(L->top ==
+                     L->base + CLOSURE_VALUE(func)->l.p->maxStackSize);
         ci->savedpc = L->savedPC;
         ci->tailcalls++; /* one more call lost */
         L->ci--;         /* remove new frame */
@@ -687,8 +688,8 @@ reentry: /* entry point */
         if (b) {
           L->top = L->ci->top;
         }
-        lua_assert(isLua(L->ci));
-        lua_assert(GET_OPCODE(*((L->ci)->savedpc - 1)) == OP_CALL);
+        DEBUG_ASSERT(isLua(L->ci));
+        DEBUG_ASSERT(GET_OPCODE(*((L->ci)->savedpc - 1)) == OP_CALL);
         goto reentry;
       }
     }
@@ -778,7 +779,7 @@ reentry: /* entry point */
         if (GET_OPCODE(*pc) == OP_GETUPVAL) {
           ncl->l.upvalues[j] = cl->upvalues[GETARG_B(*pc)];
         } else {
-          lua_assert(GET_OPCODE(*pc) == OP_MOVE);
+          DEBUG_ASSERT(GET_OPCODE(*pc) == OP_MOVE);
           ncl->l.upvalues[j] = luaF_findupval(L, base + GETARG_B(*pc));
         }
       }

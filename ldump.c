@@ -75,7 +75,7 @@ static void DumpConstants(const Prototype *f, DumpState *D) {
       DumpString(RAW_STRING_VALUE(o), D);
       break;
     default:
-      lua_assert(0); /* cannot happen */
+      DEBUG_ASSERT(0); /* cannot happen */
       break;
     }
   }

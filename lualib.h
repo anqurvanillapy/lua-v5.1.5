@@ -34,6 +34,6 @@ LUALIB_API int(luaopen_package)(lua_State *L);
 /* open all previous libraries */
 LUALIB_API void(luaL_openlibs)(lua_State *L);
 
-#ifndef lua_assert
-#define lua_assert(x) ((void)0)
+#ifndef DEBUG_ASSERT
+#define DEBUG_ASSERT(x) ((void)0)
 #endif

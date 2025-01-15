@@ -37,9 +37,9 @@ typedef LUAI_UACNUMBER l_uacNumber;
 
 /* internal assertions for in-house debugging */
 #include <assert.h>
-#define lua_assert(c) assert(c)
-#define CHECK_EXPR(c, e) (lua_assert(c), (e))
-#define api_check(l, e) lua_assert(e)
+#define DEBUG_ASSERT(c) assert(c)
+#define CHECK_EXPR(c, e) (DEBUG_ASSERT(c), (e))
+#define api_check(l, e) DEBUG_ASSERT(e)
 
 #ifndef cast
 #define cast(t, exp) ((t)(exp))

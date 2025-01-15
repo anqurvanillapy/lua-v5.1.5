@@ -28,7 +28,7 @@ void luaS_resize(lua_State *L, int newsize) {
       GCObject *next = p->gch.next; /* save next */
       unsigned int h = gco2ts(p)->hash;
       int h1 = lmod(h, newsize); /* new position */
-      lua_assert(cast_int(h % newsize) == lmod(h, newsize));
+      DEBUG_ASSERT(cast_int(h % newsize) == lmod(h, newsize));
       p->gch.next = newhash[h1]; /* chain it */
       newhash[h1] = p;
       p = next;

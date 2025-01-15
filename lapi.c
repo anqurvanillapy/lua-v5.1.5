@@ -456,7 +456,7 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
     SET_OBJECT_TO_NEW(L, &cl->c.upvalue[n], L->top + n);
   }
   SET_CLOSURE(L, L->top, cl);
-  lua_assert(iswhite(LuaObjectToGCObject(cl)));
+  DEBUG_ASSERT(iswhite(LuaObjectToGCObject(cl)));
   api_incr_top(L);
   lua_unlock(L);
 }

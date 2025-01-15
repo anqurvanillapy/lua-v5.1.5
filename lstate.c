@@ -89,12 +89,12 @@ static void close_state(lua_State *L) {
   global_State *g = G(L);
   luaF_close(L, L->stack); /* close all upvalues for this thread */
   luaC_freeall(L);         /* collect all objects */
-  lua_assert(g->rootgc == LuaObjectToGCObject(L));
-  lua_assert(g->strt.nuse == 0);
+  DEBUG_ASSERT(g->rootgc == LuaObjectToGCObject(L));
+  DEBUG_ASSERT(g->strt.nuse == 0);
   luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size, TString *);
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
-  lua_assert(g->totalbytes == sizeof(LG));
+  DEBUG_ASSERT(g->totalbytes == sizeof(LG));
   (*g->frealloc)(g->ud, fromstate(L), state_size(LG), 0);
 }
 
@@ -108,13 +108,13 @@ lua_State *luaE_newthread(lua_State *L) {
   L1->baseHookCount = L->baseHookCount;
   L1->hook = L->hook;
   resethookcount(L1);
-  lua_assert(iswhite(LuaObjectToGCObject(L1)));
+  DEBUG_ASSERT(iswhite(LuaObjectToGCObject(L1)));
   return L1;
 }
 
 void luaE_freethread(lua_State *L, lua_State *L1) {
   luaF_close(L1, L1->stack); /* close all upvalues for this thread */
-  lua_assert(L1->openUpval == NULL);
+  DEBUG_ASSERT(L1->openUpval == NULL);
   luai_userstatefree(L1);
   freestack(L, L1);
   luaM_freemem(L, fromstate(L1), state_size(lua_State));
@@ -188,7 +188,7 @@ LUA_API void lua_close(lua_State *L) {
     L->base = L->top = L->ci->base;
     L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
   } while (luaD_rawrunprotected(L, callallgcTM, NULL) != 0);
-  lua_assert(G(L)->tmudata == NULL);
+  DEBUG_ASSERT(G(L)->tmudata == NULL);
   luai_userstateclose(L);
   close_state(L);
 }
