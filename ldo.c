@@ -447,7 +447,7 @@ int luaD_pcall(lua_State *L, Pfunc func, void *u, ptrdiff_t old_top,
   int status;
   unsigned short oldnCcalls = L->nestedCCallsNum;
   ptrdiff_t old_ci = saveci(L, L->ci);
-  lu_byte old_allowhooks = L->allowHook;
+  uint8_t old_allowhooks = L->allowHook;
   ptrdiff_t old_errfunc = L->errFunc;
   L->errFunc = ef;
   status = luaD_rawrunprotected(L, func, u);

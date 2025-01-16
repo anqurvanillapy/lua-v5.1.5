@@ -31,9 +31,9 @@
 typedef struct BlockCnt {
   struct BlockCnt *previous; /* chain */
   int breaklist;             /* list of jumps out of this loop */
-  lu_byte nactvar;     /* # active locals outside the breakable structure */
-  lu_byte upval;       /* true if some variable in the block is an upvalue */
-  lu_byte isbreakable; /* true if `block' is a loop */
+  uint8_t nactvar;     /* # active locals outside the breakable structure */
+  uint8_t upval;       /* true if some variable in the block is an upvalue */
+  uint8_t isbreakable; /* true if `block' is a loop */
 } BlockCnt;
 
 /*
@@ -286,7 +286,7 @@ static void enterLevel(LexState *ls) {
 
 #define leaveLevel(ls) ((ls)->L->nestedCCallsNum--)
 
-static void enterBlock(FuncState *fs, BlockCnt *bl, lu_byte isbreakable) {
+static void enterBlock(FuncState *fs, BlockCnt *bl, uint8_t isbreakable) {
   bl->breaklist = NO_JUMP;
   bl->isbreakable = isbreakable;
   bl->nactvar = fs->nactvar;
@@ -812,8 +812,8 @@ static BinOpr getbinopr(int op) {
 }
 
 static const struct {
-  lu_byte left;  /* left priority for each binary operator */
-  lu_byte right; /* right priority */
+  uint8_t left;  /* left priority for each binary operator */
+  uint8_t right; /* right priority */
 } priority[] = {
     // Arithmetic.
     [OPR_ADD] = {6, 6},

@@ -35,7 +35,7 @@ static void error(LoadState *S, const char *why) {
 #endif
 
 #define LoadMem(S, b, n, size) LoadBlock(S, b, (n) * (size))
-#define LoadByte(S) (lu_byte) LoadChar(S)
+#define LoadByte(S) (uint8_t)LoadChar(S)
 #define LoadVar(S, x) LoadMem(S, &x, 1, sizeof(x))
 #define LoadVector(S, b, n, size) LoadMem(S, b, n, size)
 

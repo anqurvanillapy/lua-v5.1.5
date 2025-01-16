@@ -16,8 +16,8 @@
 #include "ltm.h"
 
 #define state_size(x) (sizeof(x) + LUAI_EXTRASPACE)
-#define fromstate(l) (cast(lu_byte *, (l)) - LUAI_EXTRASPACE)
-#define tostate(l) (cast(lua_State *, cast(lu_byte *, l) + LUAI_EXTRASPACE))
+#define fromstate(l) (cast(uint8_t *, (l)) - LUAI_EXTRASPACE)
+#define tostate(l) (cast(lua_State *, cast(uint8_t *, l) + LUAI_EXTRASPACE))
 
 /*
 ** Main thread combines a thread state and the global state

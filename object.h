@@ -20,8 +20,8 @@ typedef union GCObject GCObject;
 
 typedef struct GCHeader {
   GCObject *next;
-  lu_byte tt;
-  lu_byte marked;
+  uint8_t tt;
+  uint8_t marked;
 } GCHeader;
 
 typedef union Variant {
@@ -33,7 +33,7 @@ typedef union Variant {
 
 typedef struct Value {
   Variant variant;
-  lu_byte tt;
+  uint8_t tt;
 } Value;
 
 #define GET_TYPE(o) ((o)->tt)
@@ -178,7 +178,7 @@ typedef union TString {
   __attribute__((unused)) MaxAlign padding;
   struct {
     GCHeader header;
-    lu_byte reserved;
+    uint8_t reserved;
     unsigned int hash;
     size_t len;
   } tsv;
@@ -225,13 +225,13 @@ typedef struct Prototype {
   // Upvalue names.
   TString **upvalues;
   int upvaluesSize;
-  lu_byte upvaluesNum;
+  uint8_t upvaluesNum;
 
   GCObject *gcList;
 
-  lu_byte paramsNum;
-  lu_byte varargMode;
-  lu_byte maxStackSize;
+  uint8_t paramsNum;
+  uint8_t varargMode;
+  uint8_t maxStackSize;
 } Prototype;
 
 /* masks for new-style vararg */
@@ -265,7 +265,7 @@ typedef struct Upvalue {
 #define ClosureHeader                                                          \
   GCHeader header;                                                             \
   bool isC;                                                                    \
-  lu_byte nupvalues;                                                           \
+  uint8_t nupvalues;                                                           \
   GCObject *gclist;                                                            \
   struct Table *env
 
@@ -298,7 +298,7 @@ typedef union Closure {
 typedef union TKey {
   struct {
     Variant variant;
-    lu_byte tt;
+    uint8_t tt;
     struct Node *next; /* for chaining */
   } nk;
   Value tvk;
@@ -311,8 +311,8 @@ typedef struct Node {
 
 typedef struct Table {
   GCHeader header;
-  lu_byte flags;     /* 1<<p means tagmethod(p) is not present */
-  lu_byte lsizenode; /* log2 of size of 'node' array */
+  uint8_t flags;     /* 1<<p means tagmethod(p) is not present */
+  uint8_t lsizenode; /* log2 of size of 'node' array */
   struct Table *metatable;
   Value *array; /* array part */
   Node *node;

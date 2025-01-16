@@ -59,7 +59,7 @@ typedef struct FuncState {
   int nk;                 /* number of elements in `k' */
   int np;                 /* number of elements in `p' */
   short nlocvars;         /* number of elements in `locVars' */
-  lu_byte nactvar;        /* number of active local variables */
+  uint8_t nactvar;        /* number of active local variables */
   UpvalueInfo upvalues[LUAI_MAX_UPVALUES]; /* upvalues */
   unsigned short actvar[LUAI_MAX_VARS];    /* declared-variable stack */
 } FuncState;

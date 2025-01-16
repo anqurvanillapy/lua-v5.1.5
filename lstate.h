@@ -53,8 +53,8 @@ typedef struct global_State {
   stringtable strt;   /* hash table for strings */
   lua_Alloc frealloc; /* function to reallocate memory */
   void *ud;           /* auxiliary data to `frealloc' */
-  lu_byte currentwhite;
-  lu_byte gcstate;     /* state of garbage collector */
+  uint8_t currentwhite;
+  uint8_t gcstate;     /* state of garbage collector */
   int sweepstrgc;      /* position of sweep in `strt' */
   GCObject *rootgc;    /* list of all collectable objects */
   GCObject **sweepgc;  /* position of sweep in `rootgc' */
@@ -81,7 +81,7 @@ typedef struct global_State {
 struct lua_State {
   GCHeader header;
 
-  lu_byte status;
+  uint8_t status;
 
   // First free slot in the stack.
   StackIndex top;
@@ -111,8 +111,8 @@ struct lua_State {
   // Nested C calls when resuming coroutine.
   unsigned short nestedCCallsBaseNum;
 
-  lu_byte hookMask;
-  lu_byte allowHook;
+  uint8_t hookMask;
+  uint8_t allowHook;
   int baseHookCount;
   int hookCount;
   lua_Hook hook;

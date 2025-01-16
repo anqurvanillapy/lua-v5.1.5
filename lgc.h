@@ -16,7 +16,7 @@
 /*
 ** some userful bit tricks
 */
-#define resetbits(x, m) ((x) &= cast(lu_byte, ~(m)))
+#define resetbits(x, m) ((x) &= cast(uint8_t, ~(m)))
 #define setbits(x, m) ((x) |= (m))
 #define testbits(x, m) ((x) & (m))
 #define bitmask(b) (1 << (b))
@@ -62,7 +62,7 @@
 
 #define valiswhite(x) (IS_COLLECTABLE(x) && iswhite(GC_VALUE(x)))
 
-#define luaC_white(g) cast(lu_byte, (g)->currentwhite &WHITEBITS)
+#define luaC_white(g) cast(uint8_t, (g)->currentwhite &WHITEBITS)
 
 #define luaC_checkGC(L)                                                        \
   {                                                                            \
@@ -100,7 +100,7 @@ LUAI_FUNC void luaC_callGCTM(lua_State *L);
 LUAI_FUNC void luaC_freeall(lua_State *L);
 LUAI_FUNC void luaC_step(lua_State *L);
 LUAI_FUNC void luaC_fullgc(lua_State *L);
-LUAI_FUNC void luaC_link(lua_State *L, GCObject *o, lu_byte tt);
+LUAI_FUNC void luaC_link(lua_State *L, GCObject *o, uint8_t tt);
 LUAI_FUNC void luaC_linkupval(lua_State *L, Upvalue *uv);
 LUAI_FUNC void luaC_barrierf(lua_State *L, GCObject *o, GCObject *v);
 LUAI_FUNC void luaC_barrierback(lua_State *L, Table *t);

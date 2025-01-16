@@ -36,17 +36,18 @@
 #define VALUEWEAK bitmask(VALUEWEAKBIT)
 
 #define markvalue(g, o)                                                        \
-  {                                                                            \
+  do {                                                                         \
     DEBUG_CHECK_CONSISTENCY(o);                                                \
-    if (IS_COLLECTABLE(o) && iswhite(GC_VALUE(o)))                             \
+    if (IS_COLLECTABLE(o) && iswhite(GC_VALUE(o))) {                           \
       reallymarkobject(g, GC_VALUE(o));                                        \
-  }
+    }                                                                          \
+  } while (false)
 
 #define markobject(g, t)                                                       \
-  {                                                                            \
+  do {                                                                         \
     if (iswhite(LuaObjectToGCObject(t)))                                       \
       reallymarkobject(g, LuaObjectToGCObject(t));                             \
-  }
+  } while (false)
 
 #define setthreshold(g) (g->GCthreshold = (g->estimate / 100) * g->gcpause)
 
@@ -169,8 +170,9 @@ static int traversetable(global_State *g, Table *h) {
   }
   if (!weakvalue) {
     i = h->sizearray;
-    while (i--)
+    while (i--) {
       markvalue(g, &h->array[i]);
+    }
   }
   i = sizenode(h);
   while (i--) {
@@ -456,7 +458,7 @@ static void GCTM(lua_State *L) {
   const Value *tm;
   /* remove udata from `tmudata' */
   if (o == g->tmudata) { /* last element? */
-    g->tmudata = NULL;
+    g->tmudata = nullptr;
   } else {
     g->tmudata->gch.next = udata->uv.header.next;
   }
@@ -465,8 +467,8 @@ static void GCTM(lua_State *L) {
   g->mainthread->header.next = o;
   makewhite(g, o);
   tm = fasttm(L, udata->uv.metatable, TM_GC);
-  if (tm != NULL) {
-    lu_byte oldah = L->allowHook;
+  if (tm != nullptr) {
+    uint8_t oldah = L->allowHook;
     lu_mem oldt = g->GCthreshold;
     L->allowHook = 0; /* stop debug hooks during GC tag method */
     g->GCthreshold = 2 * g->totalbytes; /* avoid GC steps */
@@ -690,7 +692,7 @@ void luaC_barrierback(lua_State *L, Table *t) {
   g->grayagain = o;
 }
 
-void luaC_link(lua_State *L, GCObject *o, lu_byte tt) {
+void luaC_link(lua_State *L, GCObject *o, uint8_t tt) {
   global_State *g = G(L);
   o->gch.next = g->rootgc;
   g->rootgc = o;

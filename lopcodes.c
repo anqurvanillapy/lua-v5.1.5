@@ -17,7 +17,7 @@ const char *const luaP_opnames[NUM_OPCODES + 1] = {
 #define opmode(t, a, b, c, m)                                                  \
   (((t) << 7) | ((a) << 6) | ((b) << 4) | ((c) << 2) | (m))
 
-const lu_byte luaP_opmodes[NUM_OPCODES] = {
+const uint8_t luaP_opmodes[NUM_OPCODES] = {
     /*       T  A    B       C     mode		   opcode	*/
     opmode(0, 1, OpArgR, OpArgN, iABC) /* OP_MOVE */
     ,
