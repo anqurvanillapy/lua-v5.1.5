@@ -14,7 +14,7 @@
 #include "lstring.h"
 #include "lvm.h"
 
-const TaggedValue luaO_nilobject_ = {{nullptr}, LUA_TYPE_NIL};
+const Value luaO_nilobject_ = {{nullptr}, LUA_TYPE_NIL};
 
 /*
 ** converts an integer to a "floating point byte", represented as
@@ -65,7 +65,7 @@ int luaO_log2(unsigned int x) {
   return l + log_2[x];
 }
 
-int luaO_rawequalObj(const TaggedValue *t1, const TaggedValue *t2) {
+int luaO_rawequalObj(const Value *t1, const Value *t2) {
   if (GET_TYPE(t1) != GET_TYPE(t2)) {
     return 0;
   } else {

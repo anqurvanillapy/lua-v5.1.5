@@ -455,7 +455,7 @@ static int settrick(lua_State *L) {
 }*/
 
 static int get_gccolor(lua_State *L) {
-  TaggedValue *o;
+  Value *o;
   luaL_checkany(L, 1);
   o = obj_at(L, 1);
   if (!IS_COLLECTABLE(o))
@@ -490,7 +490,7 @@ static int hash_query(lua_State *L) {
     luaL_argcheck(L, lua_type(L, 1) == LUA_TYPE_STRING, 1, "string expected");
     lua_pushinteger(L, STRING_VALUE(obj_at(L, 1))->hash);
   } else {
-    TaggedValue *o = obj_at(L, 1);
+    Value *o = obj_at(L, 1);
     Table *t;
     luaL_checktype(L, 2, LUA_TYPE_TABLE);
     t = TABLE_VALUE(obj_at(L, 2));

@@ -149,7 +149,7 @@ static int traversetable(global_State *g, Table *h) {
   int i;
   int weakkey = 0;
   int weakvalue = 0;
-  const TaggedValue *mode;
+  const Value *mode;
   if (h->metatable)
     markobject(g, h->metatable);
   mode = gfasttm(g, h->metatable, TM_MODE);
@@ -282,7 +282,7 @@ static l_mem propagatemark(global_State *g) {
     if (traversetable(g, h)) { /* table is weak? */
       black2gray(o);           /* keep it gray */
     }
-    return sizeof(Table) + sizeof(TaggedValue) * h->sizearray +
+    return sizeof(Table) + sizeof(Value) * h->sizearray +
            sizeof(Node) * sizenode(h);
   }
   case LUA_TYPE_FUNCTION: {
@@ -299,7 +299,7 @@ static l_mem propagatemark(global_State *g) {
     g->grayagain = o;
     black2gray(o);
     traversestack(g, th);
-    return sizeof(lua_State) + sizeof(TaggedValue) * th->stackSize +
+    return sizeof(lua_State) + sizeof(Value) * th->stackSize +
            sizeof(CallInfo) * th->ciSize;
   }
   case LUA_TYPE_PROTO: {
@@ -307,7 +307,7 @@ static l_mem propagatemark(global_State *g) {
     g->gray = p->gcList;
     traverseproto(g, p);
     return sizeof(Prototype) + sizeof(Instruction) * p->codeSize +
-           sizeof(Prototype *) * p->pSize + sizeof(TaggedValue) * p->kSize +
+           sizeof(Prototype *) * p->pSize + sizeof(Value) * p->kSize +
            sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
            sizeof(TString *) * p->upvaluesSize;
   }
@@ -332,7 +332,7 @@ static size_t propagateall(global_State *g) {
 ** other objects: if really collected, cannot keep them; for userdata
 ** being finalized, keep them in keys, but not in values
 */
-static int iscleared(const TaggedValue *o, int iskey) {
+static int iscleared(const Value *o, int iskey) {
   if (!IS_COLLECTABLE(o)) {
     return 0;
   }
@@ -356,7 +356,7 @@ static void cleartable(GCObject *l) {
                  testbit(h->marked, KEYWEAKBIT));
     if (testbit(h->marked, VALUEWEAKBIT)) {
       while (i--) {
-        TaggedValue *o = &h->array[i];
+        Value *o = &h->array[i];
         if (iscleared(o, 0)) { /* value was collected? */
           SET_NIL(o);          /* remove value */
         }
@@ -453,7 +453,7 @@ static void GCTM(lua_State *L) {
   global_State *g = G(L);
   GCObject *o = g->tmudata->gch.next; /* get first element */
   Userdata *udata = rawgco2u(o);
-  const TaggedValue *tm;
+  const Value *tm;
   /* remove udata from `tmudata' */
   if (o == g->tmudata) { /* last element? */
     g->tmudata = NULL;
@@ -500,7 +500,7 @@ void luaC_freeall(lua_State *L) {
 
 static void markmt(global_State *g) {
   int i;
-  for (i = 0; i < NUM_TAGS; i++) {
+  for (i = 0; i < NUM_TYPES; i++) {
     if (g->mt[i]) {
       markobject(g, g->mt[i]);
     }

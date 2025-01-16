@@ -61,7 +61,7 @@ static void PrintString(const TString *ts) {
 }
 
 static void PrintConstant(const Prototype *f, int i) {
-  const TaggedValue *o = &f->k[i];
+  const Value *o = &f->k[i];
   switch (GET_TYPE(o)) {
   case LUA_TYPE_NIL:
     printf("nil");

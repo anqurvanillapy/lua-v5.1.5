@@ -87,13 +87,13 @@ static Prototype *LoadFunction(LoadState *S, TString *p);
 static void LoadConstants(LoadState *S, Prototype *f) {
   int i, n;
   n = LoadInt(S);
-  f->k = luaM_newvector(S->L, n, TaggedValue);
+  f->k = luaM_newvector(S->L, n, Value);
   f->kSize = n;
   for (i = 0; i < n; i++) {
     SET_NIL(&f->k[i]);
   }
   for (i = 0; i < n; i++) {
-    TaggedValue *o = &f->k[i];
+    Value *o = &f->k[i];
     int t = LoadChar(S);
     switch (t) {
     case LUA_TYPE_NIL:

@@ -28,12 +28,12 @@
     L->top++;                                                                  \
   } while (false)
 
-static TaggedValue *index2adr(lua_State *L, int idx) {
+static Value *index2adr(lua_State *L, int idx) {
   if (idx > 0) {
-    TaggedValue *o = L->base + (idx - 1);
+    Value *o = L->base + (idx - 1);
     api_check(L, idx <= L->ci->top - L->base);
     if (o >= L->top) {
-      return cast(TaggedValue *, luaO_nilobject);
+      return cast(Value *, luaO_nilobject);
     } else {
       return o;
     }
@@ -55,7 +55,7 @@ static TaggedValue *index2adr(lua_State *L, int idx) {
       Closure *func = curr_func(L);
       idx = LUA_GLOBALSINDEX - idx;
       return (idx <= func->c.nupvalues) ? &func->c.upvalue[idx - 1]
-                                        : cast(TaggedValue *, luaO_nilobject);
+                                        : cast(Value *, luaO_nilobject);
     }
     }
   }
@@ -70,7 +70,7 @@ static Table *getcurrenv(lua_State *L) {
   }
 }
 
-void luaA_pushobject(lua_State *L, const TaggedValue *o) {
+void luaA_pushobject(lua_State *L, const Value *o) {
   SET_OBJECT_TO_STACK(L, L->top, o);
   api_incr_top(L);
 }
@@ -226,8 +226,8 @@ LUA_API int lua_iscfunction(lua_State *L, int idx) {
 }
 
 LUA_API int lua_isnumber(lua_State *L, int idx) {
-  TaggedValue n;
-  const TaggedValue *o = index2adr(L, idx);
+  Value n;
+  const Value *o = index2adr(L, idx);
   return tonumber(o, &n);
 }
 
@@ -237,7 +237,7 @@ LUA_API int lua_isstring(lua_State *L, int idx) {
 }
 
 LUA_API int lua_isuserdata(lua_State *L, int idx) {
-  const TaggedValue *o = index2adr(L, idx);
+  const Value *o = index2adr(L, idx);
   return (IS_TYPE_USERDATA(o) || IS_TYPE_PTR(o));
 }
 
@@ -273,8 +273,8 @@ LUA_API int lua_lessthan(lua_State *L, int index1, int index2) {
 }
 
 LUA_API lua_Number lua_tonumber(lua_State *L, int idx) {
-  TaggedValue n;
-  const TaggedValue *o = index2adr(L, idx);
+  Value n;
+  const Value *o = index2adr(L, idx);
   if (tonumber(o, &n)) {
     return NUMBER_VALUE(o);
   } else {
@@ -283,8 +283,8 @@ LUA_API lua_Number lua_tonumber(lua_State *L, int idx) {
 }
 
 LUA_API lua_Integer lua_tointeger(lua_State *L, int idx) {
-  TaggedValue n;
-  const TaggedValue *o = index2adr(L, idx);
+  Value n;
+  const Value *o = index2adr(L, idx);
   if (tonumber(o, &n)) {
     lua_Integer res;
     lua_Number num = NUMBER_VALUE(o);
@@ -296,7 +296,7 @@ LUA_API lua_Integer lua_tointeger(lua_State *L, int idx) {
 }
 
 LUA_API int lua_toboolean(lua_State *L, int idx) {
-  const TaggedValue *o = index2adr(L, idx);
+  const Value *o = index2adr(L, idx);
   return !IS_FALSE(o);
 }
 
@@ -498,7 +498,7 @@ LUA_API void lua_gettable(lua_State *L, int idx) {
 
 LUA_API void lua_getfield(lua_State *L, int idx, const char *k) {
   StackIndex t;
-  TaggedValue key;
+  Value key;
   lua_lock(L);
   t = index2adr(L, idx);
   api_checkvalidindex(L, t);
@@ -536,7 +536,7 @@ LUA_API void lua_createtable(lua_State *L, int narray, int nrec) {
 }
 
 LUA_API int lua_getmetatable(lua_State *L, int objindex) {
-  const TaggedValue *obj;
+  const Value *obj;
   Table *mt = NULL;
   int res;
   lua_lock(L);
@@ -603,7 +603,7 @@ LUA_API void lua_settable(lua_State *L, int idx) {
 
 LUA_API void lua_setfield(lua_State *L, int idx, const char *k) {
   StackIndex t;
-  TaggedValue key;
+  Value key;
   lua_lock(L);
   api_checknelems(L, 1);
   t = index2adr(L, idx);
@@ -639,7 +639,7 @@ LUA_API void lua_rawseti(lua_State *L, int idx, int n) {
 }
 
 LUA_API int lua_setmetatable(lua_State *L, int objindex) {
-  TaggedValue *obj;
+  Value *obj;
   Table *mt;
   lua_lock(L);
   api_checknelems(L, 1);
@@ -809,7 +809,7 @@ LUA_API int lua_load(lua_State *L, lua_Reader reader, void *data,
 
 LUA_API int lua_dump(lua_State *L, lua_Writer writer, void *data) {
   int status;
-  TaggedValue *o;
+  Value *o;
   lua_lock(L);
   api_checknelems(L, 1);
   o = L->top - 1;
@@ -960,7 +960,7 @@ LUA_API void *lua_newuserdata(lua_State *L, size_t size) {
   return u + 1;
 }
 
-static const char *aux_upvalue(StackIndex fi, int n, TaggedValue **val) {
+static const char *aux_upvalue(StackIndex fi, int n, Value **val) {
   Closure *f;
   if (!IS_TYPE_FUNCTION(fi)) {
     return NULL;
@@ -984,7 +984,7 @@ static const char *aux_upvalue(StackIndex fi, int n, TaggedValue **val) {
 
 LUA_API const char *lua_getupvalue(lua_State *L, int funcindex, int n) {
   const char *name;
-  TaggedValue *val;
+  Value *val;
   lua_lock(L);
   name = aux_upvalue(index2adr(L, funcindex), n, &val);
   if (name) {
@@ -997,7 +997,7 @@ LUA_API const char *lua_getupvalue(lua_State *L, int funcindex, int n) {
 
 LUA_API const char *lua_setupvalue(lua_State *L, int funcindex, int n) {
   const char *name;
-  TaggedValue *val;
+  Value *val;
   StackIndex fi;
   lua_lock(L);
   fi = index2adr(L, funcindex);

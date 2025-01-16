@@ -7,7 +7,7 @@
 #include "lzio.h"
 
 #define luaD_checkstack(L, n)                                                  \
-  if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(TaggedValue)) \
+  if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(Value))       \
     luaD_growstack(L, n);                                                      \
   else                                                                         \
     condhardstacktests(luaD_reallocstack(L, L->stackSize - EXTRA_STACK - 1));
@@ -19,7 +19,7 @@
   }
 
 #define savestack(L, p) ((char *)(p) - (char *)L->stack)
-#define restorestack(L, n) ((TaggedValue *)((char *)L->stack + (n)))
+#define restorestack(L, n) ((Value *)((char *)L->stack + (n)))
 
 #define saveci(L, p) ((char *)(p) - (char *)L->baseCI)
 #define restoreci(L, n) ((CallInfo *)((char *)L->baseCI + (n)))

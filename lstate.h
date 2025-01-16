@@ -70,10 +70,10 @@ typedef struct global_State {
   int gcpause;         /* size of pause between successive GCs */
   int gcstepmul;       /* GC `granularity' */
   lua_CFunction panic; /* to be called in unprotected errors */
-  TaggedValue l_registry;
+  Value l_registry;
   struct lua_State *mainthread;
   Upvalue uvhead; /* head of double-linked list of all open upvalues */
-  struct Table *mt[NUM_TAGS]; /* metatables for basic types */
+  struct Table *mt[NUM_TYPES]; /* metatables for basic types */
   TString *tmname[TM_N];      /* array with tag-method names */
 } global_State;
 
@@ -118,9 +118,9 @@ struct lua_State {
   lua_Hook hook;
 
   // Table of globals.
-  TaggedValue l_gt;
+  Value l_gt;
   // Temporary place for environments.
-  TaggedValue env;
+  Value env;
 
   // List of open upvalues in this stack.
   GCObject *openUpval;

@@ -20,7 +20,7 @@
 /* limit for table tag-method chains (to avoid loops) */
 #define MAXTAGLOOP 100
 
-const TaggedValue *luaV_tonumber(const TaggedValue *obj, TaggedValue *n) {
+const Value *luaV_tonumber(const Value *obj, Value *n) {
   lua_Number num;
   if (IS_TYPE_NUMBER(obj)) {
     return obj;
@@ -63,8 +63,8 @@ static void traceexec(lua_State *L, const Instruction *pc) {
   }
 }
 
-static void callTMres(lua_State *L, StackIndex res, const TaggedValue *f,
-                      const TaggedValue *p1, const TaggedValue *p2) {
+static void callTMres(lua_State *L, StackIndex res, const Value *f,
+                      const Value *p1, const Value *p2) {
   ptrdiff_t result = savestack(L, res);
   SET_OBJECT_TO_STACK(L, L->top, f);      /* push function */
   SET_OBJECT_TO_STACK(L, L->top + 1, p1); /* 1st argument */
@@ -77,8 +77,8 @@ static void callTMres(lua_State *L, StackIndex res, const TaggedValue *f,
   SET_OBJECT_TO_SAME_STACK(L, res, L->top);
 }
 
-static void callTM(lua_State *L, const TaggedValue *f, const TaggedValue *p1,
-                   const TaggedValue *p2, const TaggedValue *p3) {
+static void callTM(lua_State *L, const Value *f, const Value *p1,
+                   const Value *p2, const Value *p3) {
   SET_OBJECT_TO_STACK(L, L->top, f);      /* push function */
   SET_OBJECT_TO_STACK(L, L->top + 1, p1); /* 1st argument */
   SET_OBJECT_TO_STACK(L, L->top + 2, p2); /* 2nd argument */
@@ -88,15 +88,14 @@ static void callTM(lua_State *L, const TaggedValue *f, const TaggedValue *p1,
   luaD_call(L, L->top - 4, 0);
 }
 
-void luaV_gettable(lua_State *L, const TaggedValue *t, TaggedValue *key,
-                   StackIndex val) {
+void luaV_gettable(lua_State *L, const Value *t, Value *key, StackIndex val) {
   int loop;
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
-    const TaggedValue *tm;
+    const Value *tm;
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = TABLE_VALUE(t);
-      const TaggedValue *res = luaH_get(h, key); /* do a primitive get */
-      if (!IS_TYPE_NIL(res) ||                   /* result is no nil? */
+      const Value *res = luaH_get(h, key); /* do a primitive get */
+      if (!IS_TYPE_NIL(res) ||             /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
         SET_OBJECT_TO_STACK(L, val, res);
         return;
@@ -114,16 +113,15 @@ void luaV_gettable(lua_State *L, const TaggedValue *t, TaggedValue *key,
   luaG_runerror(L, "loop in gettable");
 }
 
-void luaV_settable(lua_State *L, const TaggedValue *t, TaggedValue *key,
-                   StackIndex val) {
+void luaV_settable(lua_State *L, const Value *t, Value *key, StackIndex val) {
   int loop;
-  TaggedValue temp;
+  Value temp;
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
-    const TaggedValue *tm;
+    const Value *tm;
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = TABLE_VALUE(t);
-      TaggedValue *oldval = luaH_set(L, h, key); /* do a primitive set */
-      if (!IS_TYPE_NIL(oldval) ||                /* result is no nil? */
+      Value *oldval = luaH_set(L, h, key); /* do a primitive set */
+      if (!IS_TYPE_NIL(oldval) ||          /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
         SET_OBJECT_TO_TABLE(L, oldval, val);
         h->flags = 0;
@@ -145,9 +143,9 @@ void luaV_settable(lua_State *L, const TaggedValue *t, TaggedValue *key,
   luaG_runerror(L, "loop in settable");
 }
 
-static int call_binTM(lua_State *L, const TaggedValue *p1,
-                      const TaggedValue *p2, StackIndex res, TMS event) {
-  const TaggedValue *tm = luaT_gettmbyobj(L, p1, event); /* try first operand */
+static int call_binTM(lua_State *L, const Value *p1, const Value *p2,
+                      StackIndex res, TMS event) {
+  const Value *tm = luaT_gettmbyobj(L, p1, event); /* try first operand */
   if (IS_TYPE_NIL(tm)) {
     tm = luaT_gettmbyobj(L, p2, event); /* try second operand */
   }
@@ -158,10 +156,10 @@ static int call_binTM(lua_State *L, const TaggedValue *p1,
   return 1;
 }
 
-static const TaggedValue *get_compTM(lua_State *L, Table *mt1, Table *mt2,
-                                     TMS event) {
-  const TaggedValue *tm1 = fasttm(L, mt1, event);
-  const TaggedValue *tm2;
+static const Value *get_compTM(lua_State *L, Table *mt1, Table *mt2,
+                               TMS event) {
+  const Value *tm1 = fasttm(L, mt1, event);
+  const Value *tm2;
   if (tm1 == NULL) {
     return NULL; /* no metamethod */
   }
@@ -178,10 +176,10 @@ static const TaggedValue *get_compTM(lua_State *L, Table *mt1, Table *mt2,
   return NULL;
 }
 
-static int call_orderTM(lua_State *L, const TaggedValue *p1,
-                        const TaggedValue *p2, TMS event) {
-  const TaggedValue *tm1 = luaT_gettmbyobj(L, p1, event);
-  const TaggedValue *tm2;
+static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
+                        TMS event) {
+  const Value *tm1 = luaT_gettmbyobj(L, p1, event);
+  const Value *tm2;
   if (IS_TYPE_NIL(tm1)) {
     return -1; /* no metamethod? */
   }
@@ -219,7 +217,7 @@ static int l_strcmp(const TString *ls, const TString *rs) {
   }
 }
 
-int luaV_lessthan(lua_State *L, const TaggedValue *l, const TaggedValue *r) {
+int luaV_lessthan(lua_State *L, const Value *l, const Value *r) {
   int res;
   if (GET_TYPE(l) != GET_TYPE(r)) {
     return luaG_ordererror(L, l, r);
@@ -233,7 +231,7 @@ int luaV_lessthan(lua_State *L, const TaggedValue *l, const TaggedValue *r) {
   return luaG_ordererror(L, l, r);
 }
 
-static int lessequal(lua_State *L, const TaggedValue *l, const TaggedValue *r) {
+static int lessequal(lua_State *L, const Value *l, const Value *r) {
   int res;
   if (GET_TYPE(l) != GET_TYPE(r)) {
     return luaG_ordererror(L, l, r);
@@ -249,8 +247,8 @@ static int lessequal(lua_State *L, const TaggedValue *l, const TaggedValue *r) {
   return luaG_ordererror(L, l, r);
 }
 
-int luaV_equalval(lua_State *L, const TaggedValue *t1, const TaggedValue *t2) {
-  const TaggedValue *tm;
+int luaV_equalval(lua_State *L, const Value *t1, const Value *t2) {
+  const Value *tm;
   DEBUG_ASSERT(GET_TYPE(t1) == GET_TYPE(t2));
   switch (GET_TYPE(t1)) {
   case LUA_TYPE_NIL:
@@ -325,10 +323,10 @@ void luaV_concat(lua_State *L, int total, int last) {
   } while (total > 1); /* repeat until only 1 result left */
 }
 
-static void Arith(lua_State *L, StackIndex ra, const TaggedValue *rb,
-                  const TaggedValue *rc, TMS op) {
-  TaggedValue tempb, tempc;
-  const TaggedValue *b, *c;
+static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
+                  TMS op) {
+  Value tempb, tempc;
+  const Value *b, *c;
   if ((b = luaV_tonumber(rb, &tempb)) != NULL &&
       (c = luaV_tonumber(rc, &tempc)) != NULL) {
     lua_Number nb = NUMBER_VALUE(b), nc = NUMBER_VALUE(c);
@@ -402,8 +400,8 @@ static void Arith(lua_State *L, StackIndex ra, const TaggedValue *rb,
 
 #define arith_op(op, tm)                                                       \
   {                                                                            \
-    TaggedValue *rb = RKB(i);                                                  \
-    TaggedValue *rc = RKC(i);                                                  \
+    Value *rb = RKB(i);                                                        \
+    Value *rc = RKC(i);                                                        \
     if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                            \
       lua_Number nb = NUMBER_VALUE(rb), nc = NUMBER_VALUE(rc);                 \
       SET_NUMBER(ra, op(nb, nc));                                              \
@@ -414,7 +412,7 @@ static void Arith(lua_State *L, StackIndex ra, const TaggedValue *rb,
 void luaV_execute(lua_State *L, int nexeccalls) {
   LClosure *cl;
   StackIndex base;
-  TaggedValue *k;
+  Value *k;
   const Instruction *pc;
 reentry: /* entry point */
   DEBUG_ASSERT(isLua(L->ci));
@@ -457,7 +455,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_LOADNIL: {
-      TaggedValue *rb = RB(i);
+      Value *rb = RB(i);
       do {
         SET_NIL(rb--);
       } while (rb >= ra);
@@ -469,8 +467,8 @@ reentry: /* entry point */
       continue;
     }
     case OP_GETGLOBAL: {
-      TaggedValue g;
-      TaggedValue *rb = KBx(i);
+      Value g;
+      Value *rb = KBx(i);
       SET_TABLE(L, &g, cl->env);
       DEBUG_ASSERT(IS_TYPE_STRING(rb));
       Protect(luaV_gettable(L, &g, rb, ra));
@@ -481,7 +479,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_SETGLOBAL: {
-      TaggedValue g;
+      Value g;
       SET_TABLE(L, &g, cl->env);
       DEBUG_ASSERT(IS_TYPE_STRING(KBx(i)));
       Protect(luaV_settable(L, &g, KBx(i), ra));
@@ -535,7 +533,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_UNM: {
-      TaggedValue *rb = RB(i);
+      Value *rb = RB(i);
       if (IS_TYPE_NUMBER(rb)) {
         lua_Number nb = NUMBER_VALUE(rb);
         SET_NUMBER(ra, luai_numunm(nb));
@@ -550,7 +548,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_LEN: {
-      const TaggedValue *rb = RB(i);
+      const Value *rb = RB(i);
       switch (GET_TYPE(rb)) {
       case LUA_TYPE_TABLE: {
         SET_NUMBER(ra, cast_num(luaH_getn(TABLE_VALUE(rb))));
@@ -579,8 +577,8 @@ reentry: /* entry point */
       continue;
     }
     case OP_EQ: {
-      TaggedValue *rb = RKB(i);
-      TaggedValue *rc = RKC(i);
+      Value *rb = RKB(i);
+      Value *rc = RKC(i);
       Protect(if (equalobj(L, rb, rc) == GETARG_A(i))
                   dojump(L, pc, GETARG_sBx(*pc));) pc++;
       continue;
@@ -602,7 +600,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_TESTSET: {
-      TaggedValue *rb = RB(i);
+      Value *rb = RB(i);
       if (IS_FALSE(rb) != GETARG_C(i)) {
         SET_OBJECT_TO_SAME_STACK(L, ra, rb);
         dojump(L, pc, GETARG_sBx(*pc));
@@ -707,9 +705,9 @@ reentry: /* entry point */
       continue;
     }
     case OP_FORPREP: {
-      const TaggedValue *init = ra;
-      const TaggedValue *plimit = ra + 1;
-      const TaggedValue *pstep = ra + 2;
+      const Value *init = ra;
+      const Value *plimit = ra + 1;
+      const Value *pstep = ra + 2;
       L->savedPC = pc; /* next steps may throw errors */
       if (!tonumber(init, ra)) {
         luaG_runerror(L, LUA_QL("for") " initial value must be a number");
@@ -757,7 +755,7 @@ reentry: /* entry point */
         luaH_resizearray(L, h, last); /* pre-alloc it at once */
       }
       for (; n > 0; n--) {
-        TaggedValue *val = ra + n;
+        Value *val = ra + n;
         SET_OBJECT_TO_TABLE(L, luaH_setnum(L, h, last--), val);
         luaC_barriert(L, h, val);
       }

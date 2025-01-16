@@ -366,7 +366,7 @@ static void closeFunc(LexState *ls) {
   f->codeSize = fs->pc;
   luaM_reallocvector(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
   f->lineInfoSize = fs->pc;
-  luaM_reallocvector(L, f->k, f->kSize, fs->nk, TaggedValue);
+  luaM_reallocvector(L, f->k, f->kSize, fs->nk, Value);
   f->kSize = fs->nk;
   luaM_reallocvector(L, f->inners, f->pSize, fs->np, Prototype *);
   f->pSize = fs->np;

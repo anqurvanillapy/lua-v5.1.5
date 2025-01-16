@@ -7,17 +7,14 @@
 #include "limits.h"
 #include "lua.h"
 
-/* tags for values visible from Lua */
-#define LAST_TAG LUA_TYPE_THREAD
+// Types for values visible from Lua.
+#define LAST_TYPE LUA_TYPE_THREAD
+#define NUM_TYPES (LAST_TYPE + 1)
 
-#define NUM_TAGS (LAST_TAG + 1)
-
-/*
-** Extra tags for non-values
-*/
-#define LUA_TYPE_PROTO (LAST_TAG + 1)
-#define LUA_TYPE_UPVALUE (LAST_TAG + 2)
-#define LUA_TYPE_DEAD (LAST_TAG + 3) // GC-able dead object
+// Extra types for non-values.
+#define LUA_TYPE_PROTO (LAST_TYPE + 1)
+#define LUA_TYPE_UPVALUE (LAST_TYPE + 2)
+#define LUA_TYPE_DEAD (LAST_TYPE + 3) // dead object to garbage collect
 
 typedef union GCObject GCObject;
 
@@ -30,21 +27,17 @@ typedef struct GCHeader {
   GCHeaderFields;
 } GCHeader;
 
-typedef union Value {
+typedef union Variant {
   GCObject *gc;
   void *p;
   lua_Number n;
   bool b;
+} Variant;
+
+typedef struct Value {
+  Variant value;
+  lu_byte tt;
 } Value;
-
-#define TValueFields                                                           \
-  Value value;                                                                 \
-  int tt
-
-// Tagged values.
-typedef struct TaggedValue {
-  TValueFields;
-} TaggedValue;
 
 #define GET_TYPE(o) ((o)->tt)
 #define SET_TYPE(obj, t) ((obj)->tt = (t))
@@ -90,28 +83,28 @@ typedef struct TaggedValue {
 
 #define SET_NUMBER(obj, x)                                                     \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.n = (x);                                                        \
     i_o->tt = LUA_TYPE_NUMBER;                                                 \
   } while (false)
 
 #define SET_PTR(obj, x)                                                        \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.p = (x);                                                        \
     i_o->tt = LUA_TYPE_PTR;                                                    \
   } while (false)
 
 #define SET_BOOL(obj, x)                                                       \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.b = (x);                                                        \
     i_o->tt = LUA_TYPE_BOOLEAN;                                                \
   } while (false)
 
 #define SET_STRING(L, obj, x)                                                  \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_STRING;                                                 \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -119,7 +112,7 @@ typedef struct TaggedValue {
 
 #define SET_USERDATA(L, obj, x)                                                \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_USERDATA;                                               \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -127,7 +120,7 @@ typedef struct TaggedValue {
 
 #define SET_THREAD(L, obj, x)                                                  \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_THREAD;                                                 \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -135,7 +128,7 @@ typedef struct TaggedValue {
 
 #define SET_CLOSURE(L, obj, x)                                                 \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_FUNCTION;                                               \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -143,7 +136,7 @@ typedef struct TaggedValue {
 
 #define SET_TABLE(L, obj, x)                                                   \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_TABLE;                                                  \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -151,7 +144,7 @@ typedef struct TaggedValue {
 
 #define SET_PROTO(L, obj, x)                                                   \
   do {                                                                         \
-    TaggedValue *i_o = (obj);                                                  \
+    Value *i_o = (obj);                                                        \
     i_o->value.gc = (GCObject *)(x);                                           \
     i_o->tt = LUA_TYPE_PROTO;                                                  \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
@@ -159,8 +152,8 @@ typedef struct TaggedValue {
 
 #define SET_OBJECT(L, obj1, obj2)                                              \
   do {                                                                         \
-    const TaggedValue *o2 = (obj2);                                            \
-    TaggedValue *o1 = (obj1);                                                  \
+    const Value *o2 = (obj2);                                                  \
+    Value *o1 = (obj1);                                                        \
     o1->value = o2->value;                                                     \
     o1->tt = o2->tt;                                                           \
     DEBUG_CHECK_LIVENESS(G(L), o1);                                            \
@@ -178,7 +171,7 @@ typedef struct TaggedValue {
 #define SET_OBJECT_TO_NEW SET_OBJECT
 #define SET_STRING_TO_NEW SET_STRING
 
-typedef TaggedValue *StackIndex;
+typedef Value *StackIndex;
 
 /*
 ** String headers for string table
@@ -211,7 +204,7 @@ typedef struct Prototype {
   GCHeaderFields;
 
   // Constant table.
-  TaggedValue *k;
+  Value *k;
   int kSize;
 
   Instruction *code;
@@ -259,10 +252,10 @@ typedef struct LocVar {
 typedef struct Upvalue {
   GCHeaderFields;
   // Points to stack or to its own value.
-  TaggedValue *v;
+  Value *v;
   union {
     // The value (when closed).
-    TaggedValue value;
+    Value value;
     // Double linked list (when open).
     struct {
       struct Upvalue *prev;
@@ -281,7 +274,7 @@ typedef struct Upvalue {
 typedef struct CClosure {
   ClosureHeader;
   lua_CFunction f;
-  TaggedValue upvalue[1];
+  Value upvalue[1];
 } CClosure;
 
 typedef struct LClosure {
@@ -306,14 +299,15 @@ typedef union Closure {
 
 typedef union TKey {
   struct {
-    TValueFields;
+    Variant value;
+    lu_byte tt;
     struct Node *next; /* for chaining */
   } nk;
-  TaggedValue tvk;
+  Value tvk;
 } TKey;
 
 typedef struct Node {
-  TaggedValue i_val;
+  Value i_val;
   TKey i_key;
 } Node;
 
@@ -322,7 +316,7 @@ typedef struct Table {
   lu_byte flags;     /* 1<<p means tagmethod(p) is not present */
   lu_byte lsizenode; /* log2 of size of 'node' array */
   struct Table *metatable;
-  TaggedValue *array; /* array part */
+  Value *array; /* array part */
   Node *node;
   Node *lastfree; /* any free position is before this position */
   GCObject *gclist;
@@ -340,14 +334,14 @@ typedef struct Table {
 
 #define luaO_nilobject (&luaO_nilobject_)
 
-LUAI_DATA const TaggedValue luaO_nilobject_;
+LUAI_DATA const Value luaO_nilobject_;
 
 #define ceillog2(x) (luaO_log2((x) - 1) + 1)
 
 LUAI_FUNC int luaO_log2(unsigned int x);
 LUAI_FUNC int luaO_int2fb(unsigned int x);
 LUAI_FUNC int luaO_fb2int(int x);
-LUAI_FUNC int luaO_rawequalObj(const TaggedValue *t1, const TaggedValue *t2);
+LUAI_FUNC int luaO_rawequalObj(const Value *t1, const Value *t2);
 LUAI_FUNC int luaO_str2d(const char *s, lua_Number *result);
 LUAI_FUNC const char *luaO_pushvfstring(lua_State *L, const char *fmt,
                                         va_list argp);

@@ -5,10 +5,10 @@
 #include "lobject.h"
 
 #define sizeCclosure(n)                                                        \
-  (cast(int, sizeof(CClosure)) + cast(int, sizeof(TaggedValue) * ((n) - 1)))
+  (cast(int, sizeof(CClosure)) + cast(int, sizeof(Value) * ((n) - 1)))
 
 #define sizeLclosure(n)                                                        \
-  (cast(int, sizeof(LClosure)) + cast(int, sizeof(TaggedValue *) * ((n) - 1)))
+  (cast(int, sizeof(LClosure)) + cast(int, sizeof(Value *) * ((n) - 1)))
 
 LUAI_FUNC Prototype *luaF_newproto(lua_State *L);
 LUAI_FUNC Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e);

@@ -60,7 +60,7 @@ static void DumpConstants(const Prototype *f, DumpState *D) {
   int i, n = f->kSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
-    const TaggedValue *o = &f->k[i];
+    const Value *o = &f->k[i];
     DumpChar(GET_TYPE(o), D);
     switch (GET_TYPE(o)) {
     case LUA_TYPE_NIL:

@@ -560,7 +560,7 @@ static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name) {
 }
 
 /* only ANSI way to check whether a pointer points to an array */
-static int isinstack(CallInfo *ci, const TaggedValue *o) {
+static int isinstack(CallInfo *ci, const Value *o) {
   StackIndex p;
   for (p = ci->base; p < ci->top; p++) {
     if (o == p) {
@@ -570,7 +570,7 @@ static int isinstack(CallInfo *ci, const TaggedValue *o) {
   return 0;
 }
 
-void luaG_typeerror(lua_State *L, const TaggedValue *o, const char *op) {
+void luaG_typeerror(lua_State *L, const Value *o, const char *op) {
   const char *name = NULL;
   const char *t = luaT_typenames[GET_TYPE(o)];
   const char *kind = (isinstack(L->ci, o))
@@ -592,17 +592,15 @@ void luaG_concaterror(lua_State *L, StackIndex p1, StackIndex p2) {
   luaG_typeerror(L, p1, "concatenate");
 }
 
-void luaG_aritherror(lua_State *L, const TaggedValue *p1,
-                     const TaggedValue *p2) {
-  TaggedValue temp;
+void luaG_aritherror(lua_State *L, const Value *p1, const Value *p2) {
+  Value temp;
   if (luaV_tonumber(p1, &temp) == NULL) {
     p2 = p1; /* first operand is wrong */
   }
   luaG_typeerror(L, p2, "perform arithmetic on");
 }
 
-int luaG_ordererror(lua_State *L, const TaggedValue *p1,
-                    const TaggedValue *p2) {
+int luaG_ordererror(lua_State *L, const Value *p1, const Value *p2) {
   const char *t1 = luaT_typenames[GET_TYPE(p1)];
   const char *t2 = luaT_typenames[GET_TYPE(p2)];
   if (t1[2] == t2[2]) {

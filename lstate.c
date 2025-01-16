@@ -34,7 +34,7 @@ static void stack_init(lua_State *L1, lua_State *L) {
   L1->ciSize = BASIC_CI_SIZE;
   L1->endCI = L1->baseCI + L1->ciSize - 1;
   /* initialize stack array */
-  L1->stack = luaM_newvector(L, BASIC_STACK_SIZE + EXTRA_STACK, TaggedValue);
+  L1->stack = luaM_newvector(L, BASIC_STACK_SIZE + EXTRA_STACK, Value);
   L1->stackSize = BASIC_STACK_SIZE + EXTRA_STACK;
   L1->top = L1->stack;
   L1->stackLast = L1->stack + (L1->stackSize - EXTRA_STACK) - 1;
@@ -47,7 +47,7 @@ static void stack_init(lua_State *L1, lua_State *L) {
 
 static void freestack(lua_State *L, lua_State *L1) {
   luaM_freearray(L, L1->baseCI, L1->ciSize, CallInfo);
-  luaM_freearray(L, L1->stack, L1->stackSize, TaggedValue);
+  luaM_freearray(L, L1->stack, L1->stackSize, Value);
 }
 
 /*
@@ -160,7 +160,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   g->gcpause = LUAI_GCPAUSE;
   g->gcstepmul = LUAI_GCMUL;
   g->gcdept = 0;
-  for (i = 0; i < NUM_TAGS; i++) {
+  for (i = 0; i < NUM_TYPES; i++) {
     g->mt[i] = NULL;
   }
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != 0) {

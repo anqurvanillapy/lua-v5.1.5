@@ -209,9 +209,9 @@ static void freeexp(FuncState *fs, ExprInfo *e) {
   }
 }
 
-static int addConstant(FuncState *fs, TaggedValue *k, TaggedValue *v) {
+static int addConstant(FuncState *fs, Value *k, Value *v) {
   lua_State *L = fs->L;
-  TaggedValue *idx = luaH_set(L, fs->h, k);
+  Value *idx = luaH_set(L, fs->h, k);
   Prototype *f = fs->f;
 
   if (IS_TYPE_NUMBER(idx)) {
@@ -222,7 +222,7 @@ static int addConstant(FuncState *fs, TaggedValue *k, TaggedValue *v) {
   // Constant not found, create a new entry.
   int oldsize = f->kSize;
   SET_NUMBER(idx, cast_num(fs->nk));
-  luaM_growvector(L, f->k, fs->nk, f->kSize, TaggedValue, MAXARG_Bx,
+  luaM_growvector(L, f->k, fs->nk, f->kSize, Value, MAXARG_Bx,
                   "constant table overflow");
   while (oldsize < f->kSize) {
     SET_NIL(&f->k[oldsize++]);
@@ -233,25 +233,25 @@ static int addConstant(FuncState *fs, TaggedValue *k, TaggedValue *v) {
 }
 
 int Codegen_addString(FuncState *fs, TString *s) {
-  TaggedValue o;
+  Value o;
   SET_STRING(fs->L, &o, s);
   return addConstant(fs, &o, &o);
 }
 
 int luaK_numberK(FuncState *fs, lua_Number r) {
-  TaggedValue o;
+  Value o;
   SET_NUMBER(&o, r);
   return addConstant(fs, &o, &o);
 }
 
 static int boolK(FuncState *fs, int b) {
-  TaggedValue o;
+  Value o;
   SET_BOOL(&o, b);
   return addConstant(fs, &o, &o);
 }
 
 static int nilK(FuncState *fs) {
-  TaggedValue k, v;
+  Value k, v;
   SET_NIL(&v);
   /* cannot use nil as key; instead use table itself to represent nil */
   SET_TABLE(fs->L, &k, fs->h);

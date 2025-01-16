@@ -107,7 +107,7 @@ int luaD_rawrunprotected(lua_State *L, Pfunc f, void *ud) {
 
 /* }====================================================== */
 
-static void correctstack(lua_State *L, TaggedValue *oldstack) {
+static void correctstack(lua_State *L, Value *oldstack) {
   CallInfo *ci;
   GCObject *up;
   L->top = (L->top - oldstack) + L->stack;
@@ -123,10 +123,10 @@ static void correctstack(lua_State *L, TaggedValue *oldstack) {
 }
 
 void luaD_reallocstack(lua_State *L, int newsize) {
-  TaggedValue *oldstack = L->stack;
+  Value *oldstack = L->stack;
   int realsize = newsize + 1 + EXTRA_STACK;
   DEBUG_ASSERT(L->stackLast - L->stack == L->stackSize - EXTRA_STACK - 1);
-  luaM_reallocvector(L, L->stack, L->stackSize, realsize, TaggedValue);
+  luaM_reallocvector(L, L->stack, L->stackSize, realsize, Value);
   L->stackSize = realsize;
   L->stackLast = L->stack + newsize;
   correctstack(L, oldstack);
@@ -227,7 +227,7 @@ static StackIndex adjust_varargs(lua_State *L, Prototype *p, int actual) {
 }
 
 static StackIndex tryfuncTM(lua_State *L, StackIndex func) {
-  const TaggedValue *tm = luaT_gettmbyobj(L, func, TM_CALL);
+  const Value *tm = luaT_gettmbyobj(L, func, TM_CALL);
   StackIndex p;
   ptrdiff_t funcr = savestack(L, func);
   if (!IS_TYPE_FUNCTION(tm)) {
