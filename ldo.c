@@ -38,12 +38,12 @@ struct lua_longjmp {
 void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldtop) {
   switch (errcode) {
   case LUA_ERRMEM: {
-    SET_STRING_TO_STACK(L, oldtop, luaS_newliteral(L, MEMERRMSG));
+    SET_STRING_TO_STACK(L, oldtop, String_internLiteral(L, MEMERRMSG));
     break;
   }
   case LUA_ERRERR: {
     SET_STRING_TO_STACK(L, oldtop,
-                        luaS_newliteral(L, "error in error handling"));
+                        String_internLiteral(L, "error in error handling"));
     break;
   }
   case LUA_ERRSYNTAX:
@@ -208,7 +208,8 @@ static StackIndex adjust_varargs(lua_State *L, Prototype *p, int actual) {
       SET_OBJECT_TO_NEW(L, luaH_setnum(L, htab, i + 1), L->top - nvar + i);
     }
     /* store counter in field `n' */
-    SET_NUMBER(luaH_setstr(L, htab, luaS_newliteral(L, "n")), cast_num(nvar));
+    SET_NUMBER(luaH_setstr(L, htab, String_internLiteral(L, "n")),
+               cast_num(nvar));
   }
 
   /* move fixed parameters to final position */
@@ -398,7 +399,7 @@ static void resume(lua_State *L, void *ud) {
 
 static int resume_error(lua_State *L, const char *msg) {
   L->top = L->ci->base;
-  SET_STRING_TO_STACK(L, L->top, luaS_new(L, msg));
+  SET_STRING_TO_STACK(L, L->top, String_internCStr(L, msg));
   incr_top(L);
   lua_unlock(L);
   return LUA_ERRRUN;

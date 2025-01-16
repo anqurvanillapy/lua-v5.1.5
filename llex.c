@@ -20,12 +20,12 @@
 #define currIsNewline(ls) (ls->current == '\n' || ls->current == '\r')
 
 // All tokens are ORDER RESERVED.
-static const char *const luaX_tokens[] = {
-    "and",    "break",    "do",     "else", "elseif", "end",   "false",
-    "for",    "function", "if",     "in",   "local",  "nil",   "not",
-    "or",     "repeat",   "return", "then", "true",   "until", "while",
-    "..",     "...",      "==",     ">=",   "<=",     "~=",    "<number>",
-    "<name>", "<string>", "<eof>",  NULL,
+static const char *const TOKENS[] = {
+    "and",    "break",    "do",     "else",  "elseif", "end",   "false",
+    "for",    "function", "if",     "in",    "local",  "nil",   "not",
+    "or",     "repeat",   "return", "then",  "true",   "until", "while",
+    "..",     "...",      "==",     ">=",    "<=",     "~=",    "<number>",
+    "<name>", "<string>", "<eof>",  nullptr,
 };
 
 #define saveAndNext(ls) (save(ls, ls->current), next(ls))
@@ -33,22 +33,20 @@ static const char *const luaX_tokens[] = {
 static void save(LexState *ls, int c) {
   Mbuffer *b = ls->buff;
   if (b->n + 1 > b->buffsize) {
-    size_t newsize;
     if (b->buffsize >= MAX_SIZET / 2) {
       luaX_lexerror(ls, "lexical element too long", 0);
     }
-    newsize = b->buffsize * 2;
-    luaZ_resizebuffer(ls->L, b, newsize);
+    size_t newSize = b->buffsize * 2;
+    luaZ_resizebuffer(ls->L, b, newSize);
   }
   b->buffer[b->n++] = cast(char, c);
 }
 
 void luaX_init(lua_State *L) {
-  int i;
-  for (i = 0; i < NUM_RESERVED; i++) {
-    TString *ts = luaS_new(L, luaX_tokens[i]);
-    luaS_fix(ts); /* reserved words are never collected */
-    DEBUG_ASSERT(strlen(luaX_tokens[i]) + 1 <= TOKEN_LEN);
+  for (int i = 0; i < NUM_RESERVED; i++) {
+    TString *ts = String_internCStr(L, TOKENS[i]);
+    String_pin(ts); /* reserved words are never collected */
+    DEBUG_ASSERT(strlen(TOKENS[i]) + 1 <= TOKEN_LEN);
     ts->tsv.reserved = cast_byte(i + 1); /* reserved word */
   }
 }
@@ -61,7 +59,7 @@ const char *luaX_token2str(LexState *ls, int token) {
     return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token)
                             : luaO_pushfstring(ls->L, "%c", token);
   } else {
-    return luaX_tokens[token - FIRST_RESERVED];
+    return TOKENS[token - FIRST_RESERVED];
   }
 }
 

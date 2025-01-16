@@ -175,7 +175,7 @@ typedef Value *StackIndex;
 ** String headers for string table
 */
 typedef union TString {
-  __attribute__((unused)) MaxAlign padding;
+  __attribute__((unused)) Padding padding;
   struct {
     GCHeader header;
     uint8_t reserved;
@@ -188,7 +188,7 @@ typedef union TString {
 #define GET_STR_VALUE(o) GET_STR(RAW_STRING_VALUE(o))
 
 typedef union Userdata {
-  __attribute__((unused)) MaxAlign padding;
+  __attribute__((unused)) Padding padding;
   struct {
     GCHeader header;
     struct Table *metatable;

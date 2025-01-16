@@ -502,7 +502,7 @@ LUA_API void lua_getfield(lua_State *L, int idx, const char *k) {
   lua_lock(L);
   t = index2adr(L, idx);
   api_checkvalidindex(L, t);
-  SET_STRING(L, &key, luaS_new(L, k));
+  SET_STRING(L, &key, String_internCStr(L, k));
   luaV_gettable(L, t, &key, L->top);
   api_incr_top(L);
   lua_unlock(L);
@@ -608,7 +608,7 @@ LUA_API void lua_setfield(lua_State *L, int idx, const char *k) {
   api_checknelems(L, 1);
   t = index2adr(L, idx);
   api_checkvalidindex(L, t);
-  SET_STRING(L, &key, luaS_new(L, k));
+  SET_STRING(L, &key, String_internCStr(L, k));
   luaV_settable(L, t, &key, L->top - 1);
   L->top--; /* pop value */
   lua_unlock(L);
@@ -953,7 +953,7 @@ LUA_API void *lua_newuserdata(lua_State *L, size_t size) {
   Userdata *u;
   lua_lock(L);
   luaC_checkGC(L);
-  u = luaS_newudata(L, size, getcurrenv(L));
+  u = Userdata_new(L, size, getcurrenv(L));
   SET_USERDATA(L, L->top, u);
   api_incr_top(L);
   lua_unlock(L);

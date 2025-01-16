@@ -107,7 +107,7 @@ int luaO_str2d(const char *s, lua_Number *result) {
 }
 
 static void pushstr(lua_State *L, const char *str) {
-  SET_STRING_TO_STACK(L, L->top, luaS_new(L, str));
+  SET_STRING_TO_STACK(L, L->top, String_internCStr(L, str));
   incr_top(L);
 }
 

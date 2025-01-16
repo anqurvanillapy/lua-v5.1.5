@@ -61,7 +61,7 @@ static void f_luaopen(lua_State *L, void *) {
   String_resize(L, MINSTRTABSIZE); /* initial size of string table */
   luaT_init(L);
   luaX_init(L);
-  luaS_fix(luaS_newliteral(L, MEMERRMSG));
+  String_pin(String_internLiteral(L, MEMERRMSG));
   g->GCthreshold = 4 * g->totalbytes;
 }
 

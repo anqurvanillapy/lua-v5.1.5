@@ -1,4 +1,4 @@
-/* String table (keep all strings handled by Lua). */
+// String interning pool.
 
 #pragma once
 
@@ -9,12 +9,15 @@
 #define sizestring(s) (sizeof(union TString) + ((s)->len + 1) * sizeof(char))
 #define sizeudata(u) (sizeof(union Userdata) + (u)->len)
 
-#define luaS_fix(s) l_setbit((s)->tsv.header.marked, FIXEDBIT)
+#define String_pin(s) l_setbit((s)->tsv.header.marked, FIXEDBIT)
 
 LUAI_FUNC void String_resize(lua_State *L, int newSize);
-LUAI_FUNC TString *String_intern(lua_State *L, const char *str, size_t l);
-LUAI_FUNC Userdata *luaS_newudata(lua_State *L, size_t s, Table *e);
+LUAI_FUNC TString *String_intern(lua_State *L, const char *str, size_t len);
 
-#define luaS_new(L, s) (String_intern(L, s, strlen(s)))
-#define luaS_newliteral(L, s)                                                  \
+// FIXME(anqur): Why is it here?
+LUAI_FUNC Userdata *Userdata_new(lua_State *L, size_t size, Table *env);
+
+// FIXME(anqur): strlen here is bad.
+#define String_internCStr(L, s) (String_intern(L, s, strlen(s)))
+#define String_internLiteral(L, s)                                             \
   (String_intern(L, "" s, (sizeof(s) / sizeof(char)) - 1))

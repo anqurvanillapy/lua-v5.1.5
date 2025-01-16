@@ -24,8 +24,8 @@ void luaT_init(lua_State *L) {
   };
   int i;
   for (i = 0; i < TM_N; i++) {
-    G(L)->tmname[i] = luaS_new(L, luaT_eventname[i]);
-    luaS_fix(G(L)->tmname[i]); /* never collect these names */
+    G(L)->tmname[i] = String_internCStr(L, luaT_eventname[i]);
+    String_pin(G(L)->tmname[i]); /* never collect these names */
   }
 }
 

@@ -26,8 +26,9 @@ typedef LUAI_MEM l_mem;
 */
 #define IntPoint(p) ((unsigned int)(lu_mem)(p))
 
-/* type to ensure maximum alignment */
-typedef double MaxAlign;
+// Type to ensure maximum alignment, this is used for reducing memory
+// fragmentation.
+typedef double Padding;
 
 /* result of a 'usual argument conversion' over lua_Number */
 typedef LUAI_UACNUMBER l_uacNumber;

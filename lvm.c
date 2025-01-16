@@ -39,7 +39,7 @@ int luaV_tostring(lua_State *L, StackIndex obj) {
   char s[LUAI_MAXNUMBER2STR];
   lua_Number n = NUMBER_VALUE(obj);
   snprintf(s, sizeof(s), LUA_NUMBER_FMT, n);
-  SET_STRING_TO_STACK(L, obj, luaS_new(L, s));
+  SET_STRING_TO_STACK(L, obj, String_internCStr(L, s));
   return 1;
 }
 

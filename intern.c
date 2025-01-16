@@ -1,5 +1,3 @@
-/* String interning pool. */
-
 #include <string.h>
 
 #include "lua.h"
@@ -67,21 +65,21 @@ static TString *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   return ts;
 }
 
-TString *String_intern(lua_State *L, const char *str, size_t l) {
+TString *String_intern(lua_State *L, const char *str, size_t len) {
   // Seed.
-  uint32_t h = (uint32_t)l;
+  uint32_t h = (uint32_t)len;
   // If the string is too long, don't hash all of its characters.
-  size_t step = (l >> 5) + 1;
+  size_t step = (len >> 5) + 1;
 
   // Compute hash.
-  for (size_t i = l; i >= step; i -= step) {
+  for (size_t i = len; i >= step; i -= step) {
     h = h ^ ((h << 5) + (h >> 2) + (uint8_t)str[i - 1]);
   }
 
   for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.size)]; o != nullptr;
        o = o->gch.next) {
     TString *ts = rawgco2ts(o);
-    if (ts->tsv.len != l || memcmp(str, GET_STR(ts), l) != 0) {
+    if (ts->tsv.len != len || memcmp(str, GET_STR(ts), len) != 0) {
       continue;
     }
     if (IS_DEAD(G(L), o)) {
@@ -93,20 +91,20 @@ TString *String_intern(lua_State *L, const char *str, size_t l) {
   }
 
   // No such string, create a new one.
-  return newStr(L, str, l, h);
+  return newStr(L, str, len, h);
 }
 
-Userdata *luaS_newudata(lua_State *L, size_t s, Table *e) {
-  Userdata *u;
-  if (s > MAX_SIZET - sizeof(Userdata)) {
+Userdata *Userdata_new(lua_State *L, size_t size, Table *env) {
+  if (size > MAX_SIZET - sizeof(Userdata)) {
     luaM_toobig(L);
   }
-  u = cast(Userdata *, luaM_malloc(L, s + sizeof(Userdata)));
+
+  Userdata *u = luaM_malloc(L, size + sizeof(Userdata));
   u->uv.header.marked = luaC_white(G(L)); /* is not finalized */
   u->uv.header.tt = LUA_TYPE_USERDATA;
-  u->uv.len = s;
+  u->uv.len = size;
   u->uv.metatable = nullptr;
-  u->uv.env = e;
+  u->uv.env = env;
   /* chain it on udata list (after main thread) */
   u->uv.header.next = G(L)->mainthread->header.next;
   G(L)->mainthread->header.next = LuaObjectToGCObject(u);
