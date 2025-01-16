@@ -11,7 +11,6 @@
 #include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "lstring.h"
@@ -20,6 +19,7 @@
 #include "lundump.h"
 #include "lvm.h"
 #include "lzio.h"
+#include "object.h"
 #include "parser.h"
 
 /*

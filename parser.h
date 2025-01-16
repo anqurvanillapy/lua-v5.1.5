@@ -3,8 +3,8 @@
 #pragma once
 
 #include "limits.h"
-#include "lobject.h"
 #include "lzio.h"
+#include "object.h"
 
 typedef enum ExprKind {
   VVOID, /* no value */

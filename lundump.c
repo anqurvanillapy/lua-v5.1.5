@@ -8,10 +8,10 @@
 #include "ldo.h"
 #include "lfunc.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lstring.h"
 #include "lundump.h"
 #include "lzio.h"
+#include "object.h"
 
 typedef struct {
   lua_State *L;

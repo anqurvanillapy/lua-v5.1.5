@@ -13,10 +13,10 @@
 #include "ldo.h"
 #include "lfunc.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lopcodes.h"
 #include "lstring.h"
 #include "lundump.h"
+#include "object.h"
 
 #define PROGNAME "luac"        /* default program name */
 #define OUTPUT PROGNAME ".out" /* default output file */

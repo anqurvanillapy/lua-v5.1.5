@@ -3,8 +3,8 @@
 #pragma once
 
 #include "llex.h"
-#include "lobject.h"
 #include "lopcodes.h"
+#include "object.h"
 #include "parser.h"
 
 /*

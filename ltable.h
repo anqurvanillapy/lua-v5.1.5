@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "lobject.h"
+#include "object.h"
 
 #define gnode(t, i) (&(t)->node[i])
 #define gkey(n) (&(n)->i_key.nk)

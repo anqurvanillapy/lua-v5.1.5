@@ -8,11 +8,11 @@
 #include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
+#include "object.h"
 
 #define GCSTEPSIZE 1024u
 #define GCSWEEPMAX 40

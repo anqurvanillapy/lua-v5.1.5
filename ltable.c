@@ -20,9 +20,9 @@
 #include "ldebug.h"
 #include "lgc.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lstate.h"
 #include "ltable.h"
+#include "object.h"
 
 /*
 ** max size of array part is 2^MAXBITS

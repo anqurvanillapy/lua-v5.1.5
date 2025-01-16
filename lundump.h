@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "lobject.h"
 #include "lzio.h"
+#include "object.h"
 
 /* load one chunk; from lundump.c */
 LUAI_FUNC Prototype *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff,

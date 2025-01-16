@@ -10,13 +10,13 @@
 #include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
-#include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lundump.h"
 #include "lvm.h"
+#include "object.h"
 
 #define api_checknelems(L, n) api_check(L, (n) <= (L->top - L->base))
 

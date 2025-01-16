@@ -2,6 +2,6 @@
 
 #pragma once
 
-#include "lobject.h"
+#include "object.h"
 
 LUAI_FUNC void luaA_pushobject(lua_State *L, const Value *o);

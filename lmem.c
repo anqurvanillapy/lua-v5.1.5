@@ -7,8 +7,8 @@
 #include "ldebug.h"
 #include "ldo.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lstate.h"
+#include "object.h"
 
 /*
 ** About the realloc function:

@@ -9,10 +9,10 @@
 #include "lua.h"
 
 #include "ldo.h"
-#include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "lvm.h"
+#include "object.h"
 
 const Value luaO_nilobject_ = {{nullptr}, LUA_TYPE_NIL};
 

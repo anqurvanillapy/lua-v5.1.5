@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "lobject.h"
 #include "lstate.h"
 #include "lzio.h"
+#include "object.h"
 
 #define luaD_checkstack(L, n)                                                  \
   if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(Value))       \

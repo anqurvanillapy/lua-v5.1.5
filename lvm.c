@@ -9,13 +9,13 @@
 #include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
-#include "lobject.h"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lvm.h"
+#include "object.h"
 
 /* limit for table tag-method chains (to avoid loops) */
 #define MAXTAGLOOP 100

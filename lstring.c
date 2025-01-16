@@ -5,9 +5,9 @@
 #include "lua.h"
 
 #include "lmem.h"
-#include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
+#include "object.h"
 
 void luaS_resize(lua_State *L, int newsize) {
   GCObject **newhash;
@@ -98,7 +98,7 @@ Userdata *luaS_newudata(lua_State *L, size_t s, Table *e) {
   u->uv.marked = luaC_white(G(L)); /* is not finalized */
   u->uv.tt = LUA_TYPE_USERDATA;
   u->uv.len = s;
-  u->uv.metatable = NULL;
+  u->uv.metatable = nullptr;
   u->uv.env = e;
   /* chain it on udata list (after main thread) */
   u->uv.next = G(L)->mainthread->next;

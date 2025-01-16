@@ -202,7 +202,7 @@ typedef union Userdata {
 
 // Function prototype. A script file is also a function.
 typedef struct Prototype {
-  GCHeaderFields;
+  __attribute__((unused)) GCHeader header;
 
   // Constant table.
   Value *k;

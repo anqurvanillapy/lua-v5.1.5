@@ -3,8 +3,8 @@
 #pragma once
 
 #include "lgc.h"
-#include "lobject.h"
 #include "lstate.h"
+#include "object.h"
 
 #define sizestring(s) (sizeof(union TString) + ((s)->len + 1) * sizeof(char))
 

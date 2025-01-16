@@ -4,9 +4,9 @@
 
 #include "lua.h"
 
-#include "lobject.h"
 #include "ltm.h"
 #include "lzio.h"
+#include "object.h"
 
 struct lua_longjmp; /* defined in ldo.c */
 

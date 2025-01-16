@@ -7,8 +7,8 @@
 #include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lstate.h"
+#include "object.h"
 
 Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
   Closure *c = cast(Closure *, luaM_malloc(L, sizeCclosure(nelems)));

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "lobject.h"
+#include "object.h"
 
 /*
 ** Possible states of the Garbage Collector

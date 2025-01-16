@@ -8,11 +8,11 @@
 
 #include "ldo.h"
 #include "llex.h"
-#include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
 #include "lzio.h"
+#include "object.h"
 #include "parser.h"
 
 #define next(ls) (ls->current = zgetc(ls->z))

@@ -11,12 +11,12 @@
 #include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
-#include "lobject.h"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lvm.h"
+#include "object.h"
 
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name);
 

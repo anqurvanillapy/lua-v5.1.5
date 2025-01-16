@@ -4,11 +4,11 @@
 
 #include "lua.h"
 
-#include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
+#include "object.h"
 
 const char *const luaT_typenames[] = {
     "nil",      "boolean",  "userdata", "number", "string", "table",

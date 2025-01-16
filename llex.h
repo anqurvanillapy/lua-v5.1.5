@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "lobject.h"
 #include "lzio.h"
+#include "object.h"
 
 #define FIRST_RESERVED 257
 

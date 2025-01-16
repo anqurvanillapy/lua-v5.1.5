@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "lobject.h"
+#include "object.h"
 
 #define sizeCclosure(n)                                                        \
   (cast(int, sizeof(CClosure)) + cast(int, sizeof(Value) * ((n) - 1)))

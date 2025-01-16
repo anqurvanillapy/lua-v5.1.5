@@ -9,9 +9,9 @@
 #include "lgc.h"
 #include "llex.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lopcodes.h"
 #include "ltable.h"
+#include "object.h"
 #include "parser.h"
 
 #define hasjumps(e) ((e)->t != (e)->f)

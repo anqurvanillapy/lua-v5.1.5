@@ -3,8 +3,8 @@
 #pragma once
 
 #include "ldo.h"
-#include "lobject.h"
 #include "ltm.h"
+#include "object.h"
 
 #define tostring(L, o)                                                         \
   ((GET_TYPE(o) == LUA_TYPE_STRING) || (luaV_tostring(L, o)))

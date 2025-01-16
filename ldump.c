@@ -4,9 +4,9 @@
 
 #include "lua.h"
 
-#include "lobject.h"
 #include "lstate.h"
 #include "lundump.h"
+#include "object.h"
 
 typedef struct {
   lua_State *L;

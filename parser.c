@@ -10,11 +10,11 @@
 #include "lfunc.h"
 #include "llex.h"
 #include "lmem.h"
-#include "lobject.h"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "lstring.h"
 #include "ltable.h"
+#include "object.h"
 #include "parser.h"
 
 #define HAS_MULTI_RETURN(k) ((k) == VCALL || (k) == VVARARG)
