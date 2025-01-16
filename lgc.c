@@ -27,10 +27,10 @@
 #define white2gray(x) reset2bits((x)->gch.marked, WHITE0BIT, WHITE1BIT)
 #define black2gray(x) resetbit((x)->gch.marked, BLACKBIT)
 
-#define stringmark(s) reset2bits((s)->tsv.marked, WHITE0BIT, WHITE1BIT)
+#define stringmark(s) reset2bits((s)->tsv.header.marked, WHITE0BIT, WHITE1BIT)
 
-#define isfinalized(u) testbit((u)->marked, FINALIZEDBIT)
-#define markfinalized(u) l_setbit((u)->marked, FINALIZEDBIT)
+#define isfinalized(u) testbit((u)->header.marked, FINALIZEDBIT)
+#define markfinalized(u) l_setbit((u)->header.marked, FINALIZEDBIT)
 
 #define KEYWEAK bitmask(KEYWEAKBIT)
 #define VALUEWEAK bitmask(VALUEWEAKBIT)
@@ -120,7 +120,7 @@ static void marktmu(global_State *g) {
 size_t luaC_separateudata(lua_State *L, int all) {
   global_State *g = G(L);
   size_t deadmem = 0;
-  GCObject **p = &g->mainthread->next;
+  GCObject **p = &g->mainthread->header.next;
   GCObject *curr;
   while ((curr = *p) != NULL) {
     if (!(iswhite(curr) || all) || isfinalized(gco2u(curr))) {
@@ -156,9 +156,9 @@ static int traversetable(global_State *g, Table *h) {
   if (mode && IS_TYPE_STRING(mode)) { /* is there a weak mode? */
     weakkey = (strchr(GET_STR_VALUE(mode), 'k') != NULL);
     weakvalue = (strchr(GET_STR_VALUE(mode), 'v') != NULL);
-    if (weakkey || weakvalue) {            /* is really weak? */
-      h->marked &= ~(KEYWEAK | VALUEWEAK); /* clear bits */
-      h->marked |=
+    if (weakkey || weakvalue) {                   /* is really weak? */
+      h->header.marked &= ~(KEYWEAK | VALUEWEAK); /* clear bits */
+      h->header.marked |=
           cast_byte((weakkey << KEYWEAKBIT) | (weakvalue << VALUEWEAKBIT));
       h->gclist = g->weak;              /* must be cleared after GC, ... */
       g->weak = LuaObjectToGCObject(h); /* ... so put in the appropriate list */
@@ -352,9 +352,9 @@ static void cleartable(GCObject *l) {
   while (l) {
     Table *h = gco2h(l);
     int i = h->sizearray;
-    DEBUG_ASSERT(testbit(h->marked, VALUEWEAKBIT) ||
-                 testbit(h->marked, KEYWEAKBIT));
-    if (testbit(h->marked, VALUEWEAKBIT)) {
+    DEBUG_ASSERT(testbit(h->header.marked, VALUEWEAKBIT) ||
+                 testbit(h->header.marked, KEYWEAKBIT));
+    if (testbit(h->header.marked, VALUEWEAKBIT)) {
       while (i--) {
         Value *o = &h->array[i];
         if (iscleared(o, 0)) { /* value was collected? */
@@ -458,10 +458,11 @@ static void GCTM(lua_State *L) {
   if (o == g->tmudata) { /* last element? */
     g->tmudata = NULL;
   } else {
-    g->tmudata->gch.next = udata->uv.next;
+    g->tmudata->gch.next = udata->uv.header.next;
   }
-  udata->uv.next = g->mainthread->next; /* return it to `root' list */
-  g->mainthread->next = o;
+  // Return it to 'root' list.
+  udata->uv.header.next = g->mainthread->header.next;
+  g->mainthread->header.next = o;
   makewhite(g, o);
   tm = fasttm(L, udata->uv.metatable, TM_GC);
   if (tm != NULL) {

@@ -67,20 +67,20 @@ static void f_luaopen(lua_State *L, void *) {
 
 static void preinit_state(lua_State *L, global_State *g) {
   G(L) = g;
-  L->stack = NULL;
+  L->stack = nullptr;
   L->stackSize = 0;
-  L->errorJmp = NULL;
-  L->hook = NULL;
+  L->errorJmp = nullptr;
+  L->hook = nullptr;
   L->hookMask = 0;
   L->baseHookCount = 0;
   L->allowHook = 1;
   resethookcount(L);
-  L->openUpval = NULL;
+  L->openUpval = nullptr;
   L->ciSize = 0;
   L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
   L->status = 0;
-  L->baseCI = L->ci = NULL;
-  L->savedPC = NULL;
+  L->baseCI = L->ci = nullptr;
+  L->savedPC = nullptr;
   L->errFunc = 0;
   SET_NIL(gt(L));
 }
@@ -126,15 +126,15 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   global_State *g;
   void *l = (*f)(ud, NULL, 0, state_size(LG));
   if (l == NULL) {
-    return NULL;
+    return nullptr;
   }
   L = tostate(l);
   g = &((LG *)L)->g;
-  L->next = NULL;
-  L->tt = LUA_TYPE_THREAD;
+  L->header.next = nullptr;
+  L->header.tt = LUA_TYPE_THREAD;
   g->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
-  L->marked = luaC_white(g);
-  set2bits(L->marked, FIXEDBIT, SFIXEDBIT);
+  L->header.marked = luaC_white(g);
+  set2bits(L->header.marked, FIXEDBIT, SFIXEDBIT);
   preinit_state(L, g);
   g->frealloc = f;
   g->ud = ud;
@@ -144,29 +144,29 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   g->GCthreshold = 0; /* mark it as unfinished state */
   g->strt.size = 0;
   g->strt.nuse = 0;
-  g->strt.hash = NULL;
+  g->strt.hash = nullptr;
   SET_NIL(registry(L));
   luaZ_initbuffer(L, &g->buff);
-  g->panic = NULL;
+  g->panic = nullptr;
   g->gcstate = GCSpause;
   g->rootgc = LuaObjectToGCObject(L);
   g->sweepstrgc = 0;
   g->sweepgc = &g->rootgc;
-  g->gray = NULL;
-  g->grayagain = NULL;
-  g->weak = NULL;
-  g->tmudata = NULL;
+  g->gray = nullptr;
+  g->grayagain = nullptr;
+  g->weak = nullptr;
+  g->tmudata = nullptr;
   g->totalbytes = sizeof(LG);
   g->gcpause = LUAI_GCPAUSE;
   g->gcstepmul = LUAI_GCMUL;
   g->gcdept = 0;
   for (i = 0; i < NUM_TYPES; i++) {
-    g->mt[i] = NULL;
+    g->mt[i] = nullptr;
   }
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != 0) {
     /* memory allocation error: free partial state */
     close_state(L);
-    L = NULL;
+    L = nullptr;
   } else {
     luai_userstateopen(L);
   }

@@ -52,13 +52,13 @@ Upvalue *luaF_findupval(lua_State *L, StackIndex level) {
       }
       return p;
     }
-    pp = &p->next;
+    pp = &p->header.next;
   }
   uv = luaM_new(L, Upvalue); /* not found: create a new one */
-  uv->tt = LUA_TYPE_UPVALUE;
-  uv->marked = luaC_white(g);
-  uv->v = level;  /* current value lives in the stack */
-  uv->next = *pp; /* chain it in the proper position */
+  uv->header.tt = LUA_TYPE_UPVALUE;
+  uv->header.marked = luaC_white(g);
+  uv->v = level;         /* current value lives in the stack */
+  uv->header.next = *pp; /* chain it in the proper position */
   *pp = LuaObjectToGCObject(uv);
   uv->u.l.prev = &g->uvhead; /* double link it in `uvhead' list */
   uv->u.l.next = g->uvhead.u.l.next;
@@ -87,7 +87,7 @@ void luaF_close(lua_State *L, StackIndex level) {
   while (L->openUpval != nullptr && (uv = ngcotouv(L->openUpval))->v >= level) {
     GCObject *o = LuaObjectToGCObject(uv);
     DEBUG_ASSERT(!isblack(o) && uv->v != &uv->u.value);
-    L->openUpval = uv->next; /* remove from `open' list */
+    L->openUpval = uv->header.next; /* remove from `open' list */
     if (IS_DEAD(g, o)) {
       luaF_freeupval(L, uv); /* free upvalue */
     } else {

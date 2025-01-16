@@ -14,7 +14,7 @@
 #define luaS_newliteral(L, s)                                                  \
   (luaS_newlstr(L, "" s, (sizeof(s) / sizeof(char)) - 1))
 
-#define luaS_fix(s) l_setbit((s)->tsv.marked, FIXEDBIT)
+#define luaS_fix(s) l_setbit((s)->tsv.header.marked, FIXEDBIT)
 
 LUAI_FUNC void luaS_resize(lua_State *L, int newsize);
 LUAI_FUNC Userdata *luaS_newudata(lua_State *L, size_t s, Table *e);

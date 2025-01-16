@@ -18,13 +18,10 @@
 
 typedef union GCObject GCObject;
 
-#define GCHeaderFields                                                         \
-  GCObject *next;                                                              \
-  lu_byte tt;                                                                  \
-  lu_byte marked
-
 typedef struct GCHeader {
-  GCHeaderFields;
+  GCObject *next;
+  lu_byte tt;
+  lu_byte marked;
 } GCHeader;
 
 typedef union Variant {
@@ -180,7 +177,7 @@ typedef Value *StackIndex;
 typedef union TString {
   __attribute__((unused)) MaxAlign padding;
   struct {
-    GCHeaderFields;
+    GCHeader header;
     lu_byte reserved;
     unsigned int hash;
     size_t len;
@@ -193,7 +190,7 @@ typedef union TString {
 typedef union Userdata {
   __attribute__((unused)) MaxAlign padding;
   struct {
-    GCHeaderFields;
+    GCHeader header;
     struct Table *metatable;
     struct Table *env;
     size_t len;
@@ -251,7 +248,7 @@ typedef struct LocVar {
 } LocVar;
 
 typedef struct Upvalue {
-  GCHeaderFields;
+  GCHeader header;
   // Points to stack or to its own value.
   Value *v;
   union {
@@ -266,7 +263,7 @@ typedef struct Upvalue {
 } Upvalue;
 
 #define ClosureHeader                                                          \
-  GCHeaderFields;                                                              \
+  GCHeader header;                                                             \
   bool isC;                                                                    \
   lu_byte nupvalues;                                                           \
   GCObject *gclist;                                                            \
@@ -313,7 +310,7 @@ typedef struct Node {
 } Node;
 
 typedef struct Table {
-  GCHeaderFields;
+  GCHeader header;
   lu_byte flags;     /* 1<<p means tagmethod(p) is not present */
   lu_byte lsizenode; /* log2 of size of 'node' array */
   struct Table *metatable;

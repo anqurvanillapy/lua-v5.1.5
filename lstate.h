@@ -79,7 +79,7 @@ typedef struct global_State {
 
 // Per-thread state.
 struct lua_State {
-  GCHeaderFields;
+  GCHeader header;
 
   lu_byte status;
 

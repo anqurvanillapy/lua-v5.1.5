@@ -225,7 +225,7 @@ static void checkclosure(global_State *g, Closure *cl) {
     checkobjref(g, clgc, cl->l.p);
     for (i = 0; i < cl->l.nupvalues; i++) {
       if (cl->l.upvalues[i]) {
-        DEBUG_ASSERT(cl->l.upvalues[i]->tt == LUA_TYPE_UPVALUE);
+        DEBUG_ASSERT(cl->l.upvalues[i]->header.tt == LUA_TYPE_UPVALUE);
         checkobjref(g, clgc, cl->l.upvalues[i]);
       }
     }
