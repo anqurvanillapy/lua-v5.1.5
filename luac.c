@@ -10,11 +10,11 @@
 #include "lauxlib.h"
 #include "lua.h"
 
+#include "intern.h"
 #include "ldo.h"
 #include "lfunc.h"
 #include "lmem.h"
 #include "lopcodes.h"
-#include "lstring.h"
 #include "lundump.h"
 #include "object.h"
 

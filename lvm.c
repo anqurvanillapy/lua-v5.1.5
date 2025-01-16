@@ -5,13 +5,13 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
 #include "lopcodes.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lvm.h"
@@ -316,7 +316,7 @@ void luaV_concat(lua_State *L, int total, int last) {
         memcpy(buffer + tl, GET_STR_VALUE(top - i), l);
         tl += l;
       }
-      SET_STRING_TO_STACK(L, top - n, luaS_newlstr(L, buffer, tl));
+      SET_STRING_TO_STACK(L, top - n, String_intern(L, buffer, tl));
     }
     total -= n - 1; /* got `n' strings to create 1 new */
     last -= n - 1;

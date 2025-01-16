@@ -8,9 +8,9 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "ldo.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "lvm.h"
 #include "object.h"
 
@@ -120,7 +120,7 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
     if (e == NULL) {
       break;
     }
-    SET_STRING_TO_STACK(L, L->top, luaS_newlstr(L, fmt, e - fmt));
+    SET_STRING_TO_STACK(L, L->top, String_intern(L, fmt, e - fmt));
     incr_top(L);
     switch (*(e + 1)) {
     case 's': {

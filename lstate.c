@@ -4,6 +4,7 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
@@ -11,7 +12,6 @@
 #include "llex.h"
 #include "lmem.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 

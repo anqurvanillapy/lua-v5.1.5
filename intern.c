@@ -1,12 +1,12 @@
-/* String table (keeps all strings handled by Lua). */
+/* String interning pool. */
 
 #include <string.h>
 
 #include "lua.h"
 
+#include "intern.h"
 #include "lmem.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "object.h"
 
 void String_resize(lua_State *L, int newSize) {
@@ -67,7 +67,7 @@ static TString *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   return ts;
 }
 
-TString *luaS_newlstr(lua_State *L, const char *str, size_t l) {
+TString *String_intern(lua_State *L, const char *str, size_t l) {
   // Seed.
   uint32_t h = (uint32_t)l;
   // If the string is too long, don't hash all of its characters.

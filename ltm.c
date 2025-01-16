@@ -4,8 +4,8 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "object.h"

@@ -4,11 +4,11 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
 #include "lmem.h"
-#include "lstring.h"
 #include "lundump.h"
 #include "lzio.h"
 #include "object.h"
@@ -71,7 +71,7 @@ static TString *LoadString(LoadState *S) {
   } else {
     char *s = luaZ_openspace(S->L, S->b, size);
     LoadBlock(S, s, size);
-    return luaS_newlstr(S->L, s, size - 1); /* remove trailing '\0' */
+    return String_intern(S->L, s, size - 1); /* remove trailing '\0' */
   }
 }
 

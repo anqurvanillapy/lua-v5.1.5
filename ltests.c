@@ -8,6 +8,7 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "lapi.h"
 #include "lauxlib.h"
 #include "ldebug.h"
@@ -16,7 +17,6 @@
 #include "lmem.h"
 #include "lopcodes.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "lualib.h"
 

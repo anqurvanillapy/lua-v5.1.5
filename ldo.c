@@ -6,6 +6,7 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
@@ -13,7 +14,6 @@
 #include "lmem.h"
 #include "lopcodes.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lundump.h"

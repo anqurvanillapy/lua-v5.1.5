@@ -6,10 +6,10 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "ldo.h"
 #include "llex.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "lzio.h"
 #include "object.h"
@@ -93,7 +93,7 @@ void luaX_syntaxerror(LexState *ls, const char *msg) {
 
 TString *luaX_newstring(LexState *ls, const char *str, size_t l) {
   lua_State *L = ls->L;
-  TString *ts = luaS_newlstr(L, str, l);
+  TString *ts = String_intern(L, str, l);
   Value *o = luaH_setstr(L, ls->fs->h, ts); /* entry for `str' */
   if (IS_TYPE_NIL(o)) {
     SET_BOOL(o, 1); /* make sure `str' will not be collected */

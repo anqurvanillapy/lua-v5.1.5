@@ -5,13 +5,13 @@
 
 #include "lua.h"
 
+#include "intern.h"
 #include "lapi.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
 #include "lgc.h"
 #include "lstate.h"
-#include "lstring.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "lundump.h"
@@ -409,7 +409,7 @@ LUA_API void lua_pushinteger(lua_State *L, lua_Integer n) {
 LUA_API void lua_pushlstring(lua_State *L, const char *s, size_t len) {
   lua_lock(L);
   luaC_checkGC(L);
-  SET_STRING_TO_STACK(L, L->top, luaS_newlstr(L, s, len));
+  SET_STRING_TO_STACK(L, L->top, String_intern(L, s, len));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -924,7 +924,7 @@ LUA_API void lua_concat(lua_State *L, int n) {
     luaV_concat(L, n, cast_int(L->top - L->base) - 1);
     L->top -= (n - 1);
   } else if (n == 0) { /* push empty string */
-    SET_STRING_TO_STACK(L, L->top, luaS_newlstr(L, "", 0));
+    SET_STRING_TO_STACK(L, L->top, String_intern(L, "", 0));
     api_incr_top(L);
   }
   /* else n == 1; nothing to do */
