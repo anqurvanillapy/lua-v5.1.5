@@ -100,13 +100,13 @@ Userdata *Userdata_new(lua_State *L, size_t size, Table *env) {
   }
 
   Userdata *u = luaM_malloc(L, size + sizeof(Userdata));
-  u->uv.header.marked = luaC_white(G(L)); /* is not finalized */
-  u->uv.header.tt = LUA_TYPE_USERDATA;
-  u->uv.len = size;
-  u->uv.metatable = nullptr;
-  u->uv.env = env;
+  u->header.marked = luaC_white(G(L)); /* is not finalized */
+  u->header.tt = LUA_TYPE_USERDATA;
+  u->len = size;
+  u->metatable = nullptr;
+  u->env = env;
   /* chain it on udata list (after main thread) */
-  u->uv.header.next = G(L)->mainthread->header.next;
+  u->header.next = G(L)->mainthread->header.next;
   G(L)->mainthread->header.next = LuaObjectToGCObject(u);
   return u;
 }

@@ -453,19 +453,19 @@ static void checkSizes(lua_State *L) {
 static void GCTM(lua_State *L) {
   global_State *g = G(L);
   GCObject *o = g->tmudata->gch.next; /* get first element */
-  Userdata *udata = rawgco2u(o);
+  Userdata *udata = gco2u(o);
   const Value *tm;
   /* remove udata from `tmudata' */
   if (o == g->tmudata) { /* last element? */
     g->tmudata = nullptr;
   } else {
-    g->tmudata->gch.next = udata->uv.header.next;
+    g->tmudata->gch.next = udata->header.next;
   }
   // Return it to 'root' list.
-  udata->uv.header.next = g->mainthread->header.next;
+  udata->header.next = g->mainthread->header.next;
   g->mainthread->header.next = o;
   makewhite(g, o);
-  tm = fasttm(L, udata->uv.metatable, TM_GC);
+  tm = fasttm(L, udata->metatable, TM_GC);
   if (tm != nullptr) {
     uint8_t oldah = L->allowHook;
     lu_mem oldt = g->GCthreshold;

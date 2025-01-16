@@ -351,7 +351,7 @@ LUA_API void *lua_touserdata(lua_State *L, int idx) {
   StackIndex o = index2adr(L, idx);
   switch (GET_TYPE(o)) {
   case LUA_TYPE_USERDATA:
-    return (RAW_USERDATA_VALUE(o) + 1);
+    return USERDATA_VALUE(o) + 1;
   case LUA_TYPE_PTR:
     return PTR_VALUE(o);
   default:
@@ -660,8 +660,9 @@ LUA_API int lua_setmetatable(lua_State *L, int objindex) {
   }
   case LUA_TYPE_USERDATA: {
     USERDATA_VALUE(obj)->metatable = mt;
-    if (mt)
-      luaC_objbarrier(L, RAW_USERDATA_VALUE(obj), mt);
+    if (mt) {
+      luaC_objbarrier(L, USERDATA_VALUE(obj), mt);
+    }
     break;
   }
   default: {

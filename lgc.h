@@ -65,35 +65,40 @@
 #define luaC_white(g) cast(uint8_t, (g)->currentwhite &WHITEBITS)
 
 #define luaC_checkGC(L)                                                        \
-  {                                                                            \
+  do {                                                                         \
     condhardstacktests(luaD_reallocstack(L, L->stackSize - EXTRA_STACK - 1));  \
-    if (G(L)->totalbytes >= G(L)->GCthreshold)                                 \
+    if (G(L)->totalbytes >= G(L)->GCthreshold) {                               \
       luaC_step(L);                                                            \
-  }
+    }                                                                          \
+  } while (false)
 
 #define luaC_barrier(L, p, v)                                                  \
-  {                                                                            \
-    if (valiswhite(v) && isblack(LuaObjectToGCObject(p)))                      \
+  do {                                                                         \
+    if (valiswhite(v) && isblack(LuaObjectToGCObject(p))) {                    \
       luaC_barrierf(L, LuaObjectToGCObject(p), GC_VALUE(v));                   \
-  }
+    }                                                                          \
+  } while (false)
 
 #define luaC_barriert(L, t, v)                                                 \
-  {                                                                            \
-    if (valiswhite(v) && isblack(LuaObjectToGCObject(t)))                      \
+  do {                                                                         \
+    if (valiswhite(v) && isblack(LuaObjectToGCObject(t))) {                    \
       luaC_barrierback(L, t);                                                  \
-  }
+    }                                                                          \
+  } while (false)
 
 #define luaC_objbarrier(L, p, o)                                               \
-  {                                                                            \
-    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(p)))    \
+  do {                                                                         \
+    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(p))) {  \
       luaC_barrierf(L, LuaObjectToGCObject(p), LuaObjectToGCObject(o));        \
-  }
+    }                                                                          \
+  } while (false)
 
 #define luaC_objbarriert(L, t, o)                                              \
-  {                                                                            \
-    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(t)))    \
+  do {                                                                         \
+    if (iswhite(LuaObjectToGCObject(o)) && isblack(LuaObjectToGCObject(t))) {  \
       luaC_barrierback(L, t);                                                  \
-  }
+    }                                                                          \
+  } while (false)
 
 LUAI_FUNC size_t luaC_separateudata(lua_State *L, int all);
 LUAI_FUNC void luaC_callGCTM(lua_State *L);

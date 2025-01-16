@@ -58,9 +58,7 @@ typedef struct Value {
 #define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->variant.p)
 #define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->variant.n)
 #define STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->variant.gc->ts)
-#define RAW_USERDATA_VALUE(o)                                                  \
-  CHECK_EXPR(IS_TYPE_USERDATA(o), &(o)->variant.gc->u)
-#define USERDATA_VALUE(o) (&RAW_USERDATA_VALUE(o)->uv)
+#define USERDATA_VALUE(o) CHECK_EXPR(IS_TYPE_USERDATA(o), &(o)->variant.gc->u)
 #define CLOSURE_VALUE(o) CHECK_EXPR(IS_TYPE_FUNCTION(o), &(o)->variant.gc->cl)
 #define TABLE_VALUE(o) CHECK_EXPR(IS_TYPE_TABLE(o), &(o)->variant.gc->h)
 #define BOOL_VALUE(o) CHECK_EXPR(IS_TYPE_BOOLEAN(o), (o)->variant.b)
@@ -181,19 +179,17 @@ static_assert(alignof(TString) == alignof(MaxAlign));
 #define GET_STR(ts) (const char *)((ts) + 1)
 #define GET_STR_VALUE(o) GET_STR(STRING_VALUE(o))
 
-typedef union Userdata {
-  __attribute__((unused)) MaxAlign padding;
-  struct {
-    GCHeader header;
-    struct Table *metatable;
-    struct Table *env;
-    size_t len;
-  } uv;
+typedef struct Userdata {
+  GCHeader header;
+  struct Table *metatable;
+  struct Table *env;
+  size_t len;
 } Userdata;
+static_assert(alignof(Userdata) == alignof(MaxAlign));
 
 // Function prototype. A script file is also a function.
 typedef struct Prototype {
-  __attribute__((unused)) GCHeader header;
+  GCHeader header;
 
   // Constant table.
   Value *k;

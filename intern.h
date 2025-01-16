@@ -7,7 +7,7 @@
 #include "object.h"
 
 #define sizestring(s) (sizeof(struct TString) + ((s)->len + 1) * sizeof(char))
-#define sizeudata(u) (sizeof(union Userdata) + (u)->len)
+#define sizeudata(u) (sizeof(struct Userdata) + (u)->len)
 
 #define String_pin(s) l_setbit((s)->header.marked, FIXEDBIT)
 
