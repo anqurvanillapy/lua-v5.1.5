@@ -6,13 +6,15 @@
 #include "lstate.h"
 #include "object.h"
 
-#define sizestring(s) (sizeof(struct TString) + ((s)->len + 1) * sizeof(char))
+#define sizestring(s)                                                          \
+  (sizeof(struct StringHeader) + ((s)->len + 1) * sizeof(char))
 #define sizeudata(u) (sizeof(struct Userdata) + (u)->len)
 
 #define String_pin(s) l_setbit((s)->header.marked, FIXEDBIT)
 
 LUAI_FUNC void String_resize(lua_State *L, int newSize);
-LUAI_FUNC TString *String_intern(lua_State *L, const char *str, size_t len);
+LUAI_FUNC StringHeader *String_intern(lua_State *L, const char *str,
+                                      size_t len);
 
 // FIXME(anqur): Why is it here?
 LUAI_FUNC Userdata *Userdata_new(lua_State *L, size_t size, Table *env);

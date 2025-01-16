@@ -174,7 +174,7 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
   pushstr(L, fmt);
   luaV_concat(L, n + 1, cast_int(L->top - L->base) - 1);
   L->top -= n;
-  return GET_STR_VALUE(L->top - 1);
+  return VALUE_STRING_CONTENT(L->top - 1);
 }
 
 const char *luaO_pushfstring(lua_State *L, const char *fmt, ...) {

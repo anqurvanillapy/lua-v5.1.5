@@ -25,7 +25,7 @@ const Value *luaV_tonumber(const Value *obj, Value *n) {
   if (IS_TYPE_NUMBER(obj)) {
     return obj;
   }
-  if (IS_TYPE_STRING(obj) && luaO_str2d(GET_STR_VALUE(obj), &num)) {
+  if (IS_TYPE_STRING(obj) && luaO_str2d(VALUE_STRING_CONTENT(obj), &num)) {
     SET_NUMBER(n, num);
     return n;
   }
@@ -191,10 +191,10 @@ static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
   return !IS_FALSE(L->top);
 }
 
-static int l_strcmp(const TString *ls, const TString *rs) {
-  const char *l = GET_STR(ls);
+static int l_strcmp(const StringHeader *ls, const StringHeader *rs) {
+  const char *l = STRING_CONTENT(ls);
   size_t ll = ls->len;
-  const char *r = GET_STR(rs);
+  const char *r = STRING_CONTENT(rs);
   size_t lr = rs->len;
   for (;;) {
     int temp = strcoll(l, r);
@@ -313,7 +313,7 @@ void luaV_concat(lua_State *L, int total, int last) {
       tl = 0;
       for (i = n; i > 0; i--) { /* concat all strings */
         size_t l = STRING_VALUE(top - i)->len;
-        memcpy(buffer + tl, GET_STR_VALUE(top - i), l);
+        memcpy(buffer + tl, VALUE_STRING_CONTENT(top - i), l);
         tl += l;
       }
       SET_STRING_TO_STACK(L, top - n, String_intern(L, buffer, tl));

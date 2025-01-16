@@ -130,7 +130,7 @@ void luaF_freeproto(lua_State *L, Prototype *f) {
   luaM_freearray(L, f->k, f->kSize, Value);
   luaM_freearray(L, f->lineInfo, f->lineInfoSize, int);
   luaM_freearray(L, f->locVars, f->locVarsSize, struct LocVar);
-  luaM_freearray(L, f->upvalues, f->upvaluesSize, TString *);
+  luaM_freearray(L, f->upvalues, f->upvaluesSize, StringHeader *);
   luaM_free(L, f);
 }
 
@@ -150,7 +150,7 @@ const char *luaF_getlocalname(const Prototype *f, int local_number, int pc) {
     if (pc < f->locVars[i].endPC) { /* is variable active? */
       local_number--;
       if (local_number == 0) {
-        return GET_STR(f->locVars[i].varname);
+        return STRING_CONTENT(f->locVars[i].varname);
       }
     }
   }

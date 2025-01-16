@@ -13,8 +13,8 @@
 
 LUAI_FUNC const Value *luaH_getnum(Table *t, int key);
 LUAI_FUNC Value *luaH_setnum(lua_State *L, Table *t, int key);
-LUAI_FUNC const Value *luaH_getstr(Table *t, TString *key);
-LUAI_FUNC Value *luaH_setstr(lua_State *L, Table *t, TString *key);
+LUAI_FUNC const Value *luaH_getstr(Table *t, StringHeader *key);
+LUAI_FUNC Value *luaH_setstr(lua_State *L, Table *t, StringHeader *key);
 LUAI_FUNC const Value *luaH_get(Table *t, const Value *key);
 LUAI_FUNC Value *luaH_set(lua_State *L, Table *t, const Value *key);
 LUAI_FUNC Table *luaH_new(lua_State *L, int narray, int nhash);

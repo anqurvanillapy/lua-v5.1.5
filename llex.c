@@ -44,10 +44,10 @@ static void save(LexState *ls, int c) {
 
 void luaX_init(lua_State *L) {
   for (int i = 0; i < NUM_RESERVED; i++) {
-    TString *ts = String_internCStr(L, TOKENS[i]);
+    StringHeader *ts = String_internCStr(L, TOKENS[i]);
     String_pin(ts); /* reserved words are never collected */
     DEBUG_ASSERT(strlen(TOKENS[i]) + 1 <= TOKEN_LEN);
-    ts->reserved = cast_byte(i + 1); /* reserved word */
+    ts->keywordID = (uint8_t)(i + 1);
   }
 }
 
@@ -77,7 +77,7 @@ static const char *txtToken(LexState *ls, int token) {
 
 void luaX_lexerror(LexState *ls, const char *msg, int token) {
   char buff[MAXSRC];
-  luaO_chunkid(buff, GET_STR(ls->source), MAXSRC);
+  luaO_chunkid(buff, STRING_CONTENT(ls->source), MAXSRC);
   msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
   if (token) {
     luaO_pushfstring(ls->L, "%s near " LUA_QS, msg, txtToken(ls, token));
@@ -89,9 +89,9 @@ void luaX_syntaxerror(LexState *ls, const char *msg) {
   luaX_lexerror(ls, msg, ls->t.token);
 }
 
-TString *luaX_newstring(LexState *ls, const char *str, size_t l) {
+StringHeader *luaX_newstring(LexState *ls, const char *str, size_t l) {
   lua_State *L = ls->L;
-  TString *ts = String_intern(L, str, l);
+  StringHeader *ts = String_intern(L, str, l);
   Value *o = luaH_setstr(L, ls->fs->h, ts); /* entry for `str' */
   if (IS_TYPE_NIL(o)) {
     SET_BOOL(o, 1); /* make sure `str' will not be collected */
@@ -112,7 +112,7 @@ static void inclinenumber(LexState *ls) {
   }
 }
 
-void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, TString *source) {
+void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, StringHeader *source) {
   ls->decpoint = '.';
   ls->L = L;
   ls->lookahead.token = TK_EOS; /* no look-ahead token */
@@ -434,17 +434,16 @@ static int llex(LexState *ls, Literal *seminfo) {
         return TK_NUMBER;
       } else if (isalpha(ls->current) || ls->current == '_') {
         /* identifier or reserved word */
-        TString *ts;
+        StringHeader *ts;
         do {
           saveAndNext(ls);
         } while (isalnum(ls->current) || ls->current == '_');
         ts = luaX_newstring(ls, luaZ_buffer(ls->buff), luaZ_bufflen(ls->buff));
-        if (ts->reserved > 0) { /* reserved word? */
-          return ts->reserved - 1 + FIRST_RESERVED;
-        } else {
-          seminfo->str = ts;
-          return TK_NAME;
+        if (ts->keywordID) {
+          return ts->keywordID - 1 + FIRST_RESERVED;
         }
+        seminfo->str = ts;
+        return TK_NAME;
       } else {
         int c = ls->current;
         next(ls);

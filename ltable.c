@@ -432,7 +432,7 @@ const Value *luaH_getnum(Table *t, int key) {
 /*
 ** search function for strings
 */
-const Value *luaH_getstr(Table *t, TString *key) {
+const Value *luaH_getstr(Table *t, StringHeader *key) {
   Node *n = hashstr(t, key);
   do { /* check whether `key' is somewhere in the chain */
     if (IS_TYPE_STRING(gkey(n)) && STRING_VALUE(gkey(n)) == key) {
@@ -502,7 +502,7 @@ Value *luaH_setnum(lua_State *L, Table *t, int key) {
   }
 }
 
-Value *luaH_setstr(lua_State *L, Table *t, TString *key) {
+Value *luaH_setstr(lua_State *L, Table *t, StringHeader *key) {
   const Value *p = luaH_getstr(t, key);
   if (p != luaO_nilobject) {
     return cast(Value *, p);

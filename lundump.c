@@ -63,7 +63,7 @@ static lua_Number LoadNumber(LoadState *S) {
   return x;
 }
 
-static TString *LoadString(LoadState *S) {
+static StringHeader *LoadString(LoadState *S) {
   size_t size;
   LoadVar(S, size);
   if (size == 0) {
@@ -82,7 +82,7 @@ static void LoadCode(LoadState *S, Prototype *f) {
   LoadVector(S, f->code, n, sizeof(Instruction));
 }
 
-static Prototype *LoadFunction(LoadState *S, TString *p);
+static Prototype *LoadFunction(LoadState *S, StringHeader *p);
 
 static void LoadConstants(LoadState *S, Prototype *f) {
   int i, n;
@@ -142,7 +142,7 @@ static void LoadDebug(LoadState *S, Prototype *f) {
     f->locVars[i].endPC = LoadInt(S);
   }
   n = LoadInt(S);
-  f->upvalues = luaM_newvector(S->L, n, TString *);
+  f->upvalues = luaM_newvector(S->L, n, StringHeader *);
   f->upvaluesSize = n;
   for (i = 0; i < n; i++) {
     f->upvalues[i] = NULL;
@@ -152,7 +152,7 @@ static void LoadDebug(LoadState *S, Prototype *f) {
   }
 }
 
-static Prototype *LoadFunction(LoadState *S, TString *p) {
+static Prototype *LoadFunction(LoadState *S, StringHeader *p) {
   Prototype *f;
   if (++S->L->nestedCCallsNum > LUAI_MAX_C_CALLS) {
     error(S, "code too deep");

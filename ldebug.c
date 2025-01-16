@@ -131,7 +131,7 @@ static void funcinfo(lua_Debug *ar, Closure *cl) {
     ar->lastlinedefined = -1;
     ar->what = "C";
   } else {
-    ar->source = GET_STR(cl->l.p->source);
+    ar->source = STRING_CONTENT(cl->l.p->source);
     ar->linedefined = cl->l.p->lineDefined;
     ar->lastlinedefined = cl->l.p->lineDefinedLast;
     ar->what = (ar->linedefined == 0) ? "main" : "Lua";
@@ -489,7 +489,7 @@ int luaG_checkcode(const Prototype *pt) {
 
 static const char *kname(Prototype *p, int c) {
   if (ISK(c) && IS_TYPE_STRING(&p->k[INDEXK(c)])) {
-    return GET_STR_VALUE(&p->k[INDEXK(c)]);
+    return VALUE_STRING_CONTENT(&p->k[INDEXK(c)]);
   } else {
     return "?";
   }
@@ -511,7 +511,7 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     case OP_GETGLOBAL: {
       int g = GETARG_Bx(i); /* global index */
       DEBUG_ASSERT(IS_TYPE_STRING(&p->k[g]));
-      *name = GET_STR_VALUE(&p->k[g]);
+      *name = VALUE_STRING_CONTENT(&p->k[g]);
       return "global";
     }
     case OP_MOVE: {
@@ -529,7 +529,7 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     }
     case OP_GETUPVAL: {
       int u = GETARG_B(i); /* upvalue index */
-      *name = p->upvalues ? GET_STR(p->upvalues[u]) : "?";
+      *name = p->upvalues ? STRING_CONTENT(p->upvalues[u]) : "?";
       return "upvalue";
     }
     case OP_SELF: {
@@ -616,7 +616,7 @@ static void addinfo(lua_State *L, const char *msg) {
   if (isLua(ci)) {         /* is Lua code? */
     char buff[LUA_IDSIZE]; /* add file:line information */
     int line = currentline(L, ci);
-    luaO_chunkid(buff, GET_STR(getluaproto(ci)->source), LUA_IDSIZE);
+    luaO_chunkid(buff, STRING_CONTENT(getluaproto(ci)->source), LUA_IDSIZE);
     luaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
   }
 }

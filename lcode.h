@@ -47,7 +47,7 @@ LUAI_FUNC void luaK_fixline(FuncState *fs, int line);
 LUAI_FUNC void luaK_nil(FuncState *fs, int from, int n);
 LUAI_FUNC void luaK_reserveregs(FuncState *fs, int n);
 LUAI_FUNC void luaK_checkstack(FuncState *fs, int n);
-LUAI_FUNC int Codegen_addString(FuncState *fs, TString *s);
+LUAI_FUNC int Codegen_addString(FuncState *fs, StringHeader *s);
 LUAI_FUNC int luaK_numberK(FuncState *fs, lua_Number r);
 LUAI_FUNC void luaK_dischargevars(FuncState *fs, ExprInfo *e);
 LUAI_FUNC int luaK_exp2anyreg(FuncState *fs, ExprInfo *e);

@@ -155,8 +155,8 @@ static int traversetable(global_State *g, Table *h) {
     markobject(g, h->metatable);
   mode = gfasttm(g, h->metatable, TM_MODE);
   if (mode && IS_TYPE_STRING(mode)) { /* is there a weak mode? */
-    weakkey = (strchr(GET_STR_VALUE(mode), 'k') != NULL);
-    weakvalue = (strchr(GET_STR_VALUE(mode), 'v') != NULL);
+    weakkey = (strchr(VALUE_STRING_CONTENT(mode), 'k') != NULL);
+    weakvalue = (strchr(VALUE_STRING_CONTENT(mode), 'v') != NULL);
     if (weakkey || weakvalue) {                   /* is really weak? */
       h->header.marked &= ~(KEYWEAK | VALUEWEAK); /* clear bits */
       h->header.marked |=
@@ -311,7 +311,7 @@ static l_mem propagatemark(global_State *g) {
     return sizeof(Prototype) + sizeof(Instruction) * p->codeSize +
            sizeof(Prototype *) * p->pSize + sizeof(Value) * p->kSize +
            sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
-           sizeof(TString *) * p->upvaluesSize;
+           sizeof(StringHeader *) * p->upvaluesSize;
   }
   default:
     DEBUG_ASSERT(0);

@@ -91,7 +91,7 @@ static void close_state(lua_State *L) {
   luaC_freeall(L);         /* collect all objects */
   DEBUG_ASSERT(g->rootgc == LuaObjectToGCObject(L));
   DEBUG_ASSERT(g->strt.nuse == 0);
-  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size, TString *);
+  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size, StringHeader *);
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   DEBUG_ASSERT(g->totalbytes == sizeof(LG));

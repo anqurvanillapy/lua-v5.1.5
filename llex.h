@@ -50,12 +50,12 @@ enum RESERVED {
   TK_EOS
 };
 
-/* number of reserved words */
+// Number of reserved keywords.
 #define NUM_RESERVED (cast(int, TK_WHILE - FIRST_RESERVED + 1))
 
 typedef union Literal {
   lua_Number num;
-  TString *str;
+  StringHeader *str;
 } Literal;
 
 typedef struct Token {
@@ -71,16 +71,16 @@ typedef struct LexState {
   Token lookahead;      /* look ahead token */
   struct FuncState *fs; /* `FuncState' is private to the parser */
   struct lua_State *L;
-  ZIO *z;          /* input stream */
-  Mbuffer *buff;   /* buffer for tokens */
-  TString *source; /* current source name */
-  char decpoint;   /* locale decimal point */
+  ZIO *z;               /* input stream */
+  Mbuffer *buff;        /* buffer for tokens */
+  StringHeader *source; /* current source name */
+  char decpoint;        /* locale decimal point */
 } LexState;
 
 LUAI_FUNC void luaX_init(lua_State *L);
 LUAI_FUNC void luaX_setinput(lua_State *L, LexState *ls, ZIO *z,
-                             TString *source);
-LUAI_FUNC TString *luaX_newstring(LexState *ls, const char *str, size_t l);
+                             StringHeader *source);
+LUAI_FUNC StringHeader *luaX_newstring(LexState *ls, const char *str, size_t l);
 LUAI_FUNC void luaX_next(LexState *ls);
 LUAI_FUNC void luaX_lookahead(LexState *ls);
 LUAI_FUNC void luaX_lexerror(LexState *ls, const char *msg, int token);

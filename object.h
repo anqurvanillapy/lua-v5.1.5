@@ -168,16 +168,16 @@ typedef struct Value {
 
 typedef Value *StackIndex;
 
-typedef struct TString {
+typedef struct StringHeader {
   GCHeader header;
-  uint8_t reserved;
+  uint8_t keywordID;
   uint32_t hash;
   size_t len;
-} TString;
-static_assert(alignof(TString) == alignof(MaxAlign));
+} StringHeader;
+static_assert(alignof(StringHeader) == alignof(MaxAlign));
 
-#define GET_STR(ts) (const char *)((ts) + 1)
-#define GET_STR_VALUE(o) GET_STR(STRING_VALUE(o))
+#define STRING_CONTENT(ts) (const char *)((ts) + 1)
+#define VALUE_STRING_CONTENT(o) STRING_CONTENT(STRING_VALUE(o))
 
 typedef struct Userdata {
   GCHeader header;
@@ -202,7 +202,7 @@ typedef struct Prototype {
   struct Prototype **inners;
   int pSize;
 
-  TString *source;
+  StringHeader *source;
   // An int-to-int map from opcodes to source lines.
   int *lineInfo;
   int lineInfoSize;
@@ -213,7 +213,7 @@ typedef struct Prototype {
   int locVarsSize;
 
   // Upvalue names.
-  TString **upvalues;
+  StringHeader **upvalues;
   int upvaluesSize;
   uint8_t upvaluesNum;
 
@@ -230,7 +230,7 @@ typedef struct Prototype {
 #define VARARG_NEEDS_ARG 0b100
 
 typedef struct LocVar {
-  TString *varname;
+  StringHeader *varname;
   // First point where variable is active.
   int startPC;
   // First point where variable is dead.

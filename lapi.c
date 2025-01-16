@@ -318,7 +318,7 @@ LUA_API const char *lua_tolstring(lua_State *L, int idx, size_t *len) {
   if (len != NULL) {
     *len = STRING_VALUE(o)->len;
   }
-  return GET_STR_VALUE(o);
+  return VALUE_STRING_CONTENT(o);
 }
 
 LUA_API size_t lua_objlen(lua_State *L, int idx) {
@@ -979,7 +979,7 @@ static const char *aux_upvalue(StackIndex fi, int n, Value **val) {
       return NULL;
     }
     *val = f->l.upvalues[n - 1]->v;
-    return GET_STR(p->upvalues[n - 1]);
+    return STRING_CONTENT(p->upvalues[n - 1]);
   }
 }
 
