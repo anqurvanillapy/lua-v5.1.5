@@ -139,7 +139,7 @@ struct lua_State {
 */
 union GCObject {
   GCHeader gch;
-  union TString ts;
+  struct TString ts;
   union Userdata u;
   union Closure cl;
   struct Table h;
@@ -149,8 +149,7 @@ union GCObject {
 };
 
 /* macros to convert a GCObject into a specific value */
-#define rawgco2ts(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_STRING, &((o)->ts))
-#define gco2ts(o) (&rawgco2ts(o)->tsv)
+#define gco2ts(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_STRING, &((o)->ts))
 #define rawgco2u(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_USERDATA, &((o)->u))
 #define gco2u(o) (&rawgco2u(o)->uv)
 #define gco2cl(o) CHECK_EXPR((o)->gch.tt == LUA_TYPE_FUNCTION, &((o)->cl))

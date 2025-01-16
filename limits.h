@@ -28,7 +28,7 @@ typedef LUAI_MEM l_mem;
 
 // Type to ensure maximum alignment, this is used for reducing memory
 // fragmentation.
-typedef double Padding;
+typedef uint64_t MaxAlign;
 
 /* result of a 'usual argument conversion' over lua_Number */
 typedef LUAI_UACNUMBER l_uacNumber;

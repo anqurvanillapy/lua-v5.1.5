@@ -47,7 +47,7 @@ void luaX_init(lua_State *L) {
     TString *ts = String_internCStr(L, TOKENS[i]);
     String_pin(ts); /* reserved words are never collected */
     DEBUG_ASSERT(strlen(TOKENS[i]) + 1 <= TOKEN_LEN);
-    ts->tsv.reserved = cast_byte(i + 1); /* reserved word */
+    ts->reserved = cast_byte(i + 1); /* reserved word */
   }
 }
 
@@ -439,8 +439,8 @@ static int llex(LexState *ls, Literal *seminfo) {
           saveAndNext(ls);
         } while (isalnum(ls->current) || ls->current == '_');
         ts = luaX_newstring(ls, luaZ_buffer(ls->buff), luaZ_bufflen(ls->buff));
-        if (ts->tsv.reserved > 0) { /* reserved word? */
-          return ts->tsv.reserved - 1 + FIRST_RESERVED;
+        if (ts->reserved > 0) { /* reserved word? */
+          return ts->reserved - 1 + FIRST_RESERVED;
         } else {
           seminfo->str = ts;
           return TK_NAME;

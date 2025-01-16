@@ -6,10 +6,10 @@
 #include "lstate.h"
 #include "object.h"
 
-#define sizestring(s) (sizeof(union TString) + ((s)->len + 1) * sizeof(char))
+#define sizestring(s) (sizeof(struct TString) + ((s)->len + 1) * sizeof(char))
 #define sizeudata(u) (sizeof(union Userdata) + (u)->len)
 
-#define String_pin(s) l_setbit((s)->tsv.header.marked, FIXEDBIT)
+#define String_pin(s) l_setbit((s)->header.marked, FIXEDBIT)
 
 LUAI_FUNC void String_resize(lua_State *L, int newSize);
 LUAI_FUNC TString *String_intern(lua_State *L, const char *str, size_t len);

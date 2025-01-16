@@ -48,8 +48,8 @@ static void setnameval(lua_State *L, const char *name, int val) {
 #define MARK 0x55 /* 01010101 (a nice pattern) */
 
 /* full memory check */
-#define HEADER (sizeof(Padding)) /* ensures maximum alignment for HEADER */
-#define MARKSIZE 16              /* size of marks after each block */
+#define HEADER (sizeof(MaxAlign)) /* ensures maximum alignment for HEADER */
+#define MARKSIZE 16               /* size of marks after each block */
 #define blockhead(b) (cast(char *, b) - HEADER)
 #define setsize(newblock, size) (*cast(size_t *, newblock) = size)
 #define checkblocksize(b, size) (size == (*cast(size_t *, blockhead(b))))
@@ -196,7 +196,7 @@ static void checkproto(global_State *g, Prototype *f) {
     checkobjref(g, fgc, f->source);
   for (i = 0; i < f->kSize; i++) {
     if (IS_TYPE_STRING(f->k + i))
-      checkobjref(g, fgc, RAW_STRING_VALUE(f->k + i));
+      checkobjref(g, fgc, STRING_VALUE(f->k + i));
   }
   for (i = 0; i < f->upvaluesSize; i++) {
     if (f->upvalues[i])

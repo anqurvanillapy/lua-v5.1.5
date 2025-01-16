@@ -57,8 +57,7 @@ typedef struct Value {
 #define GC_VALUE(o) CHECK_EXPR(IS_COLLECTABLE(o), (o)->variant.gc)
 #define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->variant.p)
 #define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->variant.n)
-#define RAW_STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->variant.gc->ts)
-#define STRING_VALUE(o) (&RAW_STRING_VALUE(o)->tsv)
+#define STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->variant.gc->ts)
 #define RAW_USERDATA_VALUE(o)                                                  \
   CHECK_EXPR(IS_TYPE_USERDATA(o), &(o)->variant.gc->u)
 #define USERDATA_VALUE(o) (&RAW_USERDATA_VALUE(o)->uv)
@@ -171,24 +170,19 @@ typedef struct Value {
 
 typedef Value *StackIndex;
 
-/*
-** String headers for string table
-*/
-typedef union TString {
-  __attribute__((unused)) Padding padding;
-  struct {
-    GCHeader header;
-    uint8_t reserved;
-    uint32_t hash;
-    size_t len;
-  } tsv;
+typedef struct TString {
+  GCHeader header;
+  uint8_t reserved;
+  uint32_t hash;
+  size_t len;
 } TString;
+static_assert(alignof(TString) == alignof(MaxAlign));
 
 #define GET_STR(ts) (const char *)((ts) + 1)
-#define GET_STR_VALUE(o) GET_STR(RAW_STRING_VALUE(o))
+#define GET_STR_VALUE(o) GET_STR(STRING_VALUE(o))
 
 typedef union Userdata {
-  __attribute__((unused)) Padding padding;
+  __attribute__((unused)) MaxAlign padding;
   struct {
     GCHeader header;
     struct Table *metatable;

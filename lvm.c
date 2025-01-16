@@ -193,9 +193,9 @@ static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
 
 static int l_strcmp(const TString *ls, const TString *rs) {
   const char *l = GET_STR(ls);
-  size_t ll = ls->tsv.len;
+  size_t ll = ls->len;
   const char *r = GET_STR(rs);
-  size_t lr = rs->tsv.len;
+  size_t lr = rs->len;
   for (;;) {
     int temp = strcoll(l, r);
     if (temp != 0) {
@@ -224,7 +224,7 @@ int luaV_lessthan(lua_State *L, const Value *l, const Value *r) {
   } else if (IS_TYPE_NUMBER(l)) {
     return luai_numlt(NUMBER_VALUE(l), NUMBER_VALUE(r));
   } else if (IS_TYPE_STRING(l)) {
-    return l_strcmp(RAW_STRING_VALUE(l), RAW_STRING_VALUE(r)) < 0;
+    return l_strcmp(STRING_VALUE(l), STRING_VALUE(r)) < 0;
   } else if ((res = call_orderTM(L, l, r, TM_LT)) != -1) {
     return res;
   }
@@ -238,7 +238,7 @@ static int lessequal(lua_State *L, const Value *l, const Value *r) {
   } else if (IS_TYPE_NUMBER(l)) {
     return luai_numle(NUMBER_VALUE(l), NUMBER_VALUE(r));
   } else if (IS_TYPE_STRING(l)) {
-    return l_strcmp(RAW_STRING_VALUE(l), RAW_STRING_VALUE(r)) <= 0;
+    return l_strcmp(STRING_VALUE(l), STRING_VALUE(r)) <= 0;
   } else if ((res = call_orderTM(L, l, r, TM_LE)) != -1) { /* first try `le' */
     return res;
   } else if ((res = call_orderTM(L, r, l, TM_LT)) != -1) { /* else try `lt' */

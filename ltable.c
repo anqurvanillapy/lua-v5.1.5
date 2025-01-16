@@ -37,7 +37,7 @@
 
 #define hashpow2(t, n) (gnode(t, lmod((n), sizenode(t))))
 
-#define hashstr(t, str) hashpow2(t, (str)->tsv.hash)
+#define hashstr(t, str) hashpow2(t, (str)->hash)
 #define hashboolean(t, p) hashpow2(t, p)
 
 /*
@@ -85,7 +85,7 @@ static Node *mainposition(const Table *t, const Value *key) {
   case LUA_TYPE_NUMBER:
     return hashnum(t, NUMBER_VALUE(key));
   case LUA_TYPE_STRING:
-    return hashstr(t, RAW_STRING_VALUE(key));
+    return hashstr(t, STRING_VALUE(key));
   case LUA_TYPE_BOOLEAN:
     return hashboolean(t, BOOL_VALUE(key));
   case LUA_TYPE_PTR:
@@ -435,7 +435,7 @@ const Value *luaH_getnum(Table *t, int key) {
 const Value *luaH_getstr(Table *t, TString *key) {
   Node *n = hashstr(t, key);
   do { /* check whether `key' is somewhere in the chain */
-    if (IS_TYPE_STRING(gkey(n)) && RAW_STRING_VALUE(gkey(n)) == key) {
+    if (IS_TYPE_STRING(gkey(n)) && STRING_VALUE(gkey(n)) == key) {
       return gval(n); /* that's it */
     } else {
       n = gnext(n);
@@ -452,7 +452,7 @@ const Value *luaH_get(Table *t, const Value *key) {
   case LUA_TYPE_NIL:
     return luaO_nilobject;
   case LUA_TYPE_STRING:
-    return luaH_getstr(t, RAW_STRING_VALUE(key));
+    return luaH_getstr(t, STRING_VALUE(key));
   case LUA_TYPE_NUMBER: {
     int k;
     lua_Number n = NUMBER_VALUE(key);

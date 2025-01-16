@@ -44,17 +44,17 @@ static TString *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   }
 
   TString *ts = luaM_malloc(L, (l + 1) * sizeof(char) + sizeof(TString));
-  ts->tsv.len = l;
-  ts->tsv.hash = h;
-  ts->tsv.header.marked = luaC_white(G(L));
-  ts->tsv.header.tt = LUA_TYPE_STRING;
-  ts->tsv.reserved = 0;
+  ts->len = l;
+  ts->hash = h;
+  ts->header.marked = luaC_white(G(L));
+  ts->header.tt = LUA_TYPE_STRING;
+  ts->reserved = 0;
   memcpy(ts + 1, str, l * sizeof(char));
   ((char *)(ts + 1))[l] = '\0'; /* ending 0 */
 
   stringtable *tb = &G(L)->strt;
   h = lmod(h, tb->size);
-  ts->tsv.header.next = tb->hash[h]; /* chain new entry */
+  ts->header.next = tb->hash[h]; /* chain new entry */
   tb->hash[h] = LuaObjectToGCObject(ts);
   tb->nuse++;
 
@@ -78,8 +78,8 @@ TString *String_intern(lua_State *L, const char *str, size_t len) {
 
   for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.size)]; o != nullptr;
        o = o->gch.next) {
-    TString *ts = rawgco2ts(o);
-    if (ts->tsv.len != len || memcmp(str, GET_STR(ts), len) != 0) {
+    TString *ts = gco2ts(o);
+    if (ts->len != len || memcmp(str, GET_STR(ts), len) != 0) {
       continue;
     }
     if (IS_DEAD(G(L), o)) {

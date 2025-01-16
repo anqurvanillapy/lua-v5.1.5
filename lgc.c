@@ -27,7 +27,7 @@
 #define white2gray(x) reset2bits((x)->gch.marked, WHITE0BIT, WHITE1BIT)
 #define black2gray(x) resetbit((x)->gch.marked, BLACKBIT)
 
-#define stringmark(s) reset2bits((s)->tsv.header.marked, WHITE0BIT, WHITE1BIT)
+#define stringmark(s) reset2bits((s)->header.marked, WHITE0BIT, WHITE1BIT)
 
 #define isfinalized(u) testbit((u)->header.marked, FINALIZEDBIT)
 #define markfinalized(u) l_setbit((u)->header.marked, FINALIZEDBIT)
@@ -339,8 +339,7 @@ static int iscleared(const Value *o, int iskey) {
     return 0;
   }
   if (IS_TYPE_STRING(o)) {
-    stringmark(
-        RAW_STRING_VALUE(o)); /* strings are `values', so are never weak */
+    stringmark(STRING_VALUE(o)); /* strings are `values', so are never weak */
     return 0;
   }
   return iswhite(GC_VALUE(o)) ||

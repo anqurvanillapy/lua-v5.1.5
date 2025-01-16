@@ -45,7 +45,7 @@ static void expr(LexState *ls, ExprInfo *v);
 static void anchor_token(LexState *ls) {
   if (ls->t.token == TK_NAME || ls->t.token == TK_STRING) {
     TString *ts = ls->t.literal.str;
-    luaX_newstring(ls, GET_STR(ts), ts->tsv.len);
+    luaX_newstring(ls, GET_STR(ts), ts->len);
   }
 }
 

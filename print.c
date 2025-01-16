@@ -17,7 +17,7 @@
 
 static void PrintString(const TString *ts) {
   const char *s = GET_STR(ts);
-  size_t i, n = ts->tsv.len;
+  size_t i, n = ts->len;
   putchar('"');
   for (i = 0; i < n; i++) {
     int c = s[i];
@@ -73,7 +73,7 @@ static void PrintConstant(const Prototype *f, int i) {
     printf(LUA_NUMBER_FMT, NUMBER_VALUE(o));
     break;
   case LUA_TYPE_STRING:
-    PrintString(RAW_STRING_VALUE(o));
+    PrintString(STRING_VALUE(o));
     break;
   default: /* cannot happen */
     printf("? type=%d", GET_TYPE(o));

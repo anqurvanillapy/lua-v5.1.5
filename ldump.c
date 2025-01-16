@@ -46,7 +46,7 @@ static void DumpString(const TString *s, DumpState *D) {
     size_t size = 0;
     DumpVar(size, D);
   } else {
-    size_t size = s->tsv.len + 1; /* include trailing '\0' */
+    size_t size = s->len + 1; /* include trailing '\0' */
     DumpVar(size, D);
     DumpBlock(GET_STR(s), size, D);
   }
@@ -72,7 +72,7 @@ static void DumpConstants(const Prototype *f, DumpState *D) {
       DumpNumber(NUMBER_VALUE(o), D);
       break;
     case LUA_TYPE_STRING:
-      DumpString(RAW_STRING_VALUE(o), D);
+      DumpString(STRING_VALUE(o), D);
       break;
     default:
       DEBUG_ASSERT(0); /* cannot happen */
