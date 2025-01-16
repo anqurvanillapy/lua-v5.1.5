@@ -257,7 +257,7 @@ int luaD_precall(lua_State *L, StackIndex func, int nresults) {
   funcr = savestack(L, func);
   cl = &CLOSURE_VALUE(func)->l;
   L->ci->savedpc = L->savedPC;
-  if (!cl->isC) { /* Lua function? prepare its call */
+  if (!cl->header.isC) { /* Lua function? prepare its call */
     CallInfo *ci;
     StackIndex st, base;
     Prototype *p = cl->p;

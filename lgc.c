@@ -82,7 +82,7 @@ static void reallymarkobject(global_State *g, GCObject *o) {
     return;
   }
   case LUA_TYPE_FUNCTION: {
-    gco2cl(o)->c.gclist = g->gray;
+    gco2cl(o)->c.header.gclist = g->gray;
     g->gray = o;
     break;
   }
@@ -219,16 +219,16 @@ static void traverseproto(global_State *g, Prototype *f) {
 }
 
 static void traverseclosure(global_State *g, Closure *cl) {
-  markobject(g, cl->c.env);
-  if (cl->c.isC) {
+  markobject(g, cl->c.header.env);
+  if (cl->c.header.isC) {
     int i;
-    for (i = 0; i < cl->c.nupvalues; i++) /* mark its upvalues */
+    for (i = 0; i < cl->c.header.nupvalues; i++) /* mark its upvalues */
       markvalue(g, &cl->c.upvalue[i]);
   } else {
     int i;
-    DEBUG_ASSERT(cl->l.nupvalues == cl->l.p->upvaluesNum);
+    DEBUG_ASSERT(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
     markobject(g, cl->l.p);
-    for (i = 0; i < cl->l.nupvalues; i++) /* mark its upvalues */
+    for (i = 0; i < cl->l.header.nupvalues; i++) /* mark its upvalues */
       markobject(g, cl->l.upvalues[i]);
   }
 }
@@ -289,10 +289,10 @@ static l_mem propagatemark(global_State *g) {
   }
   case LUA_TYPE_FUNCTION: {
     Closure *cl = gco2cl(o);
-    g->gray = cl->c.gclist;
+    g->gray = cl->c.header.gclist;
     traverseclosure(g, cl);
-    return (cl->c.isC) ? sizeCclosure(cl->c.nupvalues)
-                       : sizeLclosure(cl->l.nupvalues);
+    return (cl->c.header.isC) ? sizeCclosure(cl->c.header.nupvalues)
+                              : sizeLclosure(cl->l.header.nupvalues);
   }
   case LUA_TYPE_THREAD: {
     lua_State *th = gco2th(o);
@@ -513,9 +513,9 @@ static void markmt(global_State *g) {
 /* mark root set */
 static void markroot(lua_State *L) {
   global_State *g = G(L);
-  g->gray = NULL;
-  g->grayagain = NULL;
-  g->weak = NULL;
+  g->gray = nullptr;
+  g->grayagain = nullptr;
+  g->weak = nullptr;
   markobject(g, g->mainthread);
   /* make global table be traversed before main stack */
   markvalue(g, gt(g->mainthread));
@@ -542,14 +542,14 @@ static void atomic(lua_State *L) {
   propagateall(g);
   /* remark weak tables */
   g->gray = g->weak;
-  g->weak = NULL;
+  g->weak = nullptr;
   DEBUG_ASSERT(!iswhite(LuaObjectToGCObject(g->mainthread)));
   markobject(g, L); /* mark running thread */
   markmt(g);        /* mark basic metatables (again) */
   propagateall(g);
   /* remark gray again */
   g->gray = g->grayagain;
-  g->grayagain = NULL;
+  g->grayagain = nullptr;
   propagateall(g);
   udsize = luaC_separateudata(L, 0); /* separate userdata to be finalized */
   marktmu(g);                        /* mark `preserved' userdata */
@@ -651,9 +651,9 @@ void luaC_fullgc(lua_State *L) {
     g->sweepstrgc = 0;
     g->sweepgc = &g->rootgc;
     /* reset other collector lists */
-    g->gray = NULL;
-    g->grayagain = NULL;
-    g->weak = NULL;
+    g->gray = nullptr;
+    g->grayagain = nullptr;
+    g->weak = nullptr;
     g->gcstate = GCSsweepstring;
   }
   DEBUG_ASSERT(g->gcstate != GCSpause && g->gcstate != GCSpropagate);

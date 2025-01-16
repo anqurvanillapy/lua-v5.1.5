@@ -125,7 +125,7 @@ LUA_API const char *lua_setlocal(lua_State *L, const lua_Debug *ar, int n) {
 }
 
 static void funcinfo(lua_Debug *ar, Closure *cl) {
-  if (cl->c.isC) {
+  if (cl->c.header.isC) {
     ar->source = "=[C]";
     ar->linedefined = -1;
     ar->lastlinedefined = -1;
@@ -149,7 +149,7 @@ static void info_tailcall(lua_Debug *ar) {
 }
 
 static void collectvalidlines(lua_State *L, Closure *f) {
-  if (f == NULL || f->c.isC) {
+  if (f == NULL || f->c.header.isC) {
     SET_NIL(L->top);
   } else {
     Table *t = luaH_new(L, 0, 0);
@@ -180,14 +180,14 @@ static int auxgetinfo(lua_State *L, const char *what, lua_Debug *ar, Closure *f,
       break;
     }
     case 'u': {
-      ar->nups = f->c.nupvalues;
+      ar->nups = f->c.header.nupvalues;
       break;
     }
     case 'n': {
-      ar->namewhat = (ci) ? getfuncname(L, ci, &ar->name) : NULL;
-      if (ar->namewhat == NULL) {
+      ar->namewhat = (ci) ? getfuncname(L, ci, &ar->name) : nullptr;
+      if (ar->namewhat == nullptr) {
         ar->namewhat = ""; /* not found */
-        ar->name = NULL;
+        ar->name = nullptr;
       }
       break;
     }
@@ -203,8 +203,8 @@ static int auxgetinfo(lua_State *L, const char *what, lua_Debug *ar, Closure *f,
 
 LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
   int status;
-  Closure *f = NULL;
-  CallInfo *ci = NULL;
+  Closure *f = nullptr;
+  CallInfo *ci = nullptr;
   lua_lock(L);
   if (*what == '>') {
     StackIndex func = L->top - 1;
@@ -541,13 +541,13 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
       break;
     }
   }
-  return NULL; /* no useful name found */
+  return nullptr; /* no useful name found */
 }
 
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name) {
   Instruction i;
   if ((isLua(ci) && ci->tailcalls > 0) || !isLua(ci - 1)) {
-    return NULL; /* calling function is not Lua (or is unknown) */
+    return nullptr; /* calling function is not Lua (or is unknown) */
   }
   ci--; /* calling function */
   i = ci_func(ci)->l.p->code[currentpc(L, ci)];
@@ -555,7 +555,7 @@ static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name) {
       GET_OPCODE(i) == OP_TFORLOOP) {
     return getobjname(L, ci, GETARG_A(i), name);
   } else {
-    return NULL; /* no useful name can be found */
+    return nullptr; /* no useful name can be found */
   }
 }
 
@@ -571,11 +571,11 @@ static int isinstack(CallInfo *ci, const Value *o) {
 }
 
 void luaG_typeerror(lua_State *L, const Value *o, const char *op) {
-  const char *name = NULL;
+  const char *name = nullptr;
   const char *t = luaT_typenames[GET_TYPE(o)];
   const char *kind = (isinstack(L->ci, o))
                          ? getobjname(L, L->ci, cast_int(o - L->base), &name)
-                         : NULL;
+                         : nullptr;
   if (kind) {
     luaG_runerror(L, "attempt to %s %s " LUA_QS " (a %s value)", op, kind, name,
                   t);

@@ -262,21 +262,22 @@ typedef struct Upvalue {
   } u;
 } Upvalue;
 
-#define ClosureHeader                                                          \
-  GCHeader header;                                                             \
-  bool isC;                                                                    \
-  uint8_t nupvalues;                                                           \
-  GCObject *gclist;                                                            \
-  struct Table *env
+typedef struct ClosureHeader {
+  GCHeader header;
+  bool isC;
+  uint8_t nupvalues;
+  GCObject *gclist;
+  struct Table *env;
+} ClosureHeader;
 
 typedef struct CClosure {
-  ClosureHeader;
+  ClosureHeader header;
   lua_CFunction f;
   Value upvalue[1];
 } CClosure;
 
 typedef struct LClosure {
-  ClosureHeader;
+  ClosureHeader header;
   struct Prototype *p;
   Upvalue *upvalues[1];
 } LClosure;
@@ -287,9 +288,9 @@ typedef union Closure {
 } Closure;
 
 #define IS_C_FUNCTION(o)                                                       \
-  (GET_TYPE(o) == LUA_TYPE_FUNCTION && CLOSURE_VALUE(o)->c.isC)
+  (GET_TYPE(o) == LUA_TYPE_FUNCTION && CLOSURE_VALUE(o)->c.header.isC)
 #define IS_LUA_FUNCTION(o)                                                     \
-  (GET_TYPE(o) == LUA_TYPE_FUNCTION && !CLOSURE_VALUE(o)->c.isC)
+  (GET_TYPE(o) == LUA_TYPE_FUNCTION && !CLOSURE_VALUE(o)->c.header.isC)
 
 /*
 ** Tables

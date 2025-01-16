@@ -469,7 +469,7 @@ reentry: /* entry point */
     case OP_GETGLOBAL: {
       Value g;
       Value *rb = KBx(i);
-      SET_TABLE(L, &g, cl->env);
+      SET_TABLE(L, &g, cl->header.env);
       DEBUG_ASSERT(IS_TYPE_STRING(rb));
       Protect(luaV_gettable(L, &g, rb, ra));
       continue;
@@ -480,7 +480,7 @@ reentry: /* entry point */
     }
     case OP_SETGLOBAL: {
       Value g;
-      SET_TABLE(L, &g, cl->env);
+      SET_TABLE(L, &g, cl->header.env);
       DEBUG_ASSERT(IS_TYPE_STRING(KBx(i)));
       Protect(luaV_settable(L, &g, KBx(i), ra));
       continue;
@@ -771,7 +771,7 @@ reentry: /* entry point */
       int nup, j;
       p = cl->p->inners[GETARG_Bx(i)];
       nup = p->upvaluesNum;
-      ncl = luaF_newLclosure(L, nup, cl->env);
+      ncl = luaF_newLclosure(L, nup, cl->header.env);
       ncl->l.p = p;
       for (j = 0; j < nup; j++, pc++) {
         if (GET_OPCODE(*pc) == OP_GETUPVAL) {

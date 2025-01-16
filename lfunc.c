@@ -13,18 +13,18 @@
 Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
   Closure *c = cast(Closure *, luaM_malloc(L, sizeCclosure(nelems)));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
-  c->c.isC = true;
-  c->c.env = e;
-  c->c.nupvalues = cast_byte(nelems);
+  c->c.header.isC = true;
+  c->c.header.env = e;
+  c->c.header.nupvalues = cast_byte(nelems);
   return c;
 }
 
 Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
   Closure *c = cast(Closure *, luaM_malloc(L, sizeLclosure(nelems)));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
-  c->l.isC = false;
-  c->l.env = e;
-  c->l.nupvalues = cast_byte(nelems);
+  c->l.header.isC = false;
+  c->l.header.env = e;
+  c->l.header.nupvalues = cast_byte(nelems);
   while (nelems--) {
     c->l.upvalues[nelems] = nullptr;
   }
@@ -135,8 +135,8 @@ void luaF_freeproto(lua_State *L, Prototype *f) {
 }
 
 void luaF_freeclosure(lua_State *L, Closure *c) {
-  int size =
-      (c->c.isC) ? sizeCclosure(c->c.nupvalues) : sizeLclosure(c->l.nupvalues);
+  int size = (c->c.header.isC) ? sizeCclosure(c->c.header.nupvalues)
+                               : sizeLclosure(c->l.header.nupvalues);
   luaM_freemem(L, c, size);
 }
 

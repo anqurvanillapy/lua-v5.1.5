@@ -214,16 +214,16 @@ static void checkproto(global_State *g, Prototype *f) {
 
 static void checkclosure(global_State *g, Closure *cl) {
   GCObject *clgc = LuaObjectToGCObject(cl);
-  checkobjref(g, clgc, cl->l.env);
-  if (cl->c.isC) {
+  checkobjref(g, clgc, cl->l.header.env);
+  if (cl->c.header.isC) {
     int i;
-    for (i = 0; i < cl->c.nupvalues; i++)
+    for (i = 0; i < cl->c.header.nupvalues; i++)
       checkvalref(g, clgc, &cl->c.upvalue[i]);
   } else {
     int i;
-    DEBUG_ASSERT(cl->l.nupvalues == cl->l.p->upvaluesNum);
+    DEBUG_ASSERT(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
     checkobjref(g, clgc, cl->l.p);
-    for (i = 0; i < cl->l.nupvalues; i++) {
+    for (i = 0; i < cl->l.header.nupvalues; i++) {
       if (cl->l.upvalues[i]) {
         DEBUG_ASSERT(cl->l.upvalues[i]->header.tt == LUA_TYPE_UPVALUE);
         checkobjref(g, clgc, cl->l.upvalues[i]);

@@ -46,7 +46,7 @@ static Value *index2adr(lua_State *L, int idx) {
       return registry(L);
     case LUA_ENVIRONINDEX: {
       Closure *func = curr_func(L);
-      SET_TABLE(L, &L->env, func->c.env);
+      SET_TABLE(L, &L->env, func->c.header.env);
       return &L->env;
     }
     case LUA_GLOBALSINDEX:
@@ -54,8 +54,8 @@ static Value *index2adr(lua_State *L, int idx) {
     default: {
       Closure *func = curr_func(L);
       idx = LUA_GLOBALSINDEX - idx;
-      return (idx <= func->c.nupvalues) ? &func->c.upvalue[idx - 1]
-                                        : cast(Value *, luaO_nilobject);
+      return (idx <= func->c.header.nupvalues) ? &func->c.upvalue[idx - 1]
+                                               : cast(Value *, luaO_nilobject);
     }
     }
   }
@@ -66,7 +66,7 @@ static Table *getcurrenv(lua_State *L) {
     return TABLE_VALUE(gt(L)); /* use global table as environment */
   } else {
     Closure *func = curr_func(L);
-    return func->c.env;
+    return func->c.header.env;
   }
 }
 
@@ -188,7 +188,7 @@ LUA_API void lua_replace(lua_State *L, int idx) {
   if (idx == LUA_ENVIRONINDEX) {
     Closure *func = curr_func(L);
     api_check(L, IS_TYPE_TABLE(L->top - 1));
-    func->c.env = TABLE_VALUE(L->top - 1);
+    func->c.header.env = TABLE_VALUE(L->top - 1);
     luaC_barrier(L, func, L->top - 1);
   } else {
     SET_OBJECT(L, o, L->top - 1);
@@ -570,7 +570,7 @@ LUA_API void lua_getfenv(lua_State *L, int idx) {
   api_checkvalidindex(L, o);
   switch (GET_TYPE(o)) {
   case LUA_TYPE_FUNCTION:
-    SET_TABLE(L, L->top, CLOSURE_VALUE(o)->c.env);
+    SET_TABLE(L, L->top, CLOSURE_VALUE(o)->c.header.env);
     break;
   case LUA_TYPE_USERDATA:
     SET_TABLE(L, L->top, USERDATA_VALUE(o)->env);
@@ -684,7 +684,7 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
   api_check(L, IS_TYPE_TABLE(L->top - 1));
   switch (GET_TYPE(o)) {
   case LUA_TYPE_FUNCTION:
-    CLOSURE_VALUE(o)->c.env = TABLE_VALUE(L->top - 1);
+    CLOSURE_VALUE(o)->c.header.env = TABLE_VALUE(L->top - 1);
     break;
   case LUA_TYPE_USERDATA:
     USERDATA_VALUE(o)->env = TABLE_VALUE(L->top - 1);
@@ -966,8 +966,8 @@ static const char *aux_upvalue(StackIndex fi, int n, Value **val) {
     return NULL;
   }
   f = CLOSURE_VALUE(fi);
-  if (f->c.isC) {
-    if (!(1 <= n && n <= f->c.nupvalues)) {
+  if (f->c.header.isC) {
+    if (!(1 <= n && n <= f->c.header.nupvalues)) {
       return NULL;
     }
     *val = &f->c.upvalue[n - 1];

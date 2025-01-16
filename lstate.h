@@ -43,7 +43,7 @@ typedef struct CallInfo {
 
 #define curr_func(L) (CLOSURE_VALUE(L->ci->func))
 #define ci_func(ci) (CLOSURE_VALUE((ci)->func))
-#define f_isLua(ci) (!ci_func(ci)->c.isC)
+#define f_isLua(ci) (!ci_func(ci)->c.header.isC)
 #define isLua(ci) (IS_TYPE_FUNCTION((ci)->func) && f_isLua(ci))
 
 /*
