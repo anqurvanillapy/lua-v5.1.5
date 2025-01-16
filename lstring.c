@@ -9,45 +9,43 @@
 #include "lstring.h"
 #include "object.h"
 
-void luaS_resize(lua_State *L, int newsize) {
-  GCObject **newhash;
-  stringtable *tb;
-  int i;
+void String_resize(lua_State *L, int newSize) {
   if (G(L)->gcstate == GCSsweepstring) {
-    return; /* cannot resize during GC traverse */
+    // Cannot resize during GC traverse.
+    return;
   }
-  newhash = luaM_newvector(L, newsize, GCObject *);
-  tb = &G(L)->strt;
-  for (i = 0; i < newsize; i++) {
-    newhash[i] = nullptr;
+
+  GCObject **newHash = luaM_newvector(L, newSize, GCObject *);
+  for (int i = 0; i < newSize; i++) {
+    newHash[i] = nullptr;
   }
-  /* rehash */
-  for (i = 0; i < tb->size; i++) {
+
+  // Rehash.
+  stringtable *tb = &G(L)->strt;
+  for (int i = 0; i < tb->size; i++) {
     GCObject *p = tb->hash[i];
     while (p) {                     /* for each node in the list */
       GCObject *next = p->gch.next; /* save next */
-      unsigned int h = gco2ts(p)->hash;
-      int h1 = lmod(h, newsize); /* new position */
-      DEBUG_ASSERT(cast_int(h % newsize) == lmod(h, newsize));
-      p->gch.next = newhash[h1]; /* chain it */
-      newhash[h1] = p;
+      uint32_t h = gco2ts(p)->hash;
+      int h1 = lmod(h, newSize); /* new position */
+      DEBUG_ASSERT(cast_int(h % newSize) == lmod(h, newSize));
+      p->gch.next = newHash[h1]; /* chain it */
+      newHash[h1] = p;
       p = next;
     }
   }
+
   luaM_freearray(L, tb->hash, tb->size, TString *);
-  tb->size = newsize;
-  tb->hash = newhash;
+  tb->size = newSize;
+  tb->hash = newHash;
 }
 
-static TString *newStr(lua_State *L, const char *str, size_t l,
-                       unsigned int h) {
-  TString *ts;
-  stringtable *tb;
-  if (l + 1 > (MAX_SIZET - sizeof(TString)) / sizeof(char)) {
+static TString *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
+  if (l > (MAX_SIZET - sizeof(TString)) / sizeof(char) - 1) {
     luaM_toobig(L);
   }
-  ts =
-      cast(TString *, luaM_malloc(L, (l + 1) * sizeof(char) + sizeof(TString)));
+
+  TString *ts = luaM_malloc(L, (l + 1) * sizeof(char) + sizeof(TString));
   ts->tsv.len = l;
   ts->tsv.hash = h;
   ts->tsv.header.marked = luaC_white(G(L));
@@ -55,20 +53,23 @@ static TString *newStr(lua_State *L, const char *str, size_t l,
   ts->tsv.reserved = 0;
   memcpy(ts + 1, str, l * sizeof(char));
   ((char *)(ts + 1))[l] = '\0'; /* ending 0 */
-  tb = &G(L)->strt;
+
+  stringtable *tb = &G(L)->strt;
   h = lmod(h, tb->size);
   ts->tsv.header.next = tb->hash[h]; /* chain new entry */
   tb->hash[h] = LuaObjectToGCObject(ts);
   tb->nuse++;
+
   if (tb->nuse > cast(lu_int32, tb->size) && tb->size <= MAX_INT / 2) {
-    luaS_resize(L, tb->size * 2); /* too crowded */
+    String_resize(L, tb->size * 2); /* too crowded */
   }
+
   return ts;
 }
 
 TString *luaS_newlstr(lua_State *L, const char *str, size_t l) {
   // Seed.
-  unsigned int h = cast(unsigned int, l);
+  uint32_t h = (uint32_t)l;
   // If the string is too long, don't hash all of its characters.
   size_t step = (l >> 5) + 1;
 

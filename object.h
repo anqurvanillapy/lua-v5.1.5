@@ -179,7 +179,7 @@ typedef union TString {
   struct {
     GCHeader header;
     uint8_t reserved;
-    unsigned int hash;
+    uint32_t hash;
     size_t len;
   } tsv;
 } TString;
