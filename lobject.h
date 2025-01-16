@@ -35,7 +35,7 @@ typedef union Variant {
 } Variant;
 
 typedef struct Value {
-  Variant value;
+  Variant variant;
   lu_byte tt;
 } Value;
 
@@ -57,25 +57,26 @@ typedef struct Value {
 
 // Getter macros.
 
-#define GC_VALUE(o) CHECK_EXPR(IS_COLLECTABLE(o), (o)->value.gc)
-#define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->value.p)
-#define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->value.n)
-#define RAW_STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->value.gc->ts)
+#define GC_VALUE(o) CHECK_EXPR(IS_COLLECTABLE(o), (o)->variant.gc)
+#define PTR_VALUE(o) CHECK_EXPR(IS_TYPE_PTR(o), (o)->variant.p)
+#define NUMBER_VALUE(o) CHECK_EXPR(IS_TYPE_NUMBER(o), (o)->variant.n)
+#define RAW_STRING_VALUE(o) CHECK_EXPR(IS_TYPE_STRING(o), &(o)->variant.gc->ts)
 #define STRING_VALUE(o) (&RAW_STRING_VALUE(o)->tsv)
-#define RAW_USERDATA_VALUE(o) CHECK_EXPR(IS_TYPE_USERDATA(o), &(o)->value.gc->u)
+#define RAW_USERDATA_VALUE(o)                                                  \
+  CHECK_EXPR(IS_TYPE_USERDATA(o), &(o)->variant.gc->u)
 #define USERDATA_VALUE(o) (&RAW_USERDATA_VALUE(o)->uv)
-#define CLOSURE_VALUE(o) CHECK_EXPR(IS_TYPE_FUNCTION(o), &(o)->value.gc->cl)
-#define TABLE_VALUE(o) CHECK_EXPR(IS_TYPE_TABLE(o), &(o)->value.gc->h)
-#define BOOL_VALUE(o) CHECK_EXPR(IS_TYPE_BOOLEAN(o), (o)->value.b)
-#define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->value.gc->th)
+#define CLOSURE_VALUE(o) CHECK_EXPR(IS_TYPE_FUNCTION(o), &(o)->variant.gc->cl)
+#define TABLE_VALUE(o) CHECK_EXPR(IS_TYPE_TABLE(o), &(o)->variant.gc->h)
+#define BOOL_VALUE(o) CHECK_EXPR(IS_TYPE_BOOLEAN(o), (o)->variant.b)
+#define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->variant.gc->th)
 
 #define DEBUG_CHECK_CONSISTENCY(obj)                                           \
   DEBUG_ASSERT(!IS_COLLECTABLE(obj) ||                                         \
-               (GET_TYPE(obj) == (obj)->value.gc->gch.tt))
+               (GET_TYPE(obj) == (obj)->variant.gc->gch.tt))
 #define DEBUG_CHECK_LIVENESS(g, obj)                                           \
   DEBUG_ASSERT(!IS_COLLECTABLE(obj) ||                                         \
-               ((GET_TYPE(obj) == (obj)->value.gc->gch.tt) &&                  \
-                !IS_DEAD(g, (obj)->value.gc)))
+               ((GET_TYPE(obj) == (obj)->variant.gc->gch.tt) &&                \
+                !IS_DEAD(g, (obj)->variant.gc)))
 
 // Setter macros.
 
@@ -84,28 +85,28 @@ typedef struct Value {
 #define SET_NUMBER(obj, x)                                                     \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.n = (x);                                                        \
+    i_o->variant.n = (x);                                                      \
     i_o->tt = LUA_TYPE_NUMBER;                                                 \
   } while (false)
 
 #define SET_PTR(obj, x)                                                        \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.p = (x);                                                        \
+    i_o->variant.p = (x);                                                      \
     i_o->tt = LUA_TYPE_PTR;                                                    \
   } while (false)
 
 #define SET_BOOL(obj, x)                                                       \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.b = (x);                                                        \
+    i_o->variant.b = (x);                                                      \
     i_o->tt = LUA_TYPE_BOOLEAN;                                                \
   } while (false)
 
 #define SET_STRING(L, obj, x)                                                  \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.gc = (GCObject *)(x);                                           \
+    i_o->variant.gc = (GCObject *)(x);                                         \
     i_o->tt = LUA_TYPE_STRING;                                                 \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
@@ -113,7 +114,7 @@ typedef struct Value {
 #define SET_USERDATA(L, obj, x)                                                \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.gc = (GCObject *)(x);                                           \
+    i_o->variant.gc = (GCObject *)(x);                                         \
     i_o->tt = LUA_TYPE_USERDATA;                                               \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
@@ -121,7 +122,7 @@ typedef struct Value {
 #define SET_THREAD(L, obj, x)                                                  \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.gc = (GCObject *)(x);                                           \
+    i_o->variant.gc = (GCObject *)(x);                                         \
     i_o->tt = LUA_TYPE_THREAD;                                                 \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
@@ -129,7 +130,7 @@ typedef struct Value {
 #define SET_CLOSURE(L, obj, x)                                                 \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.gc = (GCObject *)(x);                                           \
+    i_o->variant.gc = (GCObject *)(x);                                         \
     i_o->tt = LUA_TYPE_FUNCTION;                                               \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
@@ -137,7 +138,7 @@ typedef struct Value {
 #define SET_TABLE(L, obj, x)                                                   \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.gc = (GCObject *)(x);                                           \
+    i_o->variant.gc = (GCObject *)(x);                                         \
     i_o->tt = LUA_TYPE_TABLE;                                                  \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
@@ -145,7 +146,7 @@ typedef struct Value {
 #define SET_PROTO(L, obj, x)                                                   \
   do {                                                                         \
     Value *i_o = (obj);                                                        \
-    i_o->value.gc = (GCObject *)(x);                                           \
+    i_o->variant.gc = (GCObject *)(x);                                         \
     i_o->tt = LUA_TYPE_PROTO;                                                  \
     DEBUG_CHECK_LIVENESS(G(L), i_o);                                           \
   } while (false)
@@ -154,7 +155,7 @@ typedef struct Value {
   do {                                                                         \
     const Value *o2 = (obj2);                                                  \
     Value *o1 = (obj1);                                                        \
-    o1->value = o2->value;                                                     \
+    o1->variant = o2->variant;                                                 \
     o1->tt = o2->tt;                                                           \
     DEBUG_CHECK_LIVENESS(G(L), o1);                                            \
   } while (false)
@@ -299,7 +300,7 @@ typedef union Closure {
 
 typedef union TKey {
   struct {
-    Variant value;
+    Variant variant;
     lu_byte tt;
     struct Node *next; /* for chaining */
   } nk;

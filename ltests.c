@@ -163,7 +163,7 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
 
 #define checkvalref(g, f, t)                                                   \
   DEBUG_ASSERT(!IS_COLLECTABLE(t) ||                                           \
-               ((GET_TYPE(t) == (t)->value.gc->gch.tt) &&                      \
+               ((GET_TYPE(t) == (t)->variant.gc->gch.tt) &&                    \
                 testobjref(g, f, GC_VALUE(t))))
 
 static void checktable(global_State *g, Table *h) {

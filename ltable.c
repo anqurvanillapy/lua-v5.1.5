@@ -401,7 +401,7 @@ static Value *newkey(lua_State *L, Table *t, const Value *key) {
       mp = n;
     }
   }
-  gkey(mp)->value = key->value;
+  gkey(mp)->variant = key->variant;
   gkey(mp)->tt = key->tt;
   luaC_barriert(L, t, key);
   DEBUG_ASSERT(IS_TYPE_NIL(gval(mp)));
