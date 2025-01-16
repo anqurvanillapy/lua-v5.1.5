@@ -39,8 +39,8 @@ void luaS_resize(lua_State *L, int newsize) {
   tb->hash = newhash;
 }
 
-static TString *newlstr(lua_State *L, const char *str, size_t l,
-                        unsigned int h) {
+static TString *newStr(lua_State *L, const char *str, size_t l,
+                       unsigned int h) {
   TString *ts;
   stringtable *tb;
   if (l + 1 > (MAX_SIZET - sizeof(TString)) / sizeof(char)) {
@@ -67,26 +67,32 @@ static TString *newlstr(lua_State *L, const char *str, size_t l,
 }
 
 TString *luaS_newlstr(lua_State *L, const char *str, size_t l) {
-  GCObject *o;
-  unsigned int h = cast(unsigned int, l); /* seed */
-  size_t step =
-      (l >> 5) + 1; /* if string is too long, don't hash all its chars */
-  size_t l1;
-  for (l1 = l; l1 >= step; l1 -= step) { /* compute hash */
-    h = h ^ ((h << 5) + (h >> 2) + cast(unsigned char, str[l1 - 1]));
+  // Seed.
+  unsigned int h = cast(unsigned int, l);
+  // If the string is too long, don't hash all of its characters.
+  size_t step = (l >> 5) + 1;
+
+  // Compute hash.
+  for (size_t i = l; i >= step; i -= step) {
+    h = h ^ ((h << 5) + (h >> 2) + (uint8_t)str[i - 1]);
   }
-  for (o = G(L)->strt.hash[lmod(h, G(L)->strt.size)]; o != NULL;
+
+  for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.size)]; o != nullptr;
        o = o->gch.next) {
     TString *ts = rawgco2ts(o);
-    if (ts->tsv.len == l && (memcmp(str, GET_STR(ts), l) == 0)) {
-      /* string may be dead */
-      if (IS_DEAD(G(L), o)) {
-        changewhite(o);
-      }
-      return ts;
+    if (ts->tsv.len != l || memcmp(str, GET_STR(ts), l) != 0) {
+      continue;
     }
+    if (IS_DEAD(G(L), o)) {
+      // This string may be dead, make it alive.
+      changewhite(o);
+    }
+    // Return the existing one.
+    return ts;
   }
-  return newlstr(L, str, l, h); /* not found */
+
+  // No such string, create a new one.
+  return newStr(L, str, l, h);
 }
 
 Userdata *luaS_newudata(lua_State *L, size_t s, Table *e) {
