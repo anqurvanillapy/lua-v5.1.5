@@ -232,7 +232,7 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
   return fs->nk++;
 }
 
-int Codegen_addString(FuncState *fs, StringHeader *s) {
+int Codegen_addString(FuncState *fs, String *s) {
   Value o;
   SET_STRING(fs->L, &o, s);
   return addConstant(fs, &o, &o);

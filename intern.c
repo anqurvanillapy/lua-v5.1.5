@@ -33,19 +33,17 @@ void String_resize(lua_State *L, int newSize) {
     }
   }
 
-  luaM_freearray(L, tb->hash, tb->size, StringHeader *);
+  luaM_freearray(L, tb->hash, tb->size, String *);
   tb->size = newSize;
   tb->hash = newHash;
 }
 
-static StringHeader *newStr(lua_State *L, const char *str, size_t l,
-                            uint32_t h) {
-  if (l > (MAX_SIZET - sizeof(StringHeader)) / sizeof(char) - 1) {
+static String *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
+  if (l > (MAX_SIZET - sizeof(String)) / sizeof(char) - 1) {
     luaM_toobig(L);
   }
 
-  StringHeader *ts =
-      luaM_malloc(L, (l + 1) * sizeof(char) + sizeof(StringHeader));
+  String *ts = luaM_malloc(L, (l + 1) * sizeof(char) + sizeof(String));
   ts->len = l;
   ts->hash = h;
   ts->header.marked = luaC_white(G(L));
@@ -67,7 +65,7 @@ static StringHeader *newStr(lua_State *L, const char *str, size_t l,
   return ts;
 }
 
-StringHeader *String_intern(lua_State *L, const char *str, size_t len) {
+String *String_createSized(lua_State *L, const char *str, size_t len) {
   // Seed.
   uint32_t h = (uint32_t)len;
   // If the string is too long, don't hash all of its characters.
@@ -80,7 +78,7 @@ StringHeader *String_intern(lua_State *L, const char *str, size_t len) {
 
   for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.size)]; o != nullptr;
        o = o->gch.next) {
-    StringHeader *ts = gco2ts(o);
+    String *ts = gco2ts(o);
     if (ts->len != len || memcmp(str, STRING_CONTENT(ts), len) != 0) {
       continue;
     }

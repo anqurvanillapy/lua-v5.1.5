@@ -15,7 +15,7 @@
 #define Sizeof(x) ((int)sizeof(x))
 #define VOID(p) ((const void *)(p))
 
-static void PrintString(const StringHeader *ts) {
+static void PrintString(const String *ts) {
   const char *s = STRING_CONTENT(ts);
   size_t i, n = ts->len;
   putchar('"');

@@ -311,7 +311,7 @@ static l_mem propagatemark(global_State *g) {
     return sizeof(Prototype) + sizeof(Instruction) * p->codeSize +
            sizeof(Prototype *) * p->pSize + sizeof(Value) * p->kSize +
            sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
-           sizeof(StringHeader *) * p->upvaluesSize;
+           sizeof(String *) * p->upvaluesSize;
   }
   default:
     DEBUG_ASSERT(0);

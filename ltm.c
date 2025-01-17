@@ -24,8 +24,8 @@ void luaT_init(lua_State *L) {
   };
   int i;
   for (i = 0; i < TM_N; i++) {
-    G(L)->tmname[i] = String_internCStr(L, luaT_eventname[i]);
-    String_pin(G(L)->tmname[i]); /* never collect these names */
+    G(L)->tmname[i] = String_create(L, luaT_eventname[i]);
+    String_intern(G(L)->tmname[i]); /* never collect these names */
   }
 }
 
@@ -33,7 +33,7 @@ void luaT_init(lua_State *L) {
 ** function to be used with macro "fasttm": optimized for absence of
 ** tag methods
 */
-const Value *luaT_gettm(Table *events, TMS event, StringHeader *ename) {
+const Value *luaT_gettm(Table *events, TMS event, String *ename) {
   const Value *tm = luaH_getstr(events, ename);
   DEBUG_ASSERT(event <= TM_EQ);
   if (IS_TYPE_NIL(tm)) {                     /* no tag method? */

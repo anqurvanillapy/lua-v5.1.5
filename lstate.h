@@ -74,7 +74,7 @@ typedef struct global_State {
   struct lua_State *mainthread;
   Upvalue uvhead; /* head of double-linked list of all open upvalues */
   struct Table *mt[NUM_TYPES]; /* metatables for basic types */
-  StringHeader *tmname[TM_N];  /* array with tag-method names */
+  String *tmname[TM_N];        /* array with tag-method names */
 } global_State;
 
 // Per-thread state.
@@ -139,7 +139,7 @@ struct lua_State {
 */
 union GCObject {
   GCHeader gch;
-  struct StringHeader ts;
+  struct String ts;
   struct Userdata u;
   union Closure cl;
   struct Table h;

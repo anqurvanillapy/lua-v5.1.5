@@ -41,7 +41,7 @@ static void DumpVector(const void *b, int n, size_t size, DumpState *D) {
   DumpMem(b, n, size, D);
 }
 
-static void DumpString(const StringHeader *s, DumpState *D) {
+static void DumpString(const String *s, DumpState *D) {
   if (s == NULL || STRING_CONTENT(s) == NULL) {
     size_t size = 0;
     DumpVar(size, D);
@@ -54,8 +54,7 @@ static void DumpString(const StringHeader *s, DumpState *D) {
 
 #define DumpCode(f, D) DumpVector(f->code, f->codeSize, sizeof(Instruction), D)
 
-static void DumpFunction(const Prototype *f, const StringHeader *p,
-                         DumpState *D);
+static void DumpFunction(const Prototype *f, const String *p, DumpState *D);
 
 static void DumpConstants(const Prototype *f, DumpState *D) {
   int i, n = f->kSize;
@@ -105,8 +104,7 @@ static void DumpDebug(const Prototype *f, DumpState *D) {
   }
 }
 
-static void DumpFunction(const Prototype *f, const StringHeader *p,
-                         DumpState *D) {
+static void DumpFunction(const Prototype *f, const String *p, DumpState *D) {
   DumpString((f->source == p || D->strip) ? NULL : f->source, D);
   DumpInt(f->lineDefined, D);
   DumpInt(f->lineDefinedLast, D);

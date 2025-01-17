@@ -130,7 +130,7 @@ void luaF_freeproto(lua_State *L, Prototype *f) {
   luaM_freearray(L, f->k, f->kSize, Value);
   luaM_freearray(L, f->lineInfo, f->lineInfoSize, int);
   luaM_freearray(L, f->locVars, f->locVarsSize, struct LocVar);
-  luaM_freearray(L, f->upvalues, f->upvaluesSize, StringHeader *);
+  luaM_freearray(L, f->upvalues, f->upvaluesSize, String *);
   luaM_free(L, f);
 }
 

@@ -55,7 +55,7 @@ enum RESERVED {
 
 typedef union Literal {
   lua_Number num;
-  StringHeader *str;
+  String *str;
 } Literal;
 
 typedef struct Token {
@@ -71,16 +71,16 @@ typedef struct LexState {
   Token lookahead;      /* look ahead token */
   struct FuncState *fs; /* `FuncState' is private to the parser */
   struct lua_State *L;
-  ZIO *z;               /* input stream */
-  Mbuffer *buff;        /* buffer for tokens */
-  StringHeader *source; /* current source name */
-  char decpoint;        /* locale decimal point */
+  ZIO *z;         /* input stream */
+  Mbuffer *buff;  /* buffer for tokens */
+  String *source; /* current source name */
+  char decpoint;  /* locale decimal point */
 } LexState;
 
 LUAI_FUNC void luaX_init(lua_State *L);
 LUAI_FUNC void luaX_setinput(lua_State *L, LexState *ls, ZIO *z,
-                             StringHeader *source);
-LUAI_FUNC StringHeader *luaX_newstring(LexState *ls, const char *str, size_t l);
+                             String *source);
+LUAI_FUNC String *luaX_newstring(LexState *ls, const char *str, size_t l);
 LUAI_FUNC void luaX_next(LexState *ls);
 LUAI_FUNC void luaX_lookahead(LexState *ls);
 LUAI_FUNC void luaX_lexerror(LexState *ls, const char *msg, int token);

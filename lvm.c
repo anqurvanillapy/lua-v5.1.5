@@ -39,7 +39,7 @@ int luaV_tostring(lua_State *L, StackIndex obj) {
   char s[LUAI_MAXNUMBER2STR];
   lua_Number n = NUMBER_VALUE(obj);
   snprintf(s, sizeof(s), LUA_NUMBER_FMT, n);
-  SET_STRING_TO_STACK(L, obj, String_internCStr(L, s));
+  SET_STRING_TO_STACK(L, obj, String_create(L, s));
   return 1;
 }
 
@@ -191,7 +191,7 @@ static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
   return !IS_FALSE(L->top);
 }
 
-static int l_strcmp(const StringHeader *ls, const StringHeader *rs) {
+static int l_strcmp(const String *ls, const String *rs) {
   const char *l = STRING_CONTENT(ls);
   size_t ll = ls->len;
   const char *r = STRING_CONTENT(rs);
@@ -316,7 +316,7 @@ void luaV_concat(lua_State *L, int total, int last) {
         memcpy(buffer + tl, VALUE_STRING_CONTENT(top - i), l);
         tl += l;
       }
-      SET_STRING_TO_STACK(L, top - n, String_intern(L, buffer, tl));
+      SET_STRING_TO_STACK(L, top - n, String_createSized(L, buffer, tl));
     }
     total -= n - 1; /* got `n' strings to create 1 new */
     last -= n - 1;

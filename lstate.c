@@ -61,7 +61,7 @@ static void f_luaopen(lua_State *L, void *) {
   String_resize(L, MINSTRTABSIZE); /* initial size of string table */
   luaT_init(L);
   luaX_init(L);
-  String_pin(String_internLiteral(L, MEMERRMSG));
+  String_intern(String_createLiteral(L, MEMERRMSG));
   g->GCthreshold = 4 * g->totalbytes;
 }
 
@@ -91,7 +91,7 @@ static void close_state(lua_State *L) {
   luaC_freeall(L);         /* collect all objects */
   DEBUG_ASSERT(g->rootgc == LuaObjectToGCObject(L));
   DEBUG_ASSERT(g->strt.nuse == 0);
-  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size, StringHeader *);
+  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size, String *);
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   DEBUG_ASSERT(g->totalbytes == sizeof(LG));

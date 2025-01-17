@@ -107,7 +107,7 @@ int luaO_str2d(const char *s, lua_Number *result) {
 }
 
 static void pushstr(lua_State *L, const char *str) {
-  SET_STRING_TO_STACK(L, L->top, String_internCStr(L, str));
+  SET_STRING_TO_STACK(L, L->top, String_create(L, str));
   incr_top(L);
 }
 
@@ -120,7 +120,7 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
     if (e == NULL) {
       break;
     }
-    SET_STRING_TO_STACK(L, L->top, String_intern(L, fmt, e - fmt));
+    SET_STRING_TO_STACK(L, L->top, String_createSized(L, fmt, e - fmt));
     incr_top(L);
     switch (*(e + 1)) {
     case 's': {

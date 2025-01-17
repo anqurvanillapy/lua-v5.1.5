@@ -44,7 +44,7 @@ static void expr(LexState *ls, ExprInfo *v);
 
 static void anchor_token(LexState *ls) {
   if (ls->t.token == TK_NAME || ls->t.token == TK_STRING) {
-    StringHeader *ts = ls->t.literal.str;
+    String *ts = ls->t.literal.str;
     luaX_newstring(ls, STRING_CONTENT(ts), ts->len);
   }
 }
@@ -103,9 +103,9 @@ static void check_match(LexState *ls, int what, int who, int where) {
   }
 }
 
-static StringHeader *str_checkname(LexState *ls) {
+static String *str_checkname(LexState *ls) {
   check(ls, TK_NAME);
-  StringHeader *ts = ls->t.literal.str;
+  String *ts = ls->t.literal.str;
   luaX_next(ls);
   return ts;
 }
@@ -128,7 +128,7 @@ static void numberLiteral(ExprInfo *e, lua_Number value) {
   e->u.value = value;
 }
 
-static void stringLiteral(LexState *ls, ExprInfo *e, StringHeader *s) {
+static void stringLiteral(LexState *ls, ExprInfo *e, String *s) {
   exprSetInfo(e, VK, Codegen_addString(ls->fs, s));
 }
 
@@ -136,7 +136,7 @@ static void checkname(LexState *ls, ExprInfo *e) {
   stringLiteral(ls, e, str_checkname(ls));
 }
 
-static int registerlocalvar(LexState *ls, StringHeader *varname) {
+static int registerlocalvar(LexState *ls, String *varname) {
   FuncState *fs = ls->fs;
   Prototype *f = fs->f;
   int oldsize = f->locVarsSize;
@@ -153,7 +153,7 @@ static int registerlocalvar(LexState *ls, StringHeader *varname) {
 #define new_localvarliteral(ls, v, n)                                          \
   new_localvar(ls, luaX_newstring(ls, "" v, (sizeof(v) / sizeof(char)) - 1), n)
 
-static void new_localvar(LexState *ls, StringHeader *name, int n) {
+static void new_localvar(LexState *ls, String *name, int n) {
   FuncState *fs = ls->fs;
   luaY_checklimit(fs, fs->nactvar + n + 1, LUAI_MAX_VARS, "local variables");
   fs->actvar[fs->nactvar + n] =
@@ -175,7 +175,7 @@ static void removevars(LexState *ls, int tolevel) {
   }
 }
 
-static int indexupvalue(FuncState *fs, StringHeader *name, ExprInfo *v) {
+static int indexupvalue(FuncState *fs, String *name, ExprInfo *v) {
   int i;
   Prototype *f = fs->f;
   int oldsize = f->upvaluesSize;
@@ -187,8 +187,8 @@ static int indexupvalue(FuncState *fs, StringHeader *name, ExprInfo *v) {
   }
   /* new one */
   luaY_checklimit(fs, f->upvaluesNum + 1, LUAI_MAX_UPVALUES, "upvalues");
-  luaM_growvector(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize,
-                  StringHeader *, MAX_INT, "");
+  luaM_growvector(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize, String *,
+                  MAX_INT, "");
   while (oldsize < f->upvaluesSize) {
     f->upvalues[oldsize++] = nullptr;
   }
@@ -200,7 +200,7 @@ static int indexupvalue(FuncState *fs, StringHeader *name, ExprInfo *v) {
   return f->upvaluesNum++;
 }
 
-static int searchvar(FuncState *fs, StringHeader *n) {
+static int searchvar(FuncState *fs, String *n) {
   int i;
   for (i = fs->nactvar - 1; i >= 0; i--) {
     if (n == getlocvar(fs, i).varname) {
@@ -220,8 +220,7 @@ static void markupval(FuncState *fs, int level) {
   }
 }
 
-static int singlevaraux(FuncState *fs, StringHeader *n, ExprInfo *var,
-                        int base) {
+static int singlevaraux(FuncState *fs, String *n, ExprInfo *var, int base) {
   if (fs == nullptr) {                 /* no more levels? */
     exprSetInfo(var, VGLOBAL, NO_REG); /* default is global variable */
     return VGLOBAL;
@@ -245,7 +244,7 @@ static int singlevaraux(FuncState *fs, StringHeader *n, ExprInfo *var,
 }
 
 static void singlevar(LexState *ls, ExprInfo *var) {
-  StringHeader *varname = str_checkname(ls);
+  String *varname = str_checkname(ls);
   FuncState *fs = ls->fs;
   if (singlevaraux(fs, varname, var, 1) == VGLOBAL) {
     // Info points to global name.
@@ -373,8 +372,7 @@ static void closeFunc(LexState *ls) {
   f->pSize = fs->np;
   luaM_reallocvector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
-  luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum,
-                     StringHeader *);
+  luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);
   f->upvaluesSize = f->upvaluesNum;
   DEBUG_ASSERT(luaG_checkcode(f));
   DEBUG_ASSERT(fs->bl == nullptr);
@@ -388,7 +386,7 @@ Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
   struct LexState lexstate;
   struct FuncState funcstate;
   lexstate.buff = buff;
-  luaX_setinput(L, &lexstate, z, String_internCStr(L, name));
+  luaX_setinput(L, &lexstate, z, String_create(L, name));
   openFunc(&lexstate, &funcstate);
   funcstate.f->varargMode = VARARG_IS_VARARG; /* main func. is always vararg */
   luaX_next(&lexstate);                       /* read first token */
@@ -1074,7 +1072,7 @@ static void forbody(LexState *ls, int base, int line, int nvars, int isnum) {
   luaK_patchlist(fs, (isnum ? endfor : luaK_jump(fs)), prep + 1);
 }
 
-static void fornum(LexState *ls, StringHeader *varname, int line) {
+static void fornum(LexState *ls, String *varname, int line) {
   /* fornum -> NAME = exp1,exp1[,exp1] forbody */
   FuncState *fs = ls->fs;
   int base = fs->freereg;
@@ -1095,7 +1093,7 @@ static void fornum(LexState *ls, StringHeader *varname, int line) {
   forbody(ls, base, line, 1, 1);
 }
 
-static void forlist(LexState *ls, StringHeader *indexname) {
+static void forlist(LexState *ls, String *indexname) {
   /* forlist -> NAME {,NAME} IN exprList1 forbody */
   FuncState *fs = ls->fs;
   ExprInfo e;
@@ -1121,7 +1119,7 @@ static void forlist(LexState *ls, StringHeader *indexname) {
 static void forStmt(LexState *ls, int line) {
   /* forStmt -> FOR (fornum | forlist) END */
   FuncState *fs = ls->fs;
-  StringHeader *varname;
+  String *varname;
   BlockCnt bl;
   enterBlock(fs, &bl, 1);      /* scope for loop and control variables */
   luaX_next(ls);               /* skip `for' */

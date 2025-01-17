@@ -44,8 +44,8 @@ static void save(LexState *ls, int c) {
 
 void luaX_init(lua_State *L) {
   for (int i = 0; i < NUM_RESERVED; i++) {
-    StringHeader *ts = String_internCStr(L, TOKENS[i]);
-    String_pin(ts); /* reserved words are never collected */
+    String *ts = String_create(L, TOKENS[i]);
+    String_intern(ts); /* reserved words are never collected */
     DEBUG_ASSERT(strlen(TOKENS[i]) + 1 <= TOKEN_LEN);
     ts->keywordID = (uint8_t)(i + 1);
   }
@@ -89,9 +89,9 @@ void luaX_syntaxerror(LexState *ls, const char *msg) {
   luaX_lexerror(ls, msg, ls->t.token);
 }
 
-StringHeader *luaX_newstring(LexState *ls, const char *str, size_t l) {
+String *luaX_newstring(LexState *ls, const char *str, size_t l) {
   lua_State *L = ls->L;
-  StringHeader *ts = String_intern(L, str, l);
+  String *ts = String_createSized(L, str, l);
   Value *o = luaH_setstr(L, ls->fs->h, ts); /* entry for `str' */
   if (IS_TYPE_NIL(o)) {
     SET_BOOL(o, 1); /* make sure `str' will not be collected */
@@ -112,7 +112,7 @@ static void inclinenumber(LexState *ls) {
   }
 }
 
-void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, StringHeader *source) {
+void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, String *source) {
   ls->decpoint = '.';
   ls->L = L;
   ls->lookahead.token = TK_EOS; /* no look-ahead token */
@@ -434,7 +434,7 @@ static int llex(LexState *ls, Literal *seminfo) {
         return TK_NUMBER;
       } else if (isalpha(ls->current) || ls->current == '_') {
         /* identifier or reserved word */
-        StringHeader *ts;
+        String *ts;
         do {
           saveAndNext(ls);
         } while (isalnum(ls->current) || ls->current == '_');
