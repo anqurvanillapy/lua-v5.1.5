@@ -7,11 +7,13 @@
 #include "object.h"
 
 typedef enum ExprKind {
-  VVOID, /* no value */
+  // No value.
+  VVOID,
   VNIL,
   VTRUE,
   VFALSE,
-  VK, /* info = index of constant in `k' */
+  // info = index of constant in constant table.
+  VK,
   VKNUM,
   VLOCAL,     /* info = local register */
   VUPVAL,     /* info = index of upvalue in `upvalues' */

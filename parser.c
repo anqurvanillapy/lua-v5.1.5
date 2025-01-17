@@ -651,7 +651,7 @@ static void prefixexp(LexState *ls, ExprInfo *v) {
     luaX_next(ls);
     expr(ls, v);
     check_match(ls, ')', '(', line);
-    luaK_dischargevars(ls->fs, v);
+    Codegen_releaseVars(ls->fs, v);
     return;
   }
   case TK_NAME: {

@@ -286,46 +286,43 @@ void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
   }
 }
 
-void luaK_dischargevars(FuncState *fs, ExprInfo *e) {
+void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
   switch (e->k) {
-  case VLOCAL: {
+  case VLOCAL:
     e->k = VNONRELOC;
     break;
-  }
-  case VUPVAL: {
+  case VUPVAL:
     e->u.s.info = luaK_codeABC(fs, OP_GETUPVAL, 0, e->u.s.info, 0);
     e->k = VRELOCABLE;
     break;
-  }
-  case VGLOBAL: {
+  case VGLOBAL:
     e->u.s.info = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.s.info);
     e->k = VRELOCABLE;
     break;
-  }
-  case VINDEXED: {
+  case VINDEXED:
     freereg(fs, e->u.s.aux);
     freereg(fs, e->u.s.info);
     e->u.s.info = luaK_codeABC(fs, OP_GETTABLE, 0, e->u.s.info, e->u.s.aux);
     e->k = VRELOCABLE;
     break;
-  }
   case VVARARG:
-  case VCALL: {
+  case VCALL:
     Codegen_setReturn(fs, e);
     break;
-  }
   default:
-    break; /* there is one value available (somewhere) */
+    // There is one value available (somewhere).
+    break;
   }
 }
 
-static int code_label(FuncState *fs, int A, int b, int jump) {
-  luaK_getlabel(fs); /* those instructions may be jump targets */
+static int emitLabel(FuncState *fs, int A, int b, int jump) {
+  // Those instructions may be jump targets.
+  luaK_getlabel(fs);
   return luaK_codeABC(fs, OP_LOADBOOL, A, b, jump);
 }
 
 static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
-  luaK_dischargevars(fs, e);
+  Codegen_releaseVars(fs, e);
   switch (e->k) {
   case VNIL: {
     luaK_nil(fs, reg, 1);
@@ -382,8 +379,8 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
     int p_t = NO_JUMP; /* position of an eventual LOAD true */
     if (need_value(fs, e->t) || need_value(fs, e->f)) {
       int fj = (e->k == VJMP) ? NO_JUMP : luaK_jump(fs);
-      p_f = code_label(fs, reg, 0, 1);
-      p_t = code_label(fs, reg, 1, 0);
+      p_f = emitLabel(fs, reg, 0, 1);
+      p_t = emitLabel(fs, reg, 1, 0);
       luaK_patchtohere(fs, fj);
     }
     final = luaK_getlabel(fs);
@@ -396,14 +393,14 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
 }
 
 void luaK_exp2nextreg(FuncState *fs, ExprInfo *e) {
-  luaK_dischargevars(fs, e);
+  Codegen_releaseVars(fs, e);
   freeexp(fs, e);
   luaK_reserveregs(fs, 1);
   exp2reg(fs, e, fs->freereg - 1);
 }
 
 int luaK_exp2anyreg(FuncState *fs, ExprInfo *e) {
-  luaK_dischargevars(fs, e);
+  Codegen_releaseVars(fs, e);
   if (e->k == VNONRELOC) {
     if (!hasjumps(e)) {
       return e->u.s.info; /* exp is already in a register */
@@ -421,7 +418,7 @@ void luaK_exp2val(FuncState *fs, ExprInfo *e) {
   if (hasjumps(e)) {
     luaK_exp2anyreg(fs, e);
   } else {
-    luaK_dischargevars(fs, e);
+    Codegen_releaseVars(fs, e);
   }
 }
 
@@ -520,7 +517,7 @@ static int jumponcond(FuncState *fs, ExprInfo *e, int cond) {
 
 void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
   int pc; /* pc of last jump */
-  luaK_dischargevars(fs, e);
+  Codegen_releaseVars(fs, e);
   switch (e->k) {
   case VK:
   case VKNUM:
@@ -545,7 +542,7 @@ void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
 
 static void luaK_goiffalse(FuncState *fs, ExprInfo *e) {
   int pc; /* pc of last jump */
-  luaK_dischargevars(fs, e);
+  Codegen_releaseVars(fs, e);
   switch (e->k) {
   case VNIL:
   case VFALSE: {
@@ -566,8 +563,9 @@ static void luaK_goiffalse(FuncState *fs, ExprInfo *e) {
   e->f = NO_JUMP;
 }
 
-static void codenot(FuncState *fs, ExprInfo *e) {
-  luaK_dischargevars(fs, e);
+static void emitNot(FuncState *fs, ExprInfo *e) {
+  Codegen_releaseVars(fs, e);
+
   switch (e->k) {
   case VNIL:
   case VFALSE: {
@@ -596,11 +594,11 @@ static void codenot(FuncState *fs, ExprInfo *e) {
     DEBUG_ASSERT(false);
   }
   }
-  /* interchange true and false lists */
+
   {
-    int temp = e->f;
+    int falseList = e->f;
     e->f = e->t;
-    e->t = temp;
+    e->t = falseList;
   }
   removevalues(fs, e->f);
   removevalues(fs, e->t);
@@ -696,28 +694,21 @@ static void codecomp(FuncState *fs, OpCode op, int cond, ExprInfo *e1,
 }
 
 void Codegen_prefix(FuncState *fs, OpKind op, ExprInfo *a) {
-  ExprInfo b = {
-      .t = NO_JUMP,
-      .f = NO_JUMP,
-      .k = VKNUM,
-      .u.value = 0,
-  };
+  ExprInfo b = {.t = NO_JUMP, .f = NO_JUMP, .k = VKNUM, .u.value = 0};
   switch (op) {
-  case OPR_MINUS: {
+  case OPR_MINUS:
     if (!isNumeric(a)) {
       luaK_exp2anyreg(fs, a); /* cannot operate on non-numeric constants */
     }
     emitArith(fs, OP_UNM, a, &b);
     break;
-  }
   case OPR_NOT:
-    codenot(fs, a);
+    emitNot(fs, a);
     break;
-  case OPR_LEN: {
+  case OPR_LEN:
     luaK_exp2anyreg(fs, a); /* cannot operate on constants */
     emitArith(fs, OP_LEN, a, &b);
     break;
-  }
   default:
     DEBUG_ASSERT(false);
   }
@@ -759,14 +750,14 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
   switch (op) {
   case OPR_AND: {
     DEBUG_ASSERT(e1->t == NO_JUMP); /* list must be closed */
-    luaK_dischargevars(fs, e2);
+    Codegen_releaseVars(fs, e2);
     luaK_concat(fs, &e2->f, e1->f);
     *e1 = *e2;
     break;
   }
   case OPR_OR: {
     DEBUG_ASSERT(e1->f == NO_JUMP); /* list must be closed */
-    luaK_dischargevars(fs, e2);
+    Codegen_releaseVars(fs, e2);
     luaK_concat(fs, &e2->t, e1->t);
     *e1 = *e2;
     break;
