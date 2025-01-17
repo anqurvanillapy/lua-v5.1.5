@@ -46,8 +46,8 @@ static void stack_init(lua_State *L1, lua_State *L) {
 }
 
 static void freestack(lua_State *L, lua_State *L1) {
-  luaM_freearray(L, L1->baseCI, L1->ciSize, CallInfo);
-  luaM_freearray(L, L1->stack, L1->stackSize, Value);
+  luaM_freeArray(L, L1->baseCI, L1->ciSize, CallInfo);
+  luaM_freeArray(L, L1->stack, L1->stackSize, Value);
 }
 
 /*
@@ -58,7 +58,7 @@ static void f_luaopen(lua_State *L, void *) {
   stack_init(L, L);                             /* init stack */
   SET_TABLE(L, gt(L), luaH_new(L, 0, 2));       /* table of globals */
   SET_TABLE(L, registry(L), luaH_new(L, 0, 2)); /* registry */
-  String_resize(L, MINSTRTABSIZE); /* initial size of string table */
+  StringPool_resize(L, MINSTRTABSIZE); /* initial size of string table */
   luaT_init(L);
   luaX_init(L);
   String_intern(String_createLiteral(L, MEMERRMSG));
@@ -91,7 +91,7 @@ static void close_state(lua_State *L) {
   luaC_freeall(L);         /* collect all objects */
   DEBUG_ASSERT(g->rootgc == LuaObjectToGCObject(L));
   DEBUG_ASSERT(g->pool.itemsNum == 0);
-  luaM_freearray(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
+  luaM_freeArray(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   DEBUG_ASSERT(g->totalbytes == sizeof(LG));

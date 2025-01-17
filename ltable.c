@@ -296,7 +296,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
       SET_TABLE_TO_TABLE(L, luaH_set(L, t, key2tval(old)), gval(old));
   }
   if (nold != dummynode) {
-    luaM_freearray(L, nold, twoto(oldhsize), Node); /* free old array */
+    luaM_freeArray(L, nold, twoto(oldhsize), Node); /* free old array */
   }
 }
 
@@ -346,9 +346,9 @@ Table *luaH_new(lua_State *L, int narray, int nhash) {
 
 void luaH_free(lua_State *L, Table *t) {
   if (t->node != dummynode) {
-    luaM_freearray(L, t->node, sizenode(t), Node);
+    luaM_freeArray(L, t->node, sizenode(t), Node);
   }
-  luaM_freearray(L, t->array, t->sizearray, Value);
+  luaM_freeArray(L, t->array, t->sizearray, Value);
   luaM_free(L, t);
 }
 
@@ -514,7 +514,7 @@ static int unbound_search(Table *t, unsigned int j) {
   while (!IS_TYPE_NIL(luaH_getnum(t, j))) {
     i = j;
     j *= 2;
-    if (j > cast(unsigned int, MAX_INT)) { /* overflow? */
+    if (j > cast(unsigned int, SAFE_INT_MAX)) { /* overflow? */
       /* table was built with bad purposes: resort to linear search */
       i = 1;
       while (!IS_TYPE_NIL(luaH_getnum(t, i))) {

@@ -10,7 +10,7 @@
 
 #define String_intern(s) l_setbit((s)->header.marked, FIXEDBIT)
 
-LUAI_FUNC void String_resize(lua_State *L, int newSize);
+LUAI_FUNC void StringPool_resize(lua_State *L, size_t newSize);
 LUAI_FUNC String *String_createSized(lua_State *L, const char *str, size_t len);
 
 // FIXME(anqur): Why are these here?

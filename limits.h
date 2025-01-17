@@ -7,7 +7,7 @@
 
 #include "lua.h"
 
-#define MAX_INT (INT_MAX - 2) /* maximum value of an int (-2 for safety) */
+#define SAFE_INT_MAX (INT_MAX - 2)
 
 /*
 ** conversion of pointer to integer

@@ -830,12 +830,12 @@ static int luaK_code(FuncState *fs, Instruction i, int line) {
   Prototype *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
-  luaM_growvector(fs->L, f->code, fs->pc, f->codeSize, Instruction, MAX_INT,
-                  "code size overflow");
+  luaM_growvector(fs->L, f->code, fs->pc, f->codeSize, Instruction,
+                  SAFE_INT_MAX, "code size overflow");
   f->code[fs->pc] = i;
   /* save corresponding line information */
-  luaM_growvector(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int, MAX_INT,
-                  "code size overflow");
+  luaM_growvector(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int,
+                  SAFE_INT_MAX, "code size overflow");
   f->lineInfo[fs->pc] = line;
   return fs->pc++;
 }

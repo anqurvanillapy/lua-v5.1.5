@@ -125,12 +125,12 @@ Prototype *luaF_newproto(lua_State *L) {
 }
 
 void luaF_freeproto(lua_State *L, Prototype *f) {
-  luaM_freearray(L, f->code, f->codeSize, Instruction);
-  luaM_freearray(L, f->inners, f->pSize, Prototype *);
-  luaM_freearray(L, f->k, f->kSize, Value);
-  luaM_freearray(L, f->lineInfo, f->lineInfoSize, int);
-  luaM_freearray(L, f->locVars, f->locVarsSize, struct LocVar);
-  luaM_freearray(L, f->upvalues, f->upvaluesSize, String *);
+  luaM_freeArray(L, f->code, f->codeSize, Instruction);
+  luaM_freeArray(L, f->inners, f->pSize, Prototype *);
+  luaM_freeArray(L, f->k, f->kSize, Value);
+  luaM_freeArray(L, f->lineInfo, f->lineInfoSize, int);
+  luaM_freeArray(L, f->locVars, f->locVarsSize, struct LocVar);
+  luaM_freeArray(L, f->upvalues, f->upvaluesSize, String *);
   luaM_free(L, f);
 }
 

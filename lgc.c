@@ -441,7 +441,7 @@ static void checkSizes(lua_State *L) {
   /* check size of string pool buckets */
   if (g->pool.itemsNum < (uint32_t)(g->pool.bucketsSize / 4) &&
       g->pool.bucketsSize > MINSTRTABSIZE * 2) {
-    String_resize(L, g->pool.bucketsSize / 2); /* table is too big */
+    StringPool_resize(L, g->pool.bucketsSize / 2); /* table is too big */
   }
   /* check size of buffer */
   if (luaZ_sizebuffer(&g->buff) > LUA_MINBUFFER * 2) { /* buffer too big? */
