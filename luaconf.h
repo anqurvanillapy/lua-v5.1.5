@@ -132,28 +132,6 @@
 #define LUAI_GCMUL 200 /* GC runs 'twice the speed' of memory allocation */
 
 /*
-@@ LUAI_INT_BITS defines the number of bits in an int.
-** CHANGE here if Lua cannot automatically detect the number of bits of
-** your machine. Probably you do not need to change this.
-*/
-/* Of course `int` has at least 32 bits, time has changed man. */
-#define LUAI_INT_BITS 32
-
-/*
-@@ LUAI_UINT32 is an unsigned integer with at least 32 bits.
-@@ LUAI_UMEM is an unsigned integer big enough to count the total
-@* memory used by Lua.
-@@ LUAI_MEM is a signed integer big enough to count the total memory
-@* used by Lua.
-** CHANGE here if for some weird reason the default definitions are not
-** good enough for your machine. (The definitions in the 'else'
-** part always works, but may waste space on machines with 64-bit
-** longs.) Probably you do not need to change this.
-*/
-#define LUAI_UINT32 uint32_t
-#define LUAI_MEM ptrdiff_t
-
-/*
 @@ LUAI_MAXCALLS limits the number of nested calls.
 ** CHANGE it if you need really deep recursive calls. This limit is
 ** arbitrary; its only purpose is to stop infinite recursion before

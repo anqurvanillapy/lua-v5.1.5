@@ -24,14 +24,8 @@
 #include "ltable.h"
 #include "object.h"
 
-/*
-** max size of array part is 2^MAXBITS
-*/
-#if LUAI_INT_BITS > 26
+// Max size of array part is 2^MAXBITS.
 #define MAXBITS 26
-#else
-#define MAXBITS (LUAI_INT_BITS - 2)
-#endif
 
 #define MAXASIZE (1 << MAXBITS)
 
