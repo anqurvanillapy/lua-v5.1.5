@@ -728,7 +728,7 @@ static int getnum_aux(lua_State *L, const char **pc) {
   int sig = 1;
   skip(pc);
   if (**pc == '.') {
-    res = cast_int(lua_tonumber(L, -1));
+    res = (int)lua_tonumber(L, -1);
     lua_pop(L, 1);
     (*pc)++;
     return res;
@@ -736,7 +736,7 @@ static int getnum_aux(lua_State *L, const char **pc) {
     sig = -1;
     (*pc)++;
   }
-  while (isdigit(cast_int(**pc)))
+  while (isdigit((int)(**pc)))
     res = res * 10 + (*(*pc)++) - '0';
   return sig * res;
 }

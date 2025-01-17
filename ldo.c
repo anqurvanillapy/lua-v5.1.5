@@ -61,7 +61,7 @@ void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldtop) {
 static void restore_stack_limit(lua_State *L) {
   DEBUG_ASSERT(L->stackLast - L->stack == L->stackSize - EXTRA_STACK - 1);
   if (L->ciSize > LUAI_MAXCALLS) { /* there was an overflow? */
-    int inuse = cast_int(L->ci - L->baseCI);
+    int inuse = (int)(L->ci - L->baseCI);
     if (inuse + 1 < LUAI_MAXCALLS) { /* can `undo' overflow? */
       luaD_reallocCI(L, LUAI_MAXCALLS);
     }
@@ -85,7 +85,7 @@ void luaD_throw(lua_State *L, int errcode) {
     L->errorJmp->status = errcode;
     LUAI_THROW(L, L->errorJmp);
   } else {
-    L->status = cast_byte(errcode);
+    L->status = (uint8_t)errcode;
     if (G(L)->panic) {
       resetstack(L, errcode);
       lua_unlock(L);
@@ -171,7 +171,7 @@ void luaD_callhook(lua_State *L, int event, int line) {
     if (event == LUA_HOOKTAILRET) {
       ar.i_ci = 0; /* tail call; no debug information about it */
     } else {
-      ar.i_ci = cast_int(L->ci - L->baseCI);
+      ar.i_ci = (int)(L->ci - L->baseCI);
     }
     luaD_checkstack(L, LUA_MIN_STACK); /* ensure minimum stack size */
     L->ci->top = L->top + LUA_MIN_STACK;
@@ -270,7 +270,7 @@ int luaD_precall(lua_State *L, StackIndex func, int nresults) {
         L->top = base + p->paramsNum;
       }
     } else { /* vararg function */
-      int nargs = cast_int(L->top - func) - 1;
+      int nargs = (int)(L->top - func) - 1;
       base = adjust_varargs(L, p, nargs);
       func = restorestack(L, funcr); /* previous call may change the stack */
     }
@@ -394,7 +394,7 @@ static void resume(lua_State *L, void *ud) {
       L->base = L->ci->base;
     }
   }
-  luaV_execute(L, cast_int(L->ci - L->baseCI));
+  luaV_execute(L, (int)(L->ci - L->baseCI));
 }
 
 static int resume_error(lua_State *L, const char *msg) {
@@ -418,8 +418,8 @@ LUA_API int lua_resume(lua_State *L, int nargs) {
   DEBUG_ASSERT(L->errFunc == 0);
   L->nestedCCallsBaseNum = ++L->nestedCCallsNum;
   status = luaD_rawrunprotected(L, resume, L->top - nargs);
-  if (status != 0) {               /* error? */
-    L->status = cast_byte(status); /* mark thread as `dead' */
+  if (status != 0) {             /* error? */
+    L->status = (uint8_t)status; /* mark thread as `dead' */
     luaD_seterrorobj(L, status, L->top);
     L->ci->top = L->top;
   } else {

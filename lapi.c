@@ -135,7 +135,7 @@ LUA_API lua_State *lua_newthread(lua_State *L) {
 ** basic stack manipulation
 */
 
-LUA_API int lua_gettop(lua_State *L) { return cast_int(L->top - L->base); }
+LUA_API int lua_gettop(lua_State *L) { return (int)(L->top - L->base); }
 
 LUA_API void lua_settop(lua_State *L, int idx) {
   lua_lock(L);
@@ -849,11 +849,11 @@ LUA_API int lua_gc(lua_State *L, int what, int data) {
   }
   case LUA_GCCOUNT: {
     /* GC values are expressed in Kbytes: #bytes/2^10 */
-    res = cast_int(g->totalbytes >> 10);
+    res = (int)(g->totalbytes >> 10);
     break;
   }
   case LUA_GCCOUNTB: {
-    res = cast_int(g->totalbytes & 0x3ff);
+    res = (int)(g->totalbytes & 0x3ff);
     break;
   }
   case LUA_GCSTEP: {
@@ -922,7 +922,7 @@ LUA_API void lua_concat(lua_State *L, int n) {
   api_checknelems(L, n);
   if (n >= 2) {
     luaC_checkGC(L);
-    luaV_concat(L, n, cast_int(L->top - L->base) - 1);
+    luaV_concat(L, n, (int)(L->top - L->base) - 1);
     L->top -= (n - 1);
   } else if (n == 0) { /* push empty string */
     SET_STRING_TO_STACK(L, L->top, String_createSized(L, "", 0));

@@ -15,7 +15,7 @@ Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->c.header.isC = true;
   c->c.header.env = e;
-  c->c.header.nupvalues = cast_byte(nelems);
+  c->c.header.nupvalues = (uint8_t)nelems;
   return c;
 }
 
@@ -24,7 +24,7 @@ Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->l.header.isC = false;
   c->l.header.env = e;
-  c->l.header.nupvalues = cast_byte(nelems);
+  c->l.header.nupvalues = (uint8_t)nelems;
   while (nelems--) {
     c->l.upvalues[nelems] = nullptr;
   }

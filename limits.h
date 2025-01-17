@@ -30,9 +30,6 @@ typedef uint64_t MaxAlign;
 #define cast(t, exp) ((t)(exp))
 #endif
 
-#define cast_byte(i) cast(uint8_t, (i))
-#define cast_int(i) cast(int, (i))
-
 /*
 ** type for virtual-machine instructions
 ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)

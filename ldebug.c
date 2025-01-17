@@ -45,12 +45,12 @@ static int currentline(lua_State *L, CallInfo *ci) {
 LUA_API int lua_sethook(lua_State *L, lua_Hook func, int mask, int count) {
   if (func == NULL || mask == 0) { /* turn off hooks? */
     mask = 0;
-    func = NULL;
+    func = nullptr;
   }
   L->hook = func;
   L->baseHookCount = count;
   resethookcount(L);
-  L->hookMask = cast_byte(mask);
+  L->hookMask = (uint8_t)mask;
   return 1;
 }
 
@@ -72,7 +72,7 @@ LUA_API int lua_getstack(lua_State *L, int level, lua_Debug *ar) {
   }
   if (level == 0 && ci > L->baseCI) { /* level found? */
     status = 1;
-    ar->i_ci = cast_int(ci - L->baseCI);
+    ar->i_ci = (int)(ci - L->baseCI);
   } else if (level < 0) { /* level is of a lost tail call? */
     status = 1;
     ar->i_ci = 0;
@@ -574,7 +574,7 @@ void luaG_typeerror(lua_State *L, const Value *o, const char *op) {
   const char *name = nullptr;
   const char *t = luaT_typenames[GET_TYPE(o)];
   const char *kind = (isinstack(L->ci, o))
-                         ? getobjname(L, L->ci, cast_int(o - L->base), &name)
+                         ? getobjname(L, L->ci, (int)(o - L->base), &name)
                          : nullptr;
   if (kind) {
     luaG_runerror(L, "attempt to %s %s " LUA_QS " (a %s value)", op, kind, name,

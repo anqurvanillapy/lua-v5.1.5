@@ -19,10 +19,10 @@
 #define GCSWEEPCOST 10
 #define GCFINALIZECOST 100
 
-#define maskmarks cast_byte(~(bitmask(BLACKBIT) | WHITEBITS))
+#define maskmarks (uint8_t)(~(bitmask(BLACKBIT) | WHITEBITS))
 
 #define makewhite(g, x)                                                        \
-  ((x)->gch.marked = cast_byte(((x)->gch.marked & maskmarks) | luaC_white(g)))
+  ((x)->gch.marked = (uint8_t)(((x)->gch.marked & maskmarks) | luaC_white(g)))
 
 #define white2gray(x) reset2bits((x)->gch.marked, WHITE0BIT, WHITE1BIT)
 #define black2gray(x) resetbit((x)->gch.marked, BLACKBIT)
@@ -160,7 +160,7 @@ static int traversetable(GlobalState *g, Table *h) {
     if (weakkey || weakvalue) {                   /* is really weak? */
       h->header.marked &= ~(KEYWEAK | VALUEWEAK); /* clear bits */
       h->header.marked |=
-          cast_byte((weakkey << KEYWEAKBIT) | (weakvalue << VALUEWEAKBIT));
+          (uint8_t)((weakkey << KEYWEAKBIT) | (weakvalue << VALUEWEAKBIT));
       h->gclist = g->weak;              /* must be cleared after GC, ... */
       g->weak = LuaObjectToGCObject(h); /* ... so put in the appropriate list */
     }
@@ -234,10 +234,10 @@ static void traverseclosure(GlobalState *g, Closure *cl) {
 }
 
 static void checkstacksizes(lua_State *L, StackIndex max) {
-  int ci_used = cast_int(L->ci - L->baseCI); /* number of `ci' in use */
-  int s_used = cast_int(max - L->stack);     /* part of stack in use */
-  if (L->ciSize > LUAI_MAXCALLS) {           /* handling overflow? */
-    return;                                  /* do not touch the stacks */
+  int ci_used = (int)(L->ci - L->baseCI); /* number of `ci' in use */
+  int s_used = (int)(max - L->stack);     /* part of stack in use */
+  if (L->ciSize > LUAI_MAXCALLS) {        /* handling overflow? */
+    return;                               /* do not touch the stacks */
   }
   if (4 * ci_used < L->ciSize && 2 * BASIC_CI_SIZE < L->ciSize) {
     luaD_reallocCI(L, L->ciSize / 2); /* still big enough... */
@@ -555,7 +555,7 @@ static void atomic(lua_State *L) {
   udsize += propagateall(g);         /* remark, to propagate `preserveness' */
   cleartable(g->weak); /* remove collected objects from weak tables */
   /* flip current white */
-  g->currentwhite = cast_byte(otherwhite(g));
+  g->currentwhite = (uint8_t)otherwhite(g);
   g->sweepstrgc = 0;
   g->sweepgc = &g->rootgc;
   g->gcstate = GCSsweepstring;

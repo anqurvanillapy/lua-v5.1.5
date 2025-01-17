@@ -162,7 +162,7 @@ static void new_localvar(LexState *ls, String *name, int n) {
 
 static void adjustlocalvars(LexState *ls, int nvars) {
   FuncState *fs = ls->fs;
-  fs->nactvar = cast_byte(fs->nactvar + nvars);
+  fs->nactvar = (uint8_t)(fs->nactvar + nvars);
   for (; nvars; nvars--) {
     getlocvar(fs, fs->nactvar - nvars).startPC = fs->pc;
   }
@@ -554,7 +554,7 @@ static void parlist(LexState *ls) {
     } while (!f->varargMode && testNext(ls, ','));
   }
   adjustlocalvars(ls, nparams);
-  f->paramsNum = cast_byte(fs->nactvar - (f->varargMode & VARARG_HAS_ARG));
+  f->paramsNum = (uint8_t)(fs->nactvar - (f->varargMode & VARARG_HAS_ARG));
   luaK_reserveregs(fs, fs->nactvar); /* reserve register for parameters */
 }
 

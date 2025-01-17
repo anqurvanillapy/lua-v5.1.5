@@ -30,7 +30,7 @@ int luaO_int2fb(unsigned int x) {
   if (x < 8) {
     return x;
   } else {
-    return ((e + 1) << 3) | (cast_int(x) - 8);
+    return ((e + 1) << 3) | ((int)x - 8);
   }
 }
 
@@ -172,7 +172,7 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
     fmt = e + 2;
   }
   pushstr(L, fmt);
-  luaV_concat(L, n + 1, cast_int(L->top - L->base) - 1);
+  luaV_concat(L, n + 1, (int)(L->top - L->base) - 1);
   L->top -= n;
   return VALUE_STRING_CONTENT(L->top - 1);
 }

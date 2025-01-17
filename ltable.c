@@ -45,13 +45,13 @@
 /*
 ** number of ints inside a lua_Number
 */
-#define numints cast_int(sizeof(double) / sizeof(int))
+#define numints (int)(sizeof(double) / sizeof(int))
 
 #define dummynode (&dummynode_)
 
 static const Node dummynode_ = {
-    {{NULL}, LUA_TYPE_NIL},        /* value */
-    {{{NULL}, LUA_TYPE_NIL, NULL}} /* key */
+    {{nullptr}, LUA_TYPE_NIL},           /* value */
+    {{{nullptr}, LUA_TYPE_NIL, nullptr}} /* key */
 };
 
 /*
@@ -125,7 +125,7 @@ static int findindex(lua_State *L, Table *t, StackIndex key) {
       if (luaO_rawequalObj(key2tval(n), key) ||
           (GET_TYPE(gkey(n)) == LUA_TYPE_DEAD && IS_COLLECTABLE(key) &&
            GC_VALUE(gkey(n)) == GC_VALUE(key))) {
-        i = cast_int(n - gnode(t, 0)); /* key index in hash table */
+        i = (int)(n - gnode(t, 0)); /* key index in hash table */
         /* hash elements are numbered after array ones */
         return i + t->sizearray;
       } else {
@@ -260,12 +260,12 @@ static void setnodevector(lua_State *L, Table *t, int size) {
     t->node = luaM_newvector(L, size, Node);
     for (i = 0; i < size; i++) {
       Node *n = gnode(t, i);
-      gnext(n) = NULL;
+      gnext(n) = nullptr;
       SET_NIL(gkey(n));
       SET_NIL(gval(n));
     }
   }
-  t->lsizenode = cast_byte(lsize);
+  t->lsizenode = (uint8_t)lsize;
   t->lastfree = gnode(t, size); /* all positions are free */
 }
 
@@ -332,10 +332,10 @@ static void rehash(lua_State *L, Table *t, const Value *ek) {
 Table *luaH_new(lua_State *L, int narray, int nhash) {
   Table *t = luaM_new(L, Table);
   luaC_link(L, LuaObjectToGCObject(t), LUA_TYPE_TABLE);
-  t->metatable = NULL;
-  t->flags = cast_byte(~0);
+  t->metatable = nullptr;
+  t->flags = (uint8_t)(~0);
   /* temporary values (kept only if some malloc fails) */
-  t->array = NULL;
+  t->array = nullptr;
   t->sizearray = 0;
   t->lsizenode = 0;
   t->node = cast(Node *, dummynode);

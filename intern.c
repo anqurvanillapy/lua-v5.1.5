@@ -26,7 +26,7 @@ void String_resize(lua_State *L, int newSize) {
       GCObject *next = p->gch.next; /* save next */
       uint32_t h = gco2ts(p)->hash;
       int h1 = lmod(h, newSize); /* new position */
-      DEBUG_ASSERT(cast_int(h % newSize) == lmod(h, newSize));
+      DEBUG_ASSERT((int)(h % newSize) == lmod(h, newSize));
       p->gch.next = newHash[h1]; /* chain it */
       newHash[h1] = p;
       p = next;

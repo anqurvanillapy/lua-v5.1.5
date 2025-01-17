@@ -37,11 +37,10 @@ const Value *luaT_gettm(Table *events, TMS event, String *ename) {
   const Value *tm = luaH_getstr(events, ename);
   DEBUG_ASSERT(event <= TM_EQ);
   if (IS_TYPE_NIL(tm)) {                     /* no tag method? */
-    events->flags |= cast_byte(1u << event); /* cache this fact */
-    return NULL;
-  } else {
-    return tm;
+    events->flags |= (uint8_t)(1u << event); /* cache this fact */
+    return nullptr;
   }
+  return tm;
 }
 
 const Value *luaT_gettmbyobj(lua_State *L, const Value *o, TMS event) {

@@ -741,11 +741,11 @@ reentry: /* entry point */
       int last;
       Table *h;
       if (n == 0) {
-        n = cast_int(L->top - ra) - 1;
+        n = (int)(L->top - ra) - 1;
         L->top = L->ci->top;
       }
       if (c == 0) {
-        c = cast_int(*pc++);
+        c = (int)(*pc++);
       }
       runtime_check(L, IS_TYPE_TABLE(ra));
       h = TABLE_VALUE(ra);
@@ -788,7 +788,7 @@ reentry: /* entry point */
       int b = GETARG_B(i) - 1;
       int j;
       CallInfo *ci = L->ci;
-      int n = cast_int(ci->base - ci->func) - cl->p->paramsNum - 1;
+      int n = (int)(ci->base - ci->func) - cl->p->paramsNum - 1;
       if (b == LUA_MULTRET) {
         Protect(luaD_checkstack(L, n));
         ra = RA(i); /* previous call may change the stack */

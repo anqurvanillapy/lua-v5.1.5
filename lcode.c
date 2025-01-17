@@ -187,7 +187,7 @@ void luaK_checkstack(FuncState *fs, int n) {
     if (newstack >= MAXSTACK) {
       luaX_syntaxerror(fs->ls, "function or expression too complex");
     }
-    fs->f->maxStackSize = cast_byte(newstack);
+    fs->f->maxStackSize = (uint8_t)newstack;
   }
 }
 
@@ -215,8 +215,8 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
   Prototype *f = fs->f;
 
   if (IS_TYPE_NUMBER(idx)) {
-    DEBUG_ASSERT(luaO_rawequalObj(&f->k[cast_int(NUMBER_VALUE(idx))], v));
-    return cast_int(NUMBER_VALUE(idx));
+    DEBUG_ASSERT(luaO_rawequalObj(&f->k[(int)NUMBER_VALUE(idx)], v));
+    return (int)NUMBER_VALUE(idx);
   }
 
   // Constant not found, create a new entry.
