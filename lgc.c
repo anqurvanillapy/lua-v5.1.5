@@ -439,7 +439,7 @@ static GCObject **sweeplist(lua_State *L, GCObject **p, size_t count) {
 static void checkSizes(lua_State *L) {
   GlobalState *g = G(L);
   /* check size of string pool buckets */
-  if (g->pool.itemsNum < cast(lu_int32, g->pool.bucketsSize / 4) &&
+  if (g->pool.itemsNum < (uint32_t)(g->pool.bucketsSize / 4) &&
       g->pool.bucketsSize > MINSTRTABSIZE * 2) {
     String_resize(L, g->pool.bucketsSize / 2); /* table is too big */
   }

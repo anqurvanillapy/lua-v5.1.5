@@ -7,8 +7,6 @@
 
 #include "lua.h"
 
-typedef LUAI_UINT32 lu_int32;
-
 #define MAX_INT (INT_MAX - 2) /* maximum value of an int (-2 for safety) */
 
 /*
@@ -43,7 +41,7 @@ typedef LUAI_UACNUMBER l_uacNumber;
 ** type for virtual-machine instructions
 ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)
 */
-typedef lu_int32 Instruction;
+typedef uint32_t Instruction;
 
 /* maximum stack for a Lua function */
 #define MAXSTACK 250

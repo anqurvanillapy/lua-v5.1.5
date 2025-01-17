@@ -58,7 +58,7 @@ static String *createStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   tb->buckets[h] = LuaObjectToGCObject(ts);
   tb->itemsNum++;
 
-  if (tb->itemsNum > cast(lu_int32, tb->bucketsSize) &&
+  if (tb->itemsNum > (size_t)tb->bucketsSize &&
       tb->bucketsSize <= MAX_INT / 2) {
     String_resize(L, tb->bucketsSize * 2); /* too crowded */
   }
