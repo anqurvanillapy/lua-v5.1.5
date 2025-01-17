@@ -120,7 +120,7 @@ void *debug_realloc(void *ud, void *block, size_t oldsize, size_t size) {
 ** =======================================================
 */
 
-static int testobjref1(global_State *g, GCObject *f, GCObject *t) {
+static int testobjref1(GlobalState *g, GCObject *f, GCObject *t) {
   if (IS_DEAD(g, t))
     return 0;
   if (g->gcstate == GCSpropagate)
@@ -131,7 +131,7 @@ static int testobjref1(global_State *g, GCObject *f, GCObject *t) {
     return 1;
 }
 
-static void printobj(global_State *g, GCObject *o) {
+static void printobj(GlobalState *g, GCObject *o) {
   int i = 0;
   GCObject *p;
   for (p = g->rootgc; p != o && p != NULL; p = p->gch.next)
@@ -146,7 +146,7 @@ static void printobj(global_State *g, GCObject *o) {
          o->gch.marked);
 }
 
-static int testobjref(global_State *g, GCObject *f, GCObject *t) {
+static int testobjref(GlobalState *g, GCObject *f, GCObject *t) {
   int r = testobjref1(g, f, t);
   if (!r) {
     printf("%d(%02X) - ", g->gcstate, g->currentwhite);
@@ -166,7 +166,7 @@ static int testobjref(global_State *g, GCObject *f, GCObject *t) {
                ((GET_TYPE(t) == (t)->variant.gc->gch.tt) &&                    \
                 testobjref(g, f, GC_VALUE(t))))
 
-static void checktable(global_State *g, Table *h) {
+static void checktable(GlobalState *g, Table *h) {
   int i;
   GCObject *hgc = LuaObjectToGCObject(h);
   if (h->metatable)
@@ -189,7 +189,7 @@ static void checktable(global_State *g, Table *h) {
 ** All marks are conditional because a GC may happen while the
 ** prototype is still being created
 */
-static void checkproto(global_State *g, Prototype *f) {
+static void checkproto(GlobalState *g, Prototype *f) {
   int i;
   GCObject *fgc = LuaObjectToGCObject(f);
   if (f->source)
@@ -212,7 +212,7 @@ static void checkproto(global_State *g, Prototype *f) {
   }
 }
 
-static void checkclosure(global_State *g, Closure *cl) {
+static void checkclosure(GlobalState *g, Closure *cl) {
   GCObject *clgc = LuaObjectToGCObject(cl);
   checkobjref(g, clgc, cl->l.header.env);
   if (cl->c.header.isC) {
@@ -232,7 +232,7 @@ static void checkclosure(global_State *g, Closure *cl) {
   }
 }
 
-static void checkstack(global_State *g, lua_State *L1) {
+static void checkstack(GlobalState *g, lua_State *L1) {
   StackIndex o;
   CallInfo *ci;
   GCObject *uvo;
@@ -257,7 +257,7 @@ static void checkstack(global_State *g, lua_State *L1) {
     DEBUG_ASSERT(L1->stackSize == 0);
 }
 
-static void checkobject(global_State *g, GCObject *o) {
+static void checkobject(GlobalState *g, GCObject *o) {
   if (IS_DEAD(g, o))
   /*    DEBUG_ASSERT(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep);*/
   {
@@ -316,7 +316,7 @@ int lua_checkpc(lua_State *L, pCallInfo ci) {
 }
 
 int lua_checkmemory(lua_State *L) {
-  global_State *g = G(L);
+  GlobalState *g = G(L);
   GCObject *o;
   Upvalue *uv;
   checkstack(g, g->mainthread);
@@ -538,13 +538,13 @@ static int table_query(lua_State *L) {
 }
 
 static int string_query(lua_State *L) {
-  stringtable *tb = &G(L)->strt;
+  StringPool *tb = &G(L)->strt;
   int s = luaL_optint(L, 2, 0) - 1;
   if (s == -1) {
-    lua_pushinteger(L, tb->nuse);
-    lua_pushinteger(L, tb->size);
+    lua_pushinteger(L, tb->itemsNum);
+    lua_pushinteger(L, tb->bucketsSize);
     return 2;
-  } else if (s < tb->size) {
+  } else if (s < tb->bucketsSize) {
     GCObject *ts;
     int n = 0;
     for (ts = tb->hash[s]; ts; ts = ts->gch.next) {

@@ -831,7 +831,7 @@ LUA_API int lua_status(lua_State *L) { return L->status; }
 
 LUA_API int lua_gc(lua_State *L, int what, int data) {
   int res = 0;
-  global_State *g;
+  GlobalState *g;
   lua_lock(L);
   g = G(L);
   switch (what) {

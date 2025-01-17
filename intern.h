@@ -6,15 +6,15 @@
 #include "lstate.h"
 #include "object.h"
 
-#define sizestring(s) (sizeof(struct String) + ((s)->len + 1) * sizeof(char))
-#define sizeudata(u) (sizeof(struct Userdata) + (u)->len)
+#define STRING_SIZE(s) (sizeof(struct String) + ((s)->len + 1) * sizeof(char))
 
 #define String_intern(s) l_setbit((s)->header.marked, FIXEDBIT)
 
 LUAI_FUNC void String_resize(lua_State *L, int newSize);
 LUAI_FUNC String *String_createSized(lua_State *L, const char *str, size_t len);
 
-// FIXME(anqur): Why is it here?
+// FIXME(anqur): Why are these here?
+#define USERDATA_SIZE(u) (sizeof(struct Userdata) + (u)->len)
 LUAI_FUNC Userdata *Userdata_new(lua_State *L, size_t size, Table *env);
 
 // FIXME(anqur): strlen here is bad.

@@ -23,15 +23,12 @@ struct lua_longjmp; /* defined in ldo.c */
 
 #define BASIC_STACK_SIZE (2 * LUA_MIN_STACK)
 
-typedef struct stringtable {
+typedef struct StringPool {
   GCObject **hash;
-  lu_int32 nuse; /* number of elements */
-  int size;
-} stringtable;
+  int bucketsSize;
+  size_t itemsNum;
+} StringPool;
 
-/*
-** informations about a call
-*/
 typedef struct CallInfo {
   StackIndex base; /* base for this function */
   StackIndex func; /* function index in the stack */
@@ -46,11 +43,9 @@ typedef struct CallInfo {
 #define f_isLua(ci) (!ci_func(ci)->c.header.isC)
 #define isLua(ci) (IS_TYPE_FUNCTION((ci)->func) && f_isLua(ci))
 
-/*
-** `global state', shared by all threads of this state
-*/
-typedef struct global_State {
-  stringtable strt;   /* hash table for strings */
+// The global states shared by all threads.
+typedef struct GlobalState {
+  StringPool strt;    /* hash table for strings */
   lua_Alloc frealloc; /* function to reallocate memory */
   void *ud;           /* auxiliary data to `frealloc' */
   uint8_t currentwhite;
@@ -75,7 +70,7 @@ typedef struct global_State {
   Upvalue uvhead; /* head of double-linked list of all open upvalues */
   struct Table *mt[NUM_TYPES]; /* metatables for basic types */
   String *tmname[TM_N];        /* array with tag-method names */
-} global_State;
+} GlobalState;
 
 // Per-thread state.
 struct lua_State {
@@ -88,7 +83,7 @@ struct lua_State {
   // Base of current function.
   StackIndex base;
 
-  global_State *l_G;
+  GlobalState *l_G;
 
   // Call info for current function.
   CallInfo *ci;

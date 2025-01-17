@@ -4,6 +4,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /*
 ** ==================================================================
@@ -149,7 +150,7 @@
 ** part always works, but may waste space on machines with 64-bit
 ** longs.) Probably you do not need to change this.
 */
-#define LUAI_UINT32 unsigned int
+#define LUAI_UINT32 uint32_t
 #define LUAI_UMEM size_t
 #define LUAI_MEM ptrdiff_t
 

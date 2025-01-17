@@ -19,8 +19,8 @@ void String_resize(lua_State *L, int newSize) {
   }
 
   // Rehash.
-  stringtable *tb = &G(L)->strt;
-  for (int i = 0; i < tb->size; i++) {
+  StringPool *tb = &G(L)->strt;
+  for (int i = 0; i < tb->bucketsSize; i++) {
     GCObject *p = tb->hash[i];
     while (p) {                     /* for each node in the list */
       GCObject *next = p->gch.next; /* save next */
@@ -33,12 +33,12 @@ void String_resize(lua_State *L, int newSize) {
     }
   }
 
-  luaM_freearray(L, tb->hash, tb->size, String *);
-  tb->size = newSize;
+  luaM_freearray(L, tb->hash, tb->bucketsSize, String *);
+  tb->bucketsSize = newSize;
   tb->hash = newHash;
 }
 
-static String *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
+static String *createStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   if (l > (MAX_SIZET - sizeof(String)) / sizeof(char) - 1) {
     luaM_toobig(L);
   }
@@ -52,14 +52,15 @@ static String *newStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   memcpy(ts + 1, str, l * sizeof(char));
   ((char *)(ts + 1))[l] = '\0'; /* ending 0 */
 
-  stringtable *tb = &G(L)->strt;
-  h = lmod(h, tb->size);
+  StringPool *tb = &G(L)->strt;
+  h = lmod(h, tb->bucketsSize);
   ts->header.next = tb->hash[h]; /* chain new entry */
   tb->hash[h] = LuaObjectToGCObject(ts);
-  tb->nuse++;
+  tb->itemsNum++;
 
-  if (tb->nuse > cast(lu_int32, tb->size) && tb->size <= MAX_INT / 2) {
-    String_resize(L, tb->size * 2); /* too crowded */
+  if (tb->itemsNum > cast(lu_int32, tb->bucketsSize) &&
+      tb->bucketsSize <= MAX_INT / 2) {
+    String_resize(L, tb->bucketsSize * 2); /* too crowded */
   }
 
   return ts;
@@ -76,8 +77,8 @@ String *String_createSized(lua_State *L, const char *str, size_t len) {
     h = h ^ ((h << 5) + (h >> 2) + (uint8_t)str[i - 1]);
   }
 
-  for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.size)]; o != nullptr;
-       o = o->gch.next) {
+  for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.bucketsSize)];
+       o != nullptr; o = o->gch.next) {
     String *ts = gco2ts(o);
     if (ts->len != len || memcmp(str, STRING_CONTENT(ts), len) != 0) {
       continue;
@@ -91,7 +92,7 @@ String *String_createSized(lua_State *L, const char *str, size_t len) {
   }
 
   // No such string, create a new one.
-  return newStr(L, str, len, h);
+  return createStr(L, str, len, h);
 }
 
 Userdata *Userdata_new(lua_State *L, size_t size, Table *env) {

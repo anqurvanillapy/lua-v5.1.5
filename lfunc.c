@@ -40,7 +40,7 @@ Upvalue *luaF_newupval(lua_State *L) {
 }
 
 Upvalue *luaF_findupval(lua_State *L, StackIndex level) {
-  global_State *g = G(L);
+  GlobalState *g = G(L);
   GCObject **pp = &L->openUpval;
   Upvalue *p;
   Upvalue *uv;
@@ -83,7 +83,7 @@ void luaF_freeupval(lua_State *L, Upvalue *uv) {
 
 void luaF_close(lua_State *L, StackIndex level) {
   Upvalue *uv;
-  global_State *g = G(L);
+  GlobalState *g = G(L);
   while (L->openUpval != nullptr && (uv = ngcotouv(L->openUpval))->v >= level) {
     GCObject *o = LuaObjectToGCObject(uv);
     DEBUG_ASSERT(!isblack(o) && uv->v != &uv->u.value);

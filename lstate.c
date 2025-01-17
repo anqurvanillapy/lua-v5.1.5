@@ -24,7 +24,7 @@
 */
 typedef struct LG {
   lua_State l;
-  global_State g;
+  GlobalState g;
 } LG;
 
 static void stack_init(lua_State *L1, lua_State *L) {
@@ -54,7 +54,7 @@ static void freestack(lua_State *L, lua_State *L1) {
 ** open parts that may cause memory-allocation errors
 */
 static void f_luaopen(lua_State *L, void *) {
-  global_State *g = G(L);
+  GlobalState *g = G(L);
   stack_init(L, L);                             /* init stack */
   SET_TABLE(L, gt(L), luaH_new(L, 0, 2));       /* table of globals */
   SET_TABLE(L, registry(L), luaH_new(L, 0, 2)); /* registry */
@@ -65,7 +65,7 @@ static void f_luaopen(lua_State *L, void *) {
   g->GCthreshold = 4 * g->totalbytes;
 }
 
-static void preinit_state(lua_State *L, global_State *g) {
+static void preinit_state(lua_State *L, GlobalState *g) {
   G(L) = g;
   L->stack = nullptr;
   L->stackSize = 0;
@@ -86,12 +86,12 @@ static void preinit_state(lua_State *L, global_State *g) {
 }
 
 static void close_state(lua_State *L) {
-  global_State *g = G(L);
+  GlobalState *g = G(L);
   luaF_close(L, L->stack); /* close all upvalues for this thread */
   luaC_freeall(L);         /* collect all objects */
   DEBUG_ASSERT(g->rootgc == LuaObjectToGCObject(L));
-  DEBUG_ASSERT(g->strt.nuse == 0);
-  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size, String *);
+  DEBUG_ASSERT(g->strt.itemsNum == 0);
+  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.bucketsSize, String *);
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   DEBUG_ASSERT(g->totalbytes == sizeof(LG));
@@ -123,7 +123,7 @@ void luaE_freethread(lua_State *L, lua_State *L1) {
 LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   int i;
   lua_State *L;
-  global_State *g;
+  GlobalState *g;
   void *l = (*f)(ud, NULL, 0, state_size(LG));
   if (l == NULL) {
     return nullptr;
@@ -142,8 +142,8 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   g->uvhead.u.l.prev = &g->uvhead;
   g->uvhead.u.l.next = &g->uvhead;
   g->GCthreshold = 0; /* mark it as unfinished state */
-  g->strt.size = 0;
-  g->strt.nuse = 0;
+  g->strt.bucketsSize = 0;
+  g->strt.itemsNum = 0;
   g->strt.hash = nullptr;
   SET_NIL(registry(L));
   luaZ_initbuffer(L, &g->buff);

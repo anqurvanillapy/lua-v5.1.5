@@ -56,7 +56,7 @@ void *luaM_toobig(lua_State *L) {
 }
 
 void *luaM_realloc_(lua_State *L, void *block, size_t osize, size_t nsize) {
-  global_State *g = G(L);
+  GlobalState *g = G(L);
   DEBUG_ASSERT((osize == 0) == (block == nullptr));
   block = (*g->frealloc)(g->ud, block, osize, nsize);
   if (block == nullptr && nsize > 0) {
