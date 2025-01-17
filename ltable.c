@@ -478,7 +478,7 @@ Value *luaH_set(lua_State *L, Table *t, const Value *key) {
   } else {
     if (IS_TYPE_NIL(key)) {
       luaG_runerror(L, "table index is nil");
-    } else if (IS_TYPE_NUMBER(key) && luai_numisnan(NUMBER_VALUE(key))) {
+    } else if (IS_TYPE_NUMBER(key) && isnan(NUMBER_VALUE(key))) {
       luaG_runerror(L, "table index is NaN");
     }
     return newkey(L, t, key);

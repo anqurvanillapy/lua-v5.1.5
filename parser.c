@@ -857,7 +857,7 @@ static OpKind subExpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
   if (op != OPR_NONE) {
     luaX_next(ls);
     subExpr(ls, v, UNARY_PRIORITY);
-    luaK_prefix(ls->fs, op, v);
+    Codegen_prefix(ls->fs, op, v);
   } else {
     simpleexp(ls, v);
   }

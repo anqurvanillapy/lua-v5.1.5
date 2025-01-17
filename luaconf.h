@@ -213,7 +213,6 @@
 #define luai_numeq(a, b) ((a) == (b))
 #define luai_numlt(a, b) ((a) < (b))
 #define luai_numle(a, b) ((a) <= (b))
-#define luai_numisnan(a) (!luai_numeq((a), (a)))
 
 /*
 @@ lua_number2int is a macro to convert lua_Number to int.

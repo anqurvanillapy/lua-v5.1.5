@@ -16,8 +16,8 @@
 
 #define hasjumps(e) ((e)->t != (e)->f)
 
-static int isnumeral(ExprInfo *e) {
-  return (e->k == VKNUM && e->t == NO_JUMP && e->f == NO_JUMP);
+static int isNumeric(ExprInfo *e) {
+  return e->k == VKNUM && e->t == NO_JUMP && e->f == NO_JUMP;
 }
 
 void luaK_nil(FuncState *fs, int from, int n) {
@@ -611,13 +611,13 @@ void luaK_indexed(FuncState *fs, ExprInfo *t, ExprInfo *k) {
   t->k = VINDEXED;
 }
 
-static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
-  double v1, v2, r;
-  if (!isnumeral(e1) || !isnumeral(e2)) {
-    return 0;
+static bool constantFolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
+  if (!isNumeric(e1) || !isNumeric(e2)) {
+    return false;
   }
-  v1 = e1->u.value;
-  v2 = e2->u.value;
+  double r;
+  double v1 = e1->u.value;
+  double v2 = e2->u.value;
   switch (op) {
   case OP_ADD:
     r = luai_numadd(v1, v2);
@@ -630,13 +630,15 @@ static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
     break;
   case OP_DIV:
     if (v2 == 0) {
-      return 0; /* do not attempt to divide by 0 */
+      // Do not attempt to divide by 0.
+      return false;
     }
     r = luai_numdiv(v1, v2);
     break;
   case OP_MOD:
     if (v2 == 0) {
-      return 0; /* do not attempt to divide by 0 */
+      // Do not attempt to divide by 0.
+      return 0;
     }
     r = luai_nummod(v1, v2);
     break;
@@ -647,33 +649,33 @@ static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
     r = luai_numunm(v1);
     break;
   case OP_LEN:
-    return 0; /* no constant folding for 'len' */
+    return false;
   default:
     DEBUG_ASSERT(false);
   }
-  if (luai_numisnan(r)) {
-    return 0; /* do not attempt to produce NaN */
+  if (isnan(r)) {
+    // Do not attempt to produce NaNs.
+    return false;
   }
   e1->u.value = r;
-  return 1;
+  return true;
 }
 
-static void codearith(FuncState *fs, OpCode op, ExprInfo *e1, ExprInfo *e2) {
-  if (constfolding(op, e1, e2)) {
+static void emitArith(FuncState *fs, OpCode op, ExprInfo *e1, ExprInfo *e2) {
+  if (constantFolding(op, e1, e2)) {
     return;
-  } else {
-    int o2 = (op != OP_UNM && op != OP_LEN) ? luaK_exp2RK(fs, e2) : 0;
-    int o1 = luaK_exp2RK(fs, e1);
-    if (o1 > o2) {
-      freeexp(fs, e1);
-      freeexp(fs, e2);
-    } else {
-      freeexp(fs, e2);
-      freeexp(fs, e1);
-    }
-    e1->u.s.info = luaK_codeABC(fs, op, 0, o1, o2);
-    e1->k = VRELOCABLE;
   }
+  int o2 = (op != OP_UNM && op != OP_LEN) ? luaK_exp2RK(fs, e2) : 0;
+  int o1 = luaK_exp2RK(fs, e1);
+  if (o1 > o2) {
+    freeexp(fs, e1);
+    freeexp(fs, e2);
+  } else {
+    freeexp(fs, e2);
+    freeexp(fs, e1);
+  }
+  e1->u.s.info = luaK_codeABC(fs, op, 0, o1, o2);
+  e1->k = VRELOCABLE;
 }
 
 static void codecomp(FuncState *fs, OpCode op, int cond, ExprInfo *e1,
@@ -693,29 +695,31 @@ static void codecomp(FuncState *fs, OpCode op, int cond, ExprInfo *e1,
   e1->k = VJMP;
 }
 
-void luaK_prefix(FuncState *fs, OpKind op, ExprInfo *e) {
-  ExprInfo e2;
-  e2.t = e2.f = NO_JUMP;
-  e2.k = VKNUM;
-  e2.u.value = 0;
+void Codegen_prefix(FuncState *fs, OpKind op, ExprInfo *a) {
+  ExprInfo b = {
+      .t = NO_JUMP,
+      .f = NO_JUMP,
+      .k = VKNUM,
+      .u.value = 0,
+  };
   switch (op) {
   case OPR_MINUS: {
-    if (!isnumeral(e)) {
-      luaK_exp2anyreg(fs, e); /* cannot operate on non-numeric constants */
+    if (!isNumeric(a)) {
+      luaK_exp2anyreg(fs, a); /* cannot operate on non-numeric constants */
     }
-    codearith(fs, OP_UNM, e, &e2);
+    emitArith(fs, OP_UNM, a, &b);
     break;
   }
   case OPR_NOT:
-    codenot(fs, e);
+    codenot(fs, a);
     break;
   case OPR_LEN: {
-    luaK_exp2anyreg(fs, e); /* cannot operate on constants */
-    codearith(fs, OP_LEN, e, &e2);
+    luaK_exp2anyreg(fs, a); /* cannot operate on constants */
+    emitArith(fs, OP_LEN, a, &b);
     break;
   }
   default:
-    DEBUG_ASSERT(0);
+    DEBUG_ASSERT(false);
   }
 }
 
@@ -739,7 +743,7 @@ void luaK_infix(FuncState *fs, OpKind op, ExprInfo *v) {
   case OPR_DIV:
   case OPR_MOD:
   case OPR_POW: {
-    if (!isnumeral(v)) {
+    if (!isNumeric(v)) {
       luaK_exp2RK(fs, v);
     }
     break;
@@ -777,27 +781,27 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
       e1->u.s.info = e2->u.s.info;
     } else {
       luaK_exp2nextreg(fs, e2); /* operand must be on the 'stack' */
-      codearith(fs, OP_CONCAT, e1, e2);
+      emitArith(fs, OP_CONCAT, e1, e2);
     }
     break;
   }
   case OPR_ADD:
-    codearith(fs, OP_ADD, e1, e2);
+    emitArith(fs, OP_ADD, e1, e2);
     break;
   case OPR_SUB:
-    codearith(fs, OP_SUB, e1, e2);
+    emitArith(fs, OP_SUB, e1, e2);
     break;
   case OPR_MUL:
-    codearith(fs, OP_MUL, e1, e2);
+    emitArith(fs, OP_MUL, e1, e2);
     break;
   case OPR_DIV:
-    codearith(fs, OP_DIV, e1, e2);
+    emitArith(fs, OP_DIV, e1, e2);
     break;
   case OPR_MOD:
-    codearith(fs, OP_MOD, e1, e2);
+    emitArith(fs, OP_MOD, e1, e2);
     break;
   case OPR_POW:
-    codearith(fs, OP_POW, e1, e2);
+    emitArith(fs, OP_POW, e1, e2);
     break;
   case OPR_EQ:
     codecomp(fs, OP_EQ, 1, e1, e2);
