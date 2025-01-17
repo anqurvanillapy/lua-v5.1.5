@@ -151,7 +151,6 @@
 ** longs.) Probably you do not need to change this.
 */
 #define LUAI_UINT32 uint32_t
-#define LUAI_UMEM size_t
 #define LUAI_MEM ptrdiff_t
 
 /*

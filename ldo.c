@@ -77,7 +77,7 @@ static void resetstack(lua_State *L, int status) {
   L->allowHook = 1;
   restore_stack_limit(L);
   L->errFunc = 0;
-  L->errorJmp = NULL;
+  L->errorJmp = nullptr;
 }
 
 void luaD_throw(lua_State *L, int errcode) {

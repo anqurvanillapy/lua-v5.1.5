@@ -33,7 +33,7 @@ static const char *const TOKENS[] = {
 static void save(LexState *ls, int c) {
   Mbuffer *b = ls->buff;
   if (b->n + 1 > b->buffsize) {
-    if (b->buffsize >= MAX_SIZET / 2) {
+    if (b->buffsize >= SIZE_MAX / 2) {
       luaX_lexerror(ls, "lexical element too long", 0);
     }
     size_t newSize = b->buffsize * 2;

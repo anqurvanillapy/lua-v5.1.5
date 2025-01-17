@@ -273,7 +273,7 @@ static void traversestack(GlobalState *g, lua_State *l) {
 ** traverse one gray object, turning it to black.
 ** Returns `quantity' traversed.
 */
-static l_mem propagatemark(GlobalState *g) {
+static ptrdiff_t propagatemark(GlobalState *g) {
   GCObject *o = g->gray;
   DEBUG_ASSERT(isgray(o));
   gray2black(o);
@@ -396,7 +396,7 @@ static void freeobj(lua_State *L, GCObject *o) {
     break;
   }
   case LUA_TYPE_STRING: {
-    G(L)->strt.itemsNum--;
+    G(L)->pool.itemsNum--;
     luaM_freemem(L, o, STRING_SIZE(gco2ts(o)));
     break;
   }
@@ -409,9 +409,9 @@ static void freeobj(lua_State *L, GCObject *o) {
   }
 }
 
-#define sweepwholelist(L, p) sweeplist(L, p, MAX_LUMEM)
+#define sweepwholelist(L, p) sweeplist(L, p, SIZE_MAX)
 
-static GCObject **sweeplist(lua_State *L, GCObject **p, lu_mem count) {
+static GCObject **sweeplist(lua_State *L, GCObject **p, size_t count) {
   GCObject *curr;
   GlobalState *g = G(L);
   int deadmask = otherwhite(g);
@@ -438,10 +438,10 @@ static GCObject **sweeplist(lua_State *L, GCObject **p, lu_mem count) {
 
 static void checkSizes(lua_State *L) {
   GlobalState *g = G(L);
-  /* check size of string hash */
-  if (g->strt.itemsNum < cast(lu_int32, g->strt.bucketsSize / 4) &&
-      g->strt.bucketsSize > MINSTRTABSIZE * 2) {
-    String_resize(L, g->strt.bucketsSize / 2); /* table is too big */
+  /* check size of string pool buckets */
+  if (g->pool.itemsNum < cast(lu_int32, g->pool.bucketsSize / 4) &&
+      g->pool.bucketsSize > MINSTRTABSIZE * 2) {
+    String_resize(L, g->pool.bucketsSize / 2); /* table is too big */
   }
   /* check size of buffer */
   if (luaZ_sizebuffer(&g->buff) > LUA_MINBUFFER * 2) { /* buffer too big? */
@@ -468,7 +468,7 @@ static void GCTM(lua_State *L) {
   tm = fasttm(L, udata->metatable, TM_GC);
   if (tm != nullptr) {
     uint8_t oldah = L->allowHook;
-    lu_mem oldt = g->GCthreshold;
+    size_t oldt = g->GCthreshold;
     L->allowHook = 0; /* stop debug hooks during GC tag method */
     g->GCthreshold = 2 * g->totalbytes; /* avoid GC steps */
     SET_OBJECT_TO_STACK(L, L->top, tm);
@@ -494,9 +494,9 @@ void luaC_freeall(lua_State *L) {
   // Mask to collect all elements.
   g->currentwhite = WHITEBITS | bitmask(SFIXEDBIT);
   sweepwholelist(L, &g->rootgc);
-  for (int i = 0; i < g->strt.bucketsSize; i++) {
+  for (int i = 0; i < g->pool.bucketsSize; i++) {
     // Free all string lists.
-    sweepwholelist(L, &g->strt.hash[i]);
+    sweepwholelist(L, &g->pool.buckets[i]);
   }
 }
 
@@ -562,7 +562,7 @@ static void atomic(lua_State *L) {
   g->estimate = g->totalbytes - udsize; /* first estimate */
 }
 
-static l_mem singlestep(lua_State *L) {
+static ptrdiff_t singlestep(lua_State *L) {
   GlobalState *g = G(L);
   /*lua_checkmemory(L);*/
   switch (g->gcstate) {
@@ -579,9 +579,9 @@ static l_mem singlestep(lua_State *L) {
     }
   }
   case GCSsweepstring: {
-    lu_mem old = g->totalbytes;
-    sweepwholelist(L, &g->strt.hash[g->sweepstrgc++]);
-    if (g->sweepstrgc >= g->strt.bucketsSize) { /* nothing more to sweep? */
+    size_t old = g->totalbytes;
+    sweepwholelist(L, &g->pool.buckets[g->sweepstrgc++]);
+    if (g->sweepstrgc >= g->pool.bucketsSize) { /* nothing more to sweep? */
       g->gcstate = GCSsweep;                    /* end sweep-string phase */
     }
     DEBUG_ASSERT(old >= g->totalbytes);
@@ -589,7 +589,7 @@ static l_mem singlestep(lua_State *L) {
     return GCSWEEPCOST;
   }
   case GCSsweep: {
-    lu_mem old = g->totalbytes;
+    size_t old = g->totalbytes;
     g->sweepgc = sweeplist(L, g->sweepgc, GCSWEEPMAX);
     if (*g->sweepgc == NULL) { /* nothing more to sweep? */
       checkSizes(L);
@@ -620,9 +620,9 @@ static l_mem singlestep(lua_State *L) {
 
 void luaC_step(lua_State *L) {
   GlobalState *g = G(L);
-  l_mem lim = (GCSTEPSIZE / 100) * g->gcstepmul;
+  ptrdiff_t lim = (GCSTEPSIZE / 100) * g->gcstepmul;
   if (lim == 0) {
-    lim = (MAX_LUMEM - 1) / 2; /* no limit */
+    lim = (SIZE_MAX - 1) / 2; /* no limit */
   }
   g->gcdept += g->totalbytes - g->GCthreshold;
   do {

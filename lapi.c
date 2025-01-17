@@ -836,7 +836,7 @@ LUA_API int lua_gc(lua_State *L, int what, int data) {
   g = G(L);
   switch (what) {
   case LUA_GCSTOP: {
-    g->GCthreshold = MAX_LUMEM;
+    g->GCthreshold = SIZE_MAX;
     break;
   }
   case LUA_GCRESTART: {
@@ -857,7 +857,7 @@ LUA_API int lua_gc(lua_State *L, int what, int data) {
     break;
   }
   case LUA_GCSTEP: {
-    lu_mem a = (cast(lu_mem, data) << 10);
+    size_t a = (size_t)data << 10;
     if (a <= g->totalbytes) {
       g->GCthreshold = g->totalbytes - a;
     } else {

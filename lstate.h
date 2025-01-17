@@ -24,7 +24,7 @@ struct lua_longjmp; /* defined in ldo.c */
 #define BASIC_STACK_SIZE (2 * LUA_MIN_STACK)
 
 typedef struct StringPool {
-  GCObject **hash;
+  GCObject **buckets;
   int bucketsSize;
   size_t itemsNum;
 } StringPool;
@@ -45,12 +45,12 @@ typedef struct CallInfo {
 
 // The global states shared by all threads.
 typedef struct GlobalState {
-  StringPool strt;    /* hash table for strings */
+  StringPool pool;
   lua_Alloc frealloc; /* function to reallocate memory */
   void *ud;           /* auxiliary data to `frealloc' */
   uint8_t currentwhite;
   uint8_t gcstate;     /* state of garbage collector */
-  int sweepstrgc;      /* position of sweep in `strt' */
+  int sweepstrgc;      /* position of sweep in `pool' */
   GCObject *rootgc;    /* list of all collectable objects */
   GCObject **sweepgc;  /* position of sweep in `rootgc' */
   GCObject *gray;      /* list of gray objects */
@@ -58,10 +58,10 @@ typedef struct GlobalState {
   GCObject *weak;      /* list of weak tables (to be cleared) */
   GCObject *tmudata;   /* last element of list of userdata to be GC */
   Mbuffer buff;        /* temporary buffer for string concatentation */
-  lu_mem GCthreshold;
-  lu_mem totalbytes;   /* number of bytes currently allocated */
-  lu_mem estimate;     /* an estimate of number of bytes actually in use */
-  lu_mem gcdept;       /* how much GC is `behind schedule' */
+  size_t GCthreshold;
+  size_t totalbytes;   /* number of bytes currently allocated */
+  size_t estimate;     /* an estimate of number of bytes actually in use */
+  size_t gcdept;       /* how much GC is `behind schedule' */
   int gcpause;         /* size of pause between successive GCs */
   int gcstepmul;       /* GC `granularity' */
   lua_CFunction panic; /* to be called in unprotected errors */

@@ -10,9 +10,9 @@
 #define MEMERRMSG "not enough memory"
 
 #define luaM_reallocv(L, b, on, n, e)                                          \
-  ((cast(size_t, (n) + 1) <= MAX_SIZET / (e)) ? /* +1 to avoid warnings */     \
+  ((cast(size_t, (n) + 1) <= SIZE_MAX / (e)) ? /* +1 to avoid warnings */      \
        luaM_realloc_(L, (b), (on) * (e), (n) * (e))                            \
-                                              : luaM_toobig(L))
+                                             : luaM_toobig(L))
 
 #define luaM_freemem(L, b, s) luaM_realloc_(L, (b), (s), 0)
 #define luaM_free(L, b) luaM_realloc_(L, (b), sizeof(*(b)), 0)

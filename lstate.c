@@ -90,8 +90,8 @@ static void close_state(lua_State *L) {
   luaF_close(L, L->stack); /* close all upvalues for this thread */
   luaC_freeall(L);         /* collect all objects */
   DEBUG_ASSERT(g->rootgc == LuaObjectToGCObject(L));
-  DEBUG_ASSERT(g->strt.itemsNum == 0);
-  luaM_freearray(L, G(L)->strt.hash, G(L)->strt.bucketsSize, String *);
+  DEBUG_ASSERT(g->pool.itemsNum == 0);
+  luaM_freearray(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   DEBUG_ASSERT(g->totalbytes == sizeof(LG));
@@ -142,9 +142,9 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   g->uvhead.u.l.prev = &g->uvhead;
   g->uvhead.u.l.next = &g->uvhead;
   g->GCthreshold = 0; /* mark it as unfinished state */
-  g->strt.bucketsSize = 0;
-  g->strt.itemsNum = 0;
-  g->strt.hash = nullptr;
+  g->pool.bucketsSize = 0;
+  g->pool.itemsNum = 0;
+  g->pool.buckets = nullptr;
   SET_NIL(registry(L));
   luaZ_initbuffer(L, &g->buff);
   g->panic = nullptr;

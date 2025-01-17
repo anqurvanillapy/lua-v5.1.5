@@ -19,9 +19,9 @@ void String_resize(lua_State *L, int newSize) {
   }
 
   // Rehash.
-  StringPool *tb = &G(L)->strt;
+  StringPool *tb = &G(L)->pool;
   for (int i = 0; i < tb->bucketsSize; i++) {
-    GCObject *p = tb->hash[i];
+    GCObject *p = tb->buckets[i];
     while (p) {                     /* for each node in the list */
       GCObject *next = p->gch.next; /* save next */
       uint32_t h = gco2ts(p)->hash;
@@ -33,13 +33,13 @@ void String_resize(lua_State *L, int newSize) {
     }
   }
 
-  luaM_freearray(L, tb->hash, tb->bucketsSize, String *);
+  luaM_freearray(L, tb->buckets, tb->bucketsSize, String *);
   tb->bucketsSize = newSize;
-  tb->hash = newHash;
+  tb->buckets = newHash;
 }
 
 static String *createStr(lua_State *L, const char *str, size_t l, uint32_t h) {
-  if (l > (MAX_SIZET - sizeof(String)) / sizeof(char) - 1) {
+  if (l > (SIZE_MAX - sizeof(String)) / sizeof(char) - 1) {
     luaM_toobig(L);
   }
 
@@ -52,10 +52,10 @@ static String *createStr(lua_State *L, const char *str, size_t l, uint32_t h) {
   memcpy(ts + 1, str, l * sizeof(char));
   ((char *)(ts + 1))[l] = '\0'; /* ending 0 */
 
-  StringPool *tb = &G(L)->strt;
+  StringPool *tb = &G(L)->pool;
   h = lmod(h, tb->bucketsSize);
-  ts->header.next = tb->hash[h]; /* chain new entry */
-  tb->hash[h] = LuaObjectToGCObject(ts);
+  ts->header.next = tb->buckets[h]; /* chain new entry */
+  tb->buckets[h] = LuaObjectToGCObject(ts);
   tb->itemsNum++;
 
   if (tb->itemsNum > cast(lu_int32, tb->bucketsSize) &&
@@ -77,7 +77,8 @@ String *String_createSized(lua_State *L, const char *str, size_t len) {
     h = h ^ ((h << 5) + (h >> 2) + (uint8_t)str[i - 1]);
   }
 
-  for (GCObject *o = G(L)->strt.hash[lmod(h, G(L)->strt.bucketsSize)];
+  // Iterate the string pool.
+  for (GCObject *o = G(L)->pool.buckets[lmod(h, G(L)->pool.bucketsSize)];
        o != nullptr; o = o->gch.next) {
     String *ts = gco2ts(o);
     if (ts->len != len || memcmp(str, STRING_CONTENT(ts), len) != 0) {
@@ -96,7 +97,7 @@ String *String_createSized(lua_State *L, const char *str, size_t len) {
 }
 
 Userdata *Userdata_new(lua_State *L, size_t size, Table *env) {
-  if (size > MAX_SIZET - sizeof(Userdata)) {
+  if (size > SIZE_MAX - sizeof(Userdata)) {
     luaM_toobig(L);
   }
 

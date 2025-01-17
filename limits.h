@@ -9,14 +9,6 @@
 
 typedef LUAI_UINT32 lu_int32;
 
-typedef LUAI_UMEM lu_mem;
-
-typedef LUAI_MEM l_mem;
-
-#define MAX_SIZET ((size_t)(~(size_t)0) - 2)
-
-#define MAX_LUMEM ((lu_mem)(~(lu_mem)0) - 2)
-
 #define MAX_INT (INT_MAX - 2) /* maximum value of an int (-2 for safety) */
 
 /*
@@ -24,7 +16,7 @@ typedef LUAI_MEM l_mem;
 ** this is for hashing only; there is no problem if the integer
 ** cannot hold the whole pointer value
 */
-#define IntPoint(p) ((unsigned int)(lu_mem)(p))
+#define IntPoint(p) ((uint32_t)(size_t)(p))
 
 // Type to ensure maximum alignment, this is used for reducing memory
 // fragmentation.
