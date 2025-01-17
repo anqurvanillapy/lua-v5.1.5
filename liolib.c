@@ -234,7 +234,7 @@ static int io_lines(lua_State *L) {
 */
 
 static int read_number(lua_State *L, FILE *f) {
-  lua_Number d;
+  double d;
   if (fscanf(f, LUA_NUMBER_SCAN, &d) == 1) {
     lua_pushnumber(L, d);
     return 1;
@@ -247,7 +247,7 @@ static int read_number(lua_State *L, FILE *f) {
 static int test_eof(lua_State *L, FILE *f) {
   int c = getc(f);
   ungetc(c, f);
-  lua_pushlstring(L, NULL, 0);
+  lua_pushlstring(L, nullptr, 0);
   return (c != EOF);
 }
 

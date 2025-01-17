@@ -54,7 +54,7 @@ enum RESERVED {
 #define NUM_RESERVED (cast(int, TK_WHILE - FIRST_RESERVED + 1))
 
 typedef union Literal {
-  lua_Number num;
+  double num;
   String *str;
 } Literal;
 

@@ -221,7 +221,7 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
 
   // Constant not found, create a new entry.
   int oldsize = f->kSize;
-  SET_NUMBER(idx, cast_num(fs->nk));
+  SET_NUMBER(idx, (double)fs->nk);
   luaM_growvector(L, f->k, fs->nk, f->kSize, Value, MAXARG_Bx,
                   "constant table overflow");
   while (oldsize < f->kSize) {
@@ -238,7 +238,7 @@ int Codegen_addString(FuncState *fs, String *s) {
   return addConstant(fs, &o, &o);
 }
 
-int luaK_numberK(FuncState *fs, lua_Number r) {
+int luaK_numberK(FuncState *fs, double r) {
   Value o;
   SET_NUMBER(&o, r);
   return addConstant(fs, &o, &o);
@@ -479,8 +479,7 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
     break;
   }
   default: {
-    DEBUG_ASSERT(0); /* invalid var kind to store */
-    break;
+    DEBUG_ASSERT(false);
   }
   }
   freeexp(fs, ex);
@@ -594,8 +593,7 @@ static void codenot(FuncState *fs, ExprInfo *e) {
     break;
   }
   default: {
-    DEBUG_ASSERT(0); /* cannot happen */
-    break;
+    DEBUG_ASSERT(false);
   }
   }
   /* interchange true and false lists */
@@ -614,7 +612,7 @@ void luaK_indexed(FuncState *fs, ExprInfo *t, ExprInfo *k) {
 }
 
 static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
-  lua_Number v1, v2, r;
+  double v1, v2, r;
   if (!isnumeral(e1) || !isnumeral(e2)) {
     return 0;
   }
@@ -651,9 +649,7 @@ static int constfolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
   case OP_LEN:
     return 0; /* no constant folding for 'len' */
   default:
-    DEBUG_ASSERT(0);
-    r = 0;
-    break;
+    DEBUG_ASSERT(false);
   }
   if (luai_numisnan(r)) {
     return 0; /* do not attempt to produce NaN */

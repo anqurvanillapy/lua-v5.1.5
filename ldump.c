@@ -34,7 +34,7 @@ static void DumpChar(int y, DumpState *D) {
 
 static void DumpInt(int x, DumpState *D) { DumpVar(x, D); }
 
-static void DumpNumber(lua_Number x, DumpState *D) { DumpVar(x, D); }
+static void DumpNumber(double x, DumpState *D) { DumpVar(x, D); }
 
 static void DumpVector(const void *b, int n, size_t size, DumpState *D) {
   DumpInt(n, D);
@@ -105,7 +105,7 @@ static void DumpDebug(const Prototype *f, DumpState *D) {
 }
 
 static void DumpFunction(const Prototype *f, const String *p, DumpState *D) {
-  DumpString((f->source == p || D->strip) ? NULL : f->source, D);
+  DumpString((f->source == p || D->strip) ? nullptr : f->source, D);
   DumpInt(f->lineDefined, D);
   DumpInt(f->lineDefinedLast, D);
   DumpChar(f->upvaluesNum, D);
@@ -135,6 +135,6 @@ int luaU_dump(lua_State *L, const Prototype *f, lua_Writer w, void *data,
   D.strip = strip;
   D.status = 0;
   DumpHeader(&D);
-  DumpFunction(f, NULL, &D);
+  DumpFunction(f, nullptr, &D);
   return D.status;
 }

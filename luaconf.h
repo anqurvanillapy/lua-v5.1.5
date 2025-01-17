@@ -188,22 +188,6 @@
 /* }================================================================== */
 
 /*
-** {==================================================================
-@@ LUA_NUMBER is the type of numbers in Lua.
-** CHANGE the following definitions only if you want to build Lua
-** with a number type different from double. You may also need to
-** change lua_number2int & lua_number2integer.
-** ===================================================================
-*/
-#define LUA_NUMBER double
-
-/*
-@@ LUAI_UACNUMBER is the result of an 'usual argument conversion'
-@* over a number.
-*/
-#define LUAI_UACNUMBER double
-
-/*
 @@ LUA_NUMBER_SCAN is the format for reading numbers.
 @@ LUA_NUMBER_FMT is the format for writing numbers.
 @@ lua_number2str converts a number to a string.

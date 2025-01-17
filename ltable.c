@@ -45,7 +45,7 @@
 /*
 ** number of ints inside a lua_Number
 */
-#define numints cast_int(sizeof(lua_Number) / sizeof(int))
+#define numints cast_int(sizeof(double) / sizeof(int))
 
 #define dummynode (&dummynode_)
 
@@ -57,7 +57,7 @@ static const Node dummynode_ = {
 /*
 ** hash for lua_Numbers
 */
-static Node *hashnum(const Table *t, lua_Number n) {
+static Node *hashnum(const Table *t, double n) {
   unsigned int a[numints];
   int i;
   if (luai_numeq(n, 0)) { /* avoid problems with -0 */
@@ -95,10 +95,10 @@ static Node *mainposition(const Table *t, const Value *key) {
 */
 static int arrayindex(const Value *key) {
   if (IS_TYPE_NUMBER(key)) {
-    lua_Number n = NUMBER_VALUE(key);
+    double n = NUMBER_VALUE(key);
     int k;
     lua_number2int(k, n);
-    if (luai_numeq(cast_num(k), n)) {
+    if (luai_numeq((double)k, n)) {
       return k;
     }
   }
@@ -141,7 +141,7 @@ int luaH_next(lua_State *L, Table *t, StackIndex key) {
   int i = findindex(L, t, key);       /* find original element */
   for (i++; i < t->sizearray; i++) {  /* try first array part */
     if (!IS_TYPE_NIL(&t->array[i])) { /* a non-nil value? */
-      SET_NUMBER(key, cast_num(i + 1));
+      SET_NUMBER(key, (double)(i + 1));
       SET_OBJECT_TO_STACK(L, key + 1, &t->array[i]);
       return 1;
     }
@@ -410,7 +410,7 @@ const Value *luaH_getnum(Table *t, int key) {
   if (cast(unsigned int, key - 1) < cast(unsigned int, t->sizearray)) {
     return &t->array[key - 1];
   } else {
-    lua_Number nk = cast_num(key);
+    double nk = (double)key;
     Node *n = hashnum(t, nk);
     do { /* check whether `key' is somewhere in the chain */
       if (IS_TYPE_NUMBER(gkey(n)) && luai_numeq(NUMBER_VALUE(gkey(n)), nk)) {
@@ -449,9 +449,9 @@ const Value *luaH_get(Table *t, const Value *key) {
     return luaH_getstr(t, STRING_VALUE(key));
   case LUA_TYPE_NUMBER: {
     int k;
-    lua_Number n = NUMBER_VALUE(key);
+    double n = NUMBER_VALUE(key);
     lua_number2int(k, n);
-    if (luai_numeq(cast_num(k), NUMBER_VALUE(key))) { /* index is int? */
+    if (luai_numeq((double)k, NUMBER_VALUE(key))) { /* index is int? */
       return luaH_getnum(t, k); /* use specialized version */
     }
     /* else go through */
@@ -491,7 +491,7 @@ Value *luaH_setnum(lua_State *L, Table *t, int key) {
     return cast(Value *, p);
   } else {
     Value k;
-    SET_NUMBER(&k, cast_num(key));
+    SET_NUMBER(&k, (double)key);
     return newkey(L, t, &k);
   }
 }

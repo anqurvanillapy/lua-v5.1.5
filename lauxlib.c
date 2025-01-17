@@ -159,15 +159,15 @@ LUALIB_API const char *luaL_optlstring(lua_State *L, int narg, const char *def,
   }
 }
 
-LUALIB_API lua_Number luaL_checknumber(lua_State *L, int narg) {
-  lua_Number d = lua_tonumber(L, narg);
+LUALIB_API double luaL_checknumber(lua_State *L, int narg) {
+  double d = lua_tonumber(L, narg);
   if (d == 0 && !lua_isnumber(L, narg)) { /* avoid extra test when d is not 0 */
     tag_error(L, narg, LUA_TYPE_NUMBER);
   }
   return d;
 }
 
-LUALIB_API lua_Number luaL_optnumber(lua_State *L, int narg, lua_Number def) {
+LUALIB_API double luaL_optnumber(lua_State *L, int narg, double def) {
   return luaL_opt(L, luaL_checknumber, narg, def);
 }
 

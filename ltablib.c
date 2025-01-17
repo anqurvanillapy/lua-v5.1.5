@@ -44,13 +44,13 @@ static int foreach (lua_State *L) {
 }
 
 static int maxn(lua_State *L) {
-  lua_Number max = 0;
+  double max = 0;
   luaL_checktype(L, 1, LUA_TYPE_TABLE);
   lua_pushnil(L); /* first key */
   while (lua_next(L, 1)) {
     lua_pop(L, 1); /* remove value */
     if (lua_type(L, -1) == LUA_TYPE_NUMBER) {
-      lua_Number v = lua_tonumber(L, -1);
+      double v = lua_tonumber(L, -1);
       if (v > max) {
         max = v;
       }
@@ -273,7 +273,7 @@ static const luaL_Reg tab_funcs[] = {
     {"concat", tconcat}, {"foreach", foreach}, {"foreachi", foreachi},
     {"getn", getn},      {"maxn", maxn},       {"insert", tinsert},
     {"remove", tremove}, {"setn", setn},       {"sort", sort},
-    {NULL, NULL},
+    {nullptr, nullptr},
 };
 
 LUALIB_API int luaopen_table(lua_State *L) {

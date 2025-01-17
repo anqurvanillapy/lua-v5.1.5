@@ -209,7 +209,7 @@ static StackIndex adjust_varargs(lua_State *L, Prototype *p, int actual) {
     }
     /* store counter in field `n' */
     SET_NUMBER(luaH_setstr(L, htab, String_createLiteral(L, "n")),
-               cast_num(nvar));
+               (double)nvar);
   }
 
   /* move fixed parameters to final position */

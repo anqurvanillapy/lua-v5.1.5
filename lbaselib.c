@@ -58,7 +58,7 @@ static int luaB_tonumber(lua_State *L) {
         s2++; /* skip trailing spaces */
       }
       if (*s2 == '\0') { /* no invalid trailing characters? */
-        lua_pushnumber(L, (lua_Number)n);
+        lua_pushnumber(L, (double)n);
         return 1;
       }
     }
@@ -186,7 +186,7 @@ static int luaB_collectgarbage(lua_State *L) {
   switch (optsnum[o]) {
   case LUA_GCCOUNT: {
     int b = lua_gc(L, LUA_GCCOUNTB, 0);
-    lua_pushnumber(L, res + ((lua_Number)b / 1024));
+    lua_pushnumber(L, res + ((double)b / 1024));
     return 1;
   }
   case LUA_GCSTEP: {
@@ -277,14 +277,14 @@ static const char *generic_reader(lua_State *L, void *ud, size_t *size) {
   lua_call(L, 0, 1);   /* call it */
   if (lua_isnil(L, -1)) {
     *size = 0;
-    return NULL;
+    return nullptr;
   } else if (lua_isstring(L, -1)) {
     lua_replace(L, 3); /* save string in a reserved stack slot */
     return lua_tolstring(L, 3, size);
   } else {
     luaL_error(L, "reader function must return a string");
   }
-  return NULL; /* to avoid warnings */
+  return nullptr; /* to avoid warnings */
 }
 
 static int luaB_load(lua_State *L) {

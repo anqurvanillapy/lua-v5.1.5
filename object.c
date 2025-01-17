@@ -85,14 +85,14 @@ int luaO_rawequalObj(const Value *t1, const Value *t2) {
   }
 }
 
-int luaO_str2d(const char *s, lua_Number *result) {
+int luaO_str2d(const char *s, double *result) {
   char *endptr;
   *result = lua_str2number(s, &endptr);
   if (endptr == s) {
     return 0; /* conversion failed */
   }
   if (*endptr == 'x' || *endptr == 'X') { /* maybe an hexadecimal constant? */
-    *result = cast_num(strtoul(s, &endptr, 16));
+    *result = (double)strtoul(s, &endptr, 16);
   }
   if (*endptr == '\0') {
     return 1; /* most common case */
@@ -139,12 +139,12 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
       break;
     }
     case 'd': {
-      SET_NUMBER(L->top, cast_num(va_arg(argp, int)));
+      SET_NUMBER(L->top, (double)va_arg(argp, int));
       incr_top(L);
       break;
     }
     case 'f': {
-      SET_NUMBER(L->top, cast_num(va_arg(argp, l_uacNumber)));
+      SET_NUMBER(L->top, (double)va_arg(argp, double));
       incr_top(L);
       break;
     }

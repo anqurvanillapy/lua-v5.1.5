@@ -272,7 +272,7 @@ LUA_API int lua_lessthan(lua_State *L, int index1, int index2) {
   return i;
 }
 
-LUA_API lua_Number lua_tonumber(lua_State *L, int idx) {
+LUA_API double lua_tonumber(lua_State *L, int idx) {
   Value n;
   const Value *o = index2adr(L, idx);
   if (tonumber(o, &n)) {
@@ -287,7 +287,7 @@ LUA_API lua_Integer lua_tointeger(lua_State *L, int idx) {
   const Value *o = index2adr(L, idx);
   if (tonumber(o, &n)) {
     lua_Integer res;
-    lua_Number num = NUMBER_VALUE(o);
+    double num = NUMBER_VALUE(o);
     lua_number2integer(res, num);
     return res;
   } else {
@@ -392,7 +392,7 @@ LUA_API void lua_pushnil(lua_State *L) {
   lua_unlock(L);
 }
 
-LUA_API void lua_pushnumber(lua_State *L, lua_Number n) {
+LUA_API void lua_pushnumber(lua_State *L, double n) {
   lua_lock(L);
   SET_NUMBER(L->top, n);
   api_incr_top(L);
@@ -401,7 +401,7 @@ LUA_API void lua_pushnumber(lua_State *L, lua_Number n) {
 
 LUA_API void lua_pushinteger(lua_State *L, lua_Integer n) {
   lua_lock(L);
-  SET_NUMBER(L->top, cast_num(n));
+  SET_NUMBER(L->top, (double)n);
   api_incr_top(L);
   lua_unlock(L);
 }

@@ -20,9 +20,6 @@
 // fragmentation.
 typedef uint64_t MaxAlign;
 
-/* result of a 'usual argument conversion' over lua_Number */
-typedef LUAI_UACNUMBER l_uacNumber;
-
 /* internal assertions for in-house debugging */
 #include <assert.h>
 #define DEBUG_ASSERT(c) assert(c)
@@ -34,7 +31,6 @@ typedef LUAI_UACNUMBER l_uacNumber;
 #endif
 
 #define cast_byte(i) cast(uint8_t, (i))
-#define cast_num(i) cast(lua_Number, (i))
 #define cast_int(i) cast(int, (i))
 
 /*

@@ -21,7 +21,7 @@
 #define MAXTAGLOOP 100
 
 const Value *luaV_tonumber(const Value *obj, Value *n) {
-  lua_Number num;
+  double num;
   if (IS_TYPE_NUMBER(obj)) {
     return obj;
   }
@@ -37,7 +37,7 @@ int luaV_tostring(lua_State *L, StackIndex obj) {
     return 0;
   }
   char s[LUAI_MAXNUMBER2STR];
-  lua_Number n = NUMBER_VALUE(obj);
+  double n = NUMBER_VALUE(obj);
   snprintf(s, sizeof(s), LUA_NUMBER_FMT, n);
   SET_STRING_TO_STACK(L, obj, String_create(L, s));
   return 1;
@@ -329,7 +329,7 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
   const Value *b, *c;
   if ((b = luaV_tonumber(rb, &tempb)) != NULL &&
       (c = luaV_tonumber(rc, &tempc)) != NULL) {
-    lua_Number nb = NUMBER_VALUE(b), nc = NUMBER_VALUE(c);
+    double nb = NUMBER_VALUE(b), nc = NUMBER_VALUE(c);
     switch (op) {
     case TM_ADD:
       SET_NUMBER(ra, luai_numadd(nb, nc));
@@ -399,15 +399,15 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
   }
 
 #define arith_op(op, tm)                                                       \
-  {                                                                            \
+  do {                                                                         \
     Value *rb = RKB(i);                                                        \
     Value *rc = RKC(i);                                                        \
     if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                            \
-      lua_Number nb = NUMBER_VALUE(rb), nc = NUMBER_VALUE(rc);                 \
+      double nb = NUMBER_VALUE(rb), nc = NUMBER_VALUE(rc);                     \
       SET_NUMBER(ra, op(nb, nc));                                              \
     } else                                                                     \
       Protect(Arith(L, ra, rb, rc, tm));                                       \
-  }
+  } while (false)
 
 void luaV_execute(lua_State *L, int nexeccalls) {
   LClosure *cl;
@@ -535,7 +535,7 @@ reentry: /* entry point */
     case OP_UNM: {
       Value *rb = RB(i);
       if (IS_TYPE_NUMBER(rb)) {
-        lua_Number nb = NUMBER_VALUE(rb);
+        double nb = NUMBER_VALUE(rb);
         SET_NUMBER(ra, luai_numunm(nb));
       } else {
         Protect(Arith(L, ra, rb, rb, TM_UNM));
@@ -551,11 +551,11 @@ reentry: /* entry point */
       const Value *rb = RB(i);
       switch (GET_TYPE(rb)) {
       case LUA_TYPE_TABLE: {
-        SET_NUMBER(ra, cast_num(luaH_getn(TABLE_VALUE(rb))));
+        SET_NUMBER(ra, (double)luaH_getn(TABLE_VALUE(rb)));
         break;
       }
       case LUA_TYPE_STRING: {
-        SET_NUMBER(ra, cast_num(STRING_VALUE(rb)->len));
+        SET_NUMBER(ra, (double)STRING_VALUE(rb)->len);
         break;
       }
       default: { /* try metamethod */
@@ -692,10 +692,9 @@ reentry: /* entry point */
       }
     }
     case OP_FORLOOP: {
-      lua_Number step = NUMBER_VALUE(ra + 2);
-      lua_Number idx =
-          luai_numadd(NUMBER_VALUE(ra), step); /* increment index */
-      lua_Number limit = NUMBER_VALUE(ra + 1);
+      double step = NUMBER_VALUE(ra + 2);
+      double idx = luai_numadd(NUMBER_VALUE(ra), step); /* increment index */
+      double limit = NUMBER_VALUE(ra + 1);
       if (luai_numlt(0, step) ? luai_numle(idx, limit)
                               : luai_numle(limit, idx)) {
         dojump(L, pc, GETARG_sBx(i)); /* jump back */

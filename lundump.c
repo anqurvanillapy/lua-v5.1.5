@@ -57,8 +57,8 @@ static int LoadInt(LoadState *S) {
   return x;
 }
 
-static lua_Number LoadNumber(LoadState *S) {
-  lua_Number x;
+static double LoadNumber(LoadState *S) {
+  double x;
   LoadVar(S, x);
   return x;
 }
@@ -67,7 +67,7 @@ static String *LoadString(LoadState *S) {
   size_t size;
   LoadVar(S, size);
   if (size == 0) {
-    return NULL;
+    return nullptr;
   } else {
     char *s = luaZ_openspace(S->L, S->b, size);
     LoadBlock(S, s, size);
@@ -219,6 +219,7 @@ void luaU_header(char *h) {
   *h++ = (char)sizeof(int);
   *h++ = (char)sizeof(size_t);
   *h++ = (char)sizeof(Instruction);
-  *h++ = (char)sizeof(lua_Number);
-  *h++ = (char)(((lua_Number)0.5) == 0); /* is lua_Number integral? */
+  *h++ = (char)sizeof(double);
+  // Is the number type integral, always false.
+  *h = (char)false;
 }

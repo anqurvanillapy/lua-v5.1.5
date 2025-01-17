@@ -123,7 +123,7 @@ static void exprSetKind(ExprInfo *e, ExprKind k) {
   e->k = k;
 }
 
-static void numberLiteral(ExprInfo *e, lua_Number value) {
+static void numberLiteral(ExprInfo *e, double value) {
   exprSetKind(e, VKNUM);
   e->u.value = value;
 }

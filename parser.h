@@ -31,7 +31,7 @@ typedef struct ExprInfo {
       int info;
       int aux;
     } s;
-    lua_Number value;
+    double value;
   } u;
   int t; /* patch list of `exit when true' */
   int f; /* patch list of `exit when false' */

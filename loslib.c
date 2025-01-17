@@ -76,7 +76,7 @@ static int os_getenv(lua_State *L) {
 }
 
 static int os_clock(lua_State *L) {
-  lua_pushnumber(L, ((lua_Number)clock()) / (lua_Number)CLOCKS_PER_SEC);
+  lua_pushnumber(L, ((double)clock()) / (double)CLOCKS_PER_SEC);
   return 1;
 }
 
@@ -189,7 +189,7 @@ static int os_time(lua_State *L) {
   if (t == (time_t)(-1)) {
     lua_pushnil(L);
   } else {
-    lua_pushnumber(L, (lua_Number)t);
+    lua_pushnumber(L, (double)t);
   }
   return 1;
 }
@@ -206,7 +206,8 @@ static int os_setlocale(lua_State *L) {
   static const int cat[] = {LC_ALL,      LC_COLLATE, LC_CTYPE,
                             LC_MONETARY, LC_NUMERIC, LC_TIME};
   static const char *const catnames[] = {
-      "all", "collate", "ctype", "monetary", "numeric", "time", NULL};
+      "all", "collate", "ctype", "monetary", "numeric", "time", nullptr,
+  };
   const char *l = luaL_optstring(L, 1, NULL);
   int op = luaL_checkoption(L, 2, "all", catnames);
   lua_pushstring(L, setlocale(cat[op], l));
@@ -221,7 +222,8 @@ static const luaL_Reg syslib[] = {
     {"exit", os_exit},           {"getenv", os_getenv},
     {"remove", os_remove},       {"rename", os_rename},
     {"setlocale", os_setlocale}, {"time", os_time},
-    {"tmpname", os_tmpname},     {NULL, NULL}};
+    {"tmpname", os_tmpname},     {nullptr, nullptr},
+};
 
 /* }====================================================== */
 

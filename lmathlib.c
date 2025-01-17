@@ -139,10 +139,10 @@ static int math_ldexp(lua_State *L) {
 
 static int math_min(lua_State *L) {
   int n = lua_gettop(L); /* number of arguments */
-  lua_Number dmin = luaL_checknumber(L, 1);
+  double dmin = luaL_checknumber(L, 1);
   int i;
   for (i = 2; i <= n; i++) {
-    lua_Number d = luaL_checknumber(L, i);
+    double d = luaL_checknumber(L, i);
     if (d < dmin) {
       dmin = d;
     }
@@ -153,10 +153,10 @@ static int math_min(lua_State *L) {
 
 static int math_max(lua_State *L) {
   int n = lua_gettop(L); /* number of arguments */
-  lua_Number dmax = luaL_checknumber(L, 1);
+  double dmax = luaL_checknumber(L, 1);
   int i;
   for (i = 2; i <= n; i++) {
-    lua_Number d = luaL_checknumber(L, i);
+    double d = luaL_checknumber(L, i);
     if (d > dmax) {
       dmax = d;
     }
@@ -168,7 +168,7 @@ static int math_max(lua_State *L) {
 static int math_random(lua_State *L) {
   /* the `%' avoids the (rare) case of r==1, and is needed also because on
      some systems (SunOS!) `rand()' may return a value larger than RAND_MAX */
-  lua_Number r = (lua_Number)(rand() % RAND_MAX) / (lua_Number)RAND_MAX;
+  double r = (double)(rand() % RAND_MAX) / (double)RAND_MAX;
   switch (lua_gettop(L)) { /* check number of arguments */
   case 0: {                /* no arguments */
     lua_pushnumber(L, r);  /* Number between 0 and 1 */
@@ -227,7 +227,7 @@ static const luaL_Reg mathlib[] = {
     {"sqrt", math_sqrt},
     {"tanh", math_tanh},
     {"tan", math_tan},
-    {NULL, NULL},
+    {nullptr, nullptr},
 };
 
 /*
