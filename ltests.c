@@ -540,11 +540,13 @@ static int table_query(lua_State *L) {
 static int string_query(lua_State *L) {
   StringPool *tb = &G(L)->pool;
   int s = luaL_optint(L, 2, 0) - 1;
-  if (s == -1) {
-    lua_pushinteger(L, tb->itemsNum);
-    lua_pushinteger(L, tb->bucketsSize);
+  if (s < 0) {
+    lua_pushinteger(L, (lua_Integer)tb->itemsNum);
+    lua_pushinteger(L, (lua_Integer)tb->bucketsSize);
     return 2;
-  } else if (s < tb->bucketsSize) {
+  }
+
+  if ((size_t)s < tb->bucketsSize) {
     GCObject *ts;
     int n = 0;
     for (ts = tb->buckets[s]; ts; ts = ts->gch.next) {
@@ -554,6 +556,7 @@ static int string_query(lua_State *L) {
     }
     return n;
   }
+
   return 0;
 }
 

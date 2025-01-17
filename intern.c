@@ -20,7 +20,7 @@ void StringPool_resize(lua_State *L, size_t newSize) {
 
   // Rehash.
   StringPool *tb = &G(L)->pool;
-  for (int i = 0; i < tb->bucketsSize; i++) {
+  for (size_t i = 0; i < tb->bucketsSize; i++) {
     GCObject *p = tb->buckets[i];
     while (p) {
       // New bucket position.

@@ -494,7 +494,7 @@ void luaC_freeall(lua_State *L) {
   // Mask to collect all elements.
   g->currentwhite = WHITEBITS | bitmask(SFIXEDBIT);
   sweepwholelist(L, &g->rootgc);
-  for (int i = 0; i < g->pool.bucketsSize; i++) {
+  for (size_t i = 0; i < g->pool.bucketsSize; i++) {
     // Free all string lists.
     sweepwholelist(L, &g->pool.buckets[i]);
   }

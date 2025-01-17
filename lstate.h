@@ -25,7 +25,7 @@ struct lua_longjmp; /* defined in ldo.c */
 
 typedef struct StringPool {
   GCObject **buckets;
-  int bucketsSize;
+  size_t bucketsSize;
   size_t itemsNum;
 } StringPool;
 
@@ -50,7 +50,7 @@ typedef struct GlobalState {
   void *ud;           /* auxiliary data to `frealloc' */
   uint8_t currentwhite;
   uint8_t gcstate;     /* state of garbage collector */
-  int sweepstrgc;      /* position of sweep in `pool' */
+  size_t sweepstrgc;   /* position of sweep in `pool' */
   GCObject *rootgc;    /* list of all collectable objects */
   GCObject **sweepgc;  /* position of sweep in `rootgc' */
   GCObject *gray;      /* list of gray objects */
