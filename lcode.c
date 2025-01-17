@@ -693,7 +693,7 @@ static void codecomp(FuncState *fs, OpCode op, int cond, ExprInfo *e1,
   e1->k = VJMP;
 }
 
-void luaK_prefix(FuncState *fs, UnOpr op, ExprInfo *e) {
+void luaK_prefix(FuncState *fs, OpKind op, ExprInfo *e) {
   ExprInfo e2;
   e2.t = e2.f = NO_JUMP;
   e2.k = VKNUM;
@@ -719,7 +719,7 @@ void luaK_prefix(FuncState *fs, UnOpr op, ExprInfo *e) {
   }
 }
 
-void luaK_infix(FuncState *fs, BinOpr op, ExprInfo *v) {
+void luaK_infix(FuncState *fs, OpKind op, ExprInfo *v) {
   switch (op) {
   case OPR_AND: {
     luaK_goiftrue(fs, v);
@@ -751,7 +751,7 @@ void luaK_infix(FuncState *fs, BinOpr op, ExprInfo *v) {
   }
 }
 
-void luaK_posfix(FuncState *fs, BinOpr op, ExprInfo *e1, ExprInfo *e2) {
+void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
   switch (op) {
   case OPR_AND: {
     DEBUG_ASSERT(e1->t == NO_JUMP); /* list must be closed */

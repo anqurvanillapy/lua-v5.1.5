@@ -760,8 +760,8 @@ static void simpleexp(LexState *ls, ExprInfo *v) {
   luaX_next(ls);
 }
 
-static UnOpr getunopr(int op) {
-  switch (op) {
+static OpKind unaryOp(int token) {
+  switch (token) {
   case TK_NOT:
     return OPR_NOT;
   case '-':
@@ -769,12 +769,12 @@ static UnOpr getunopr(int op) {
   case '#':
     return OPR_LEN;
   default:
-    return OPR_NOUNOPR;
+    return OPR_NONE;
   }
 }
 
-static BinOpr getbinopr(int op) {
-  switch (op) {
+static OpKind binaryOp(int token) {
+  switch (token) {
   case '+':
     return OPR_ADD;
   case '-':
@@ -806,7 +806,7 @@ static BinOpr getbinopr(int op) {
   case TK_OR:
     return OPR_OR;
   default:
-    return OPR_NOBINOPR;
+    return OPR_NONE;
   }
 }
 
@@ -843,34 +843,34 @@ static const struct {
 #define UNARY_PRIORITY 8 /* priority for unary operators */
 
 /// \code
-/// subexpr
-///     : (simpleexp | unop subexpr) (binop subexpr)*
+/// subExpr
+///     : (unaryOp subExpr | simpleexp) (binop subExpr)*
 ///     ;
 /// \endcode
 ///
 /// Where `binop` is any binary operator with a priority higher than
 /// `minPriority`.
-static BinOpr subexpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
+static OpKind subExpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
   enterLevel(ls);
 
-  UnOpr uop = getunopr(ls->t.token);
-  if (uop != OPR_NOUNOPR) {
+  OpKind op = unaryOp(ls->t.token);
+  if (op != OPR_NONE) {
     luaX_next(ls);
-    subexpr(ls, v, UNARY_PRIORITY);
-    luaK_prefix(ls->fs, uop, v);
+    subExpr(ls, v, UNARY_PRIORITY);
+    luaK_prefix(ls->fs, op, v);
   } else {
     simpleexp(ls, v);
   }
 
   /* expand while operators have priorities higher than `minPriority' */
-  BinOpr op = getbinopr(ls->t.token);
-  while (op != OPR_NOBINOPR && priority[op].left > minPriority) {
+  op = binaryOp(ls->t.token);
+  while (op != OPR_NONE && priority[op].left > minPriority) {
     ExprInfo v2;
-    BinOpr nextop;
+    OpKind nextop;
     luaX_next(ls);
     luaK_infix(ls->fs, op, v);
     /* read sub-expression with higher priority */
-    nextop = subexpr(ls, &v2, priority[op].right);
+    nextop = subExpr(ls, &v2, priority[op].right);
     luaK_posfix(ls->fs, op, v, &v2);
     op = nextop;
   }
@@ -879,7 +879,7 @@ static BinOpr subexpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
   return op; /* return first untreated operator */
 }
 
-static void expr(LexState *ls, ExprInfo *v) { subexpr(ls, v, 0); }
+static void expr(LexState *ls, ExprInfo *v) { subExpr(ls, v, 0); }
 
 static bool isBlockEnded(int token) {
   switch (token) {

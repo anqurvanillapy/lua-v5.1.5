@@ -13,10 +13,17 @@
 */
 #define NO_JUMP (-1)
 
-/*
-** grep "ORDER OPR" if you change these enums
-*/
-typedef enum BinOpr {
+typedef enum OpKind {
+  OPR_NONE,
+
+  // Unary.
+
+  OPR_MINUS,
+  OPR_NOT,
+  OPR_LEN,
+
+  // Binary.
+
   OPR_ADD,
   OPR_SUB,
   OPR_MUL,
@@ -32,10 +39,7 @@ typedef enum BinOpr {
   OPR_GE,
   OPR_AND,
   OPR_OR,
-  OPR_NOBINOPR
-} BinOpr;
-
-typedef enum UnOpr { OPR_MINUS, OPR_NOT, OPR_LEN, OPR_NOUNOPR } UnOpr;
+} OpKind;
 
 #define getcode(fs, e) ((fs)->f->code[(e)->u.s.info])
 
@@ -67,8 +71,8 @@ LUAI_FUNC void luaK_patchlist(FuncState *fs, int list, int target);
 LUAI_FUNC void luaK_patchtohere(FuncState *fs, int list);
 LUAI_FUNC void luaK_concat(FuncState *fs, int *l1, int l2);
 LUAI_FUNC int luaK_getlabel(FuncState *fs);
-LUAI_FUNC void luaK_prefix(FuncState *fs, UnOpr op, ExprInfo *v);
-LUAI_FUNC void luaK_infix(FuncState *fs, BinOpr op, ExprInfo *v);
-LUAI_FUNC void luaK_posfix(FuncState *fs, BinOpr op, ExprInfo *v1,
+LUAI_FUNC void luaK_prefix(FuncState *fs, OpKind op, ExprInfo *v);
+LUAI_FUNC void luaK_infix(FuncState *fs, OpKind op, ExprInfo *v);
+LUAI_FUNC void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *v1,
                            ExprInfo *v2);
 LUAI_FUNC void luaK_setlist(FuncState *fs, int base, int nelems, int tostore);
