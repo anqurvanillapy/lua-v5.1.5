@@ -40,8 +40,7 @@ static int db_setfenv(lua_State *L) {
   luaL_checktype(L, 2, LUA_TYPE_TABLE);
   lua_settop(L, 2);
   if (lua_setfenv(L, 1) == 0) {
-    luaL_error(
-        L, LUA_QUOTE("setfenv") " cannot change environment of given object");
+    luaL_error(L, "'setfenv' cannot change environment of given object");
   }
   return 1;
 }
@@ -252,7 +251,7 @@ static int db_sethook(lua_State *L) {
   lua_State *L1 = getthread(L, &arg);
   if (lua_isnoneornil(L, arg + 1)) {
     lua_settop(L, arg + 1);
-    func = NULL;
+    func = nullptr;
     mask = 0;
     count = 0; /* turn off hooks */
   } else {
@@ -294,7 +293,7 @@ static int db_debug(lua_State *L) {
   for (;;) {
     char buffer[250];
     fputs("lua_debug> ", stderr);
-    if (fgets(buffer, sizeof(buffer), stdin) == 0 ||
+    if (fgets(buffer, sizeof(buffer), stdin) == nullptr ||
         strcmp(buffer, "cont\n") == 0) {
       return 0;
     }
@@ -351,7 +350,7 @@ static int db_errorfb(lua_State *L) {
       lua_pushfstring(L, "%d:", ar.currentline);
     }
     if (*ar.namewhat != '\0') { /* is there a name? */
-      lua_pushfstring(L, " in function " LUA_QUOTE_FMT, ar.name);
+      lua_pushfstring(L, " in function '%s'", ar.name);
     } else {
       if (*ar.what == 'm') { /* main? */
         lua_pushfstring(L, " in main chunk");
@@ -368,21 +367,23 @@ static int db_errorfb(lua_State *L) {
   return 1;
 }
 
-static const luaL_Reg dblib[] = {{"debug", db_debug},
-                                 {"getfenv", db_getfenv},
-                                 {"gethook", db_gethook},
-                                 {"getinfo", db_getinfo},
-                                 {"getlocal", db_getlocal},
-                                 {"getregistry", db_getregistry},
-                                 {"getmetatable", db_getmetatable},
-                                 {"getupvalue", db_getupvalue},
-                                 {"setfenv", db_setfenv},
-                                 {"sethook", db_sethook},
-                                 {"setlocal", db_setlocal},
-                                 {"setmetatable", db_setmetatable},
-                                 {"setupvalue", db_setupvalue},
-                                 {"traceback", db_errorfb},
-                                 {NULL, NULL}};
+static const luaL_Reg dblib[] = {
+    {"debug", db_debug},
+    {"getfenv", db_getfenv},
+    {"gethook", db_gethook},
+    {"getinfo", db_getinfo},
+    {"getlocal", db_getlocal},
+    {"getregistry", db_getregistry},
+    {"getmetatable", db_getmetatable},
+    {"getupvalue", db_getupvalue},
+    {"setfenv", db_setfenv},
+    {"sethook", db_sethook},
+    {"setlocal", db_setlocal},
+    {"setmetatable", db_setmetatable},
+    {"setupvalue", db_setupvalue},
+    {"traceback", db_errorfb},
+    {nullptr, nullptr},
+};
 
 LUALIB_API int luaopen_debug(lua_State *L) {
   luaL_register(L, LUA_DBLIBNAME, dblib);

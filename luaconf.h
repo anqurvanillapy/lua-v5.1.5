@@ -99,13 +99,6 @@
 #define LUAI_DATA extern
 
 /*
-@@ LUA_QUOTE describes how error messages quote program elements.
-** CHANGE it if you want a different appearance.
-*/
-#define LUA_QUOTE(x) "'" x "'"
-#define LUA_QUOTE_FMT LUA_QUOTE("%s")
-
-/*
 @@ LUA_IDSIZE gives the maximum size for the description of the source
 @* of a function in debug information.
 ** CHANGE it if you want a different size.

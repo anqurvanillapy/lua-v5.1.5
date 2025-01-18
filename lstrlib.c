@@ -201,7 +201,7 @@ static const char *classend(MatchState *ms, const char *p) {
   switch (*p++) {
   case L_ESC: {
     if (*p == '\0') {
-      luaL_error(ms->L, "malformed pattern (ends with " LUA_QUOTE("%%") ")");
+      luaL_error(ms->L, "malformed pattern (ends with '%%')");
     }
     return p + 1;
   }
@@ -211,7 +211,7 @@ static const char *classend(MatchState *ms, const char *p) {
     }
     do { /* look for a `]' */
       if (*p == '\0') {
-        luaL_error(ms->L, "malformed pattern (missing " LUA_QUOTE("]") ")");
+        luaL_error(ms->L, "malformed pattern (missing ']')");
       }
       if (*(p++) == L_ESC && *p != '\0') {
         p++; /* skip escapes (e.g. `%]') */
@@ -423,14 +423,13 @@ init: /* using goto's to optimize tail recursion */
       char previous;
       p += 2;
       if (*p != '[') {
-        luaL_error(ms->L, "missing " LUA_QUOTE("[") " after " LUA_QUOTE(
-                              "%%f") " in pattern");
+        luaL_error(ms->L, "missing '[' after '%%f' in pattern");
       }
       ep = classend(ms, p); /* points to what is next */
       previous = (s == ms->src_init) ? '\0' : *(s - 1);
       if (matchbracketclass(uchar(previous), p, ep - 1) ||
           !matchbracketclass(uchar(*s), p, ep - 1)) {
-        return NULL;
+        return nullptr;
       }
       p = ep;
       goto init; /* else return match(ms, s, ep); */
@@ -438,8 +437,8 @@ init: /* using goto's to optimize tail recursion */
     default: {
       if (isdigit(uchar(*(p + 1)))) { /* capture results (%0-%9)? */
         s = match_capture(ms, s, uchar(*(p + 1)));
-        if (s == NULL) {
-          return NULL;
+        if (s == nullptr) {
+          return nullptr;
         }
         p += 2;
         goto init; /* else return match(ms, s, p+2) */
@@ -453,7 +452,7 @@ init: /* using goto's to optimize tail recursion */
   }
   case '$': {
     if (*(p + 1) == '\0') { /* is the `$' the last char in pattern? */
-      return (s == ms->src_end) ? s : NULL; /* check end of string */
+      return (s == ms->src_end) ? s : nullptr; /* check end of string */
     } else {
       goto dflt;
     }
@@ -475,14 +474,14 @@ init: /* using goto's to optimize tail recursion */
       return max_expand(ms, s, p, ep);
     }
     case '+': { /* 1 or more repetitions */
-      return (m ? max_expand(ms, s + 1, p, ep) : NULL);
+      return (m ? max_expand(ms, s + 1, p, ep) : nullptr);
     }
     case '-': { /* 0 or more repetitions (minimum) */
       return min_expand(ms, s, p, ep);
     }
     default: {
       if (!m) {
-        return NULL;
+        return nullptr;
       }
       s++;
       p = ep;
@@ -498,7 +497,7 @@ static const char *lmemfind(const char *s1, size_t l1, const char *s2,
   if (l2 == 0) {
     return s1; /* empty strings are everywhere */
   } else if (l2 > l1) {
-    return NULL; /* avoids a negative `l1' */
+    return nullptr; /* avoids a negative `l1' */
   } else {
     const char *init; /* to search for a `*s2' inside `s1' */
     l2--;             /* 1st char will be checked by `memchr' */
@@ -512,7 +511,7 @@ static const char *lmemfind(const char *s1, size_t l1, const char *s2,
         s1 = init;
       }
     }
-    return NULL; /* not found */
+    return nullptr; /* not found */
   }
 }
 
@@ -580,7 +579,7 @@ static int str_find_aux(lua_State *L, int find) {
         if (find) {
           lua_pushinteger(L, s1 - s + 1); /* start */
           lua_pushinteger(L, res - s);    /* end */
-          return push_captures(&ms, NULL, 0) + 2;
+          return push_captures(&ms, nullptr, 0) + 2;
         } else {
           return push_captures(&ms, s1, res);
         }
@@ -631,8 +630,7 @@ static int gmatch(lua_State *L) {
 }
 
 static int gfind_nodef(lua_State *L) {
-  return luaL_error(L, LUA_QUOTE("string.gfind") " was renamed to " LUA_QUOTE(
-                           "string.gmatch"));
+  return luaL_error(L, "'string.gfind' was renamed to 'string.gmatch'");
 }
 
 static void add_s(MatchState *ms, luaL_Buffer *b, const char *s,
@@ -882,9 +880,8 @@ static int str_format(lua_State *L) {
         }
       }
       default: { /* also treat cases `pnLlh' */
-        return luaL_error(
-            L, "invalid option " LUA_QUOTE("%%%c") " to " LUA_QUOTE("format"),
-            *(strfrmt - 1));
+        return luaL_error(L, "invalid option '%%%c' to 'format'",
+                          *(strfrmt - 1));
       }
       }
       luaL_addlstring(&b, buff, strlen(buff));

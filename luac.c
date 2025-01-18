@@ -41,8 +41,7 @@ static void cannot(const char *what) {
 
 static void usage(const char *message) {
   if (*message == '-') {
-    fprintf(stderr, "%s: unrecognized option " LUA_QUOTE_FMT "\n", progname,
-            message);
+    fprintf(stderr, "%s: unrecognized option '%s'\n", progname, message);
   } else {
     fprintf(stderr, "%s: %s\n", progname, message);
   }
@@ -51,12 +50,11 @@ static void usage(const char *message) {
           "Available options are:\n"
           "  -        process stdin\n"
           "  -l       list\n"
-          "  -o name  output to file " LUA_QUOTE(
-              "name") " (default is \"%s\")\n"
-                      "  -p       parse only\n"
-                      "  -s       strip debug information\n"
-                      "  -v       show version information\n"
-                      "  --       stop handling options\n",
+          "  -o name  output to file 'name' (default is \"%s\")\n"
+          "  -p       parse only\n"
+          "  -s       strip debug information\n"
+          "  -v       show version information\n"
+          "  --       stop handling options\n",
           progname, Output);
   exit(EXIT_FAILURE);
 }
@@ -66,7 +64,7 @@ static void usage(const char *message) {
 static int doargs(int argc, const char *argv[]) {
   int i;
   int version = 0;
-  if (argv[0] != NULL && *argv[0] != 0) {
+  if (argv[0] != nullptr && *argv[0] != 0) {
     progname = argv[0];
   }
   for (i = 1; i < argc; i++) {
@@ -84,11 +82,11 @@ static int doargs(int argc, const char *argv[]) {
       ++listing;
     } else if (IS("-o")) { /* output file */
       output = argv[++i];
-      if (output == NULL || *output == 0) {
-        usage(LUA_QUOTE("-o") " needs argument");
+      if (output == nullptr || *output == 0) {
+        usage("'-o' needs argument");
       }
       if (IS("-")) {
-        output = NULL;
+        output = nullptr;
       }
     } else if (IS("-p")) { /* parse only */
       dumping = 0;
@@ -160,7 +158,7 @@ static int Compiler_main(lua_State *L) {
     fatal("too many input files");
   }
   for (i = 0; i < argc; i++) {
-    const char *filename = IS("-") ? NULL : argv[i];
+    const char *filename = IS("-") ? nullptr : argv[i];
     if (luaL_loadfile(L, filename) != 0) {
       fatal(lua_tostring(L, -1));
     }
@@ -170,8 +168,8 @@ static int Compiler_main(lua_State *L) {
     luaU_print(f, listing > 1);
   }
   if (dumping) {
-    FILE *D = (output == NULL) ? stdout : fopen(output, "wb");
-    if (D == NULL) {
+    FILE *D = (output == nullptr) ? stdout : fopen(output, "wb");
+    if (D == nullptr) {
       cannot("open");
     }
     lua_lock(L);
@@ -197,7 +195,7 @@ int main(int argc, const char *argv[]) {
     usage("no input files given");
   }
   L = lua_open();
-  if (L == NULL) {
+  if (L == nullptr) {
     fatal("not enough memory for state");
   }
   s.argc = argc;

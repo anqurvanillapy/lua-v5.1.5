@@ -50,8 +50,8 @@ static void anchor_token(LexState *ls) {
 }
 
 static void error_expected(LexState *ls, int token) {
-  Lex_throw(ls, luaO_pushfstring(ls->L, LUA_QUOTE_FMT " expected",
-                                 luaX_token2str(ls, token)));
+  Lex_throw(
+      ls, luaO_pushfstring(ls->L, "'%s' expected", luaX_token2str(ls, token)));
 }
 
 static void errorlimit(FuncState *fs, int limit, const char *what) {
@@ -96,9 +96,7 @@ static void check_match(LexState *ls, int what, int who, int where) {
       error_expected(ls, what);
     } else {
       Lex_throw(ls, luaO_pushfstring(ls->L,
-                                     LUA_QUOTE_FMT
-                                     " expected (to close " LUA_QUOTE_FMT
-                                     " at line %d)",
+                                     "'%s' expected (to close '%s' at line %d)",
                                      luaX_token2str(ls, what),
                                      luaX_token2str(ls, who), where));
     }
@@ -551,7 +549,7 @@ static void parlist(LexState *ls) {
         break;
       }
       default:
-        Lex_throw(ls, "<name> or " LUA_QUOTE("...") " expected");
+        Lex_throw(ls, "<name> or '...' expected");
       }
     } while (!f->varargMode && testNext(ls, ','));
   }
@@ -740,8 +738,7 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
     // Vararg.
     FuncState *fs = ls->fs;
     if (!fs->f->varargMode) {
-      Lex_throw(ls,
-                "cannot use " LUA_QUOTE("...") " outside a vararg function");
+      Lex_throw(ls, "cannot use '...' outside a vararg function");
     }
     fs->f->varargMode &= ~VARARG_NEEDS_ARG; /* don't need 'arg' */
     exprSetInfo(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
@@ -1134,7 +1131,7 @@ static void forStmt(LexState *ls, int line) {
     forlist(ls, varname);
     break;
   default:
-    Lex_throw(ls, LUA_QUOTE("=") " or " LUA_QUOTE("in") " expected");
+    Lex_throw(ls, "'=' or 'in' expected");
   }
   check_match(ls, TK_END, TK_FOR, line);
   leaveBlock(fs); /* loop scope (`break' jumps to this point) */

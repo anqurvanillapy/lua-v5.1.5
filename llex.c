@@ -80,7 +80,7 @@ void Lex_throwWith(LexState *ls, const char *msg, int token) {
   luaO_chunkid(buff, STRING_CONTENT(ls->source), MAXSRC);
   msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
   if (token) {
-    luaO_pushfstring(ls->L, "%s near " LUA_QUOTE_FMT, msg, txtToken(ls, token));
+    luaO_pushfstring(ls->L, "%s near '%s'", msg, txtToken(ls, token));
   }
   luaD_throw(ls->L, LUA_ERRSYNTAX);
 }

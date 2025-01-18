@@ -577,8 +577,7 @@ void luaG_typeerror(lua_State *L, const Value *o, const char *op) {
                          ? getobjname(L, L->ci, (int)(o - L->base), &name)
                          : nullptr;
   if (kind) {
-    luaG_runerror(L, "attempt to %s %s " LUA_QUOTE_FMT " (a %s value)", op,
-                  kind, name, t);
+    luaG_runerror(L, "attempt to %s %s '%s' (a %s value)", op, kind, name, t);
   } else {
     luaG_runerror(L, "attempt to %s a %s value", op, t);
   }

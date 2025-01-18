@@ -91,23 +91,16 @@ static void laction(int i) {
 }
 
 static void print_usage(void) {
-  fprintf(
-      stderr,
-      "usage: %s [options] [script [args]].\n"
-      "Available options are:\n"
-      "  -e stat  execute string " LUA_QUOTE(
-          "stat") "\n"
-                  "  -l name  require library " LUA_QUOTE(
-                      "name") "\n"
-                              "  -i       enter interactive mode after "
-                              "executing " LUA_QUOTE(
-                                  "script") "\n"
-                                            "  -v       show version "
-                                            "information\n"
-                                            "  --       stop handling options\n"
-                                            "  -        execute stdin and stop "
-                                            "handling options\n",
-      progname);
+  fprintf(stderr,
+          "usage: %s [options] [script [args]].\n"
+          "Available options are:\n"
+          "  -e stat  execute string 'stat'\n"
+          "  -l name  require library 'name'\n"
+          "  -i       enter interactive mode after executing 'script'\n"
+          "  -v       show version information\n"
+          "  --       stop handling options\n"
+          "  -        execute stdin and stop handling options\n",
+          progname);
   fflush(stderr);
 }
 
@@ -222,8 +215,8 @@ static int incomplete(lua_State *L, int status) {
   if (status == LUA_ERRSYNTAX) {
     size_t lmsg;
     const char *msg = lua_tolstring(L, -1, &lmsg);
-    const char *tp = msg + lmsg - (sizeof(LUA_QUOTE("<eof>")) - 1);
-    if (strstr(msg, LUA_QUOTE("<eof>")) == tp) {
+    const char *tp = msg + lmsg - (sizeof("'<eof>'") - 1);
+    if (strstr(msg, "'<eof>'") == tp) {
       lua_pop(L, 1);
       return 1;
     }
@@ -288,9 +281,8 @@ static void dotty(lua_State *L) {
       lua_getglobal(L, "print");
       lua_insert(L, 1);
       if (lua_pcall(L, lua_gettop(L) - 1, 0, 0) != 0) {
-        l_message(progname, lua_pushfstring(
-                                L, "error calling " LUA_QUOTE("print") " (%s)",
-                                lua_tostring(L, -1)));
+        l_message(progname, lua_pushfstring(L, "error calling 'print' (%s)",
+                                            lua_tostring(L, -1)));
       }
     }
   }

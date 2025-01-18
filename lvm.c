@@ -709,11 +709,11 @@ reentry: /* entry point */
       const Value *pstep = ra + 2;
       L->savedPC = pc; /* next steps may throw errors */
       if (!tonumber(init, ra)) {
-        luaG_runerror(L, LUA_QUOTE("for") " initial value must be a number");
+        luaG_runerror(L, "'for' initial value must be a number");
       } else if (!tonumber(plimit, ra + 1)) {
-        luaG_runerror(L, LUA_QUOTE("for") " limit must be a number");
+        luaG_runerror(L, "'for' limit must be a number");
       } else if (!tonumber(pstep, ra + 2)) {
-        luaG_runerror(L, LUA_QUOTE("for") " step must be a number");
+        luaG_runerror(L, "'for' step must be a number");
       }
       SET_NUMBER(ra, luai_numsub(NUMBER_VALUE(ra), NUMBER_VALUE(pstep)));
       dojump(L, pc, GETARG_sBx(i));

@@ -25,10 +25,8 @@ static int luaB_print(lua_State *L) {
     lua_pushvalue(L, i);  /* value to print */
     lua_call(L, 1, 1);
     s = lua_tostring(L, -1); /* get result */
-    if (s == NULL) {
-      return luaL_error(
-          L,
-          LUA_QUOTE("tostring") " must return a string to " LUA_QUOTE("print"));
+    if (s == nullptr) {
+      return luaL_error(L, "'tostring' must return a string to 'print'");
     }
     if (i > 1) {
       fputs("\t", stdout);
@@ -140,8 +138,7 @@ static int luaB_setfenv(lua_State *L) {
     lua_setfenv(L, -2);
     return 0;
   } else if (lua_iscfunction(L, -2) || lua_setfenv(L, -2) == 0) {
-    luaL_error(
-        L, LUA_QUOTE("setfenv") " cannot change environment of given object");
+    luaL_error(L, "'setfenv' cannot change environment of given object");
   }
   return 1;
 }
@@ -176,11 +173,14 @@ static int luaB_gcinfo(lua_State *L) {
 }
 
 static int luaB_collectgarbage(lua_State *L) {
-  static const char *const opts[] = {"stop", "restart",  "collect",    "count",
-                                     "step", "setpause", "setstepmul", NULL};
-  static const int optsnum[] = {LUA_GCSTOP,      LUA_GCRESTART, LUA_GCCOLLECT,
-                                LUA_GCCOUNT,     LUA_GCSTEP,    LUA_GCSETPAUSE,
-                                LUA_GCSETSTEPMUL};
+  static const char *const opts[] = {
+      "stop", "restart",  "collect",    "count",
+      "step", "setpause", "setstepmul", nullptr,
+  };
+  static const int optsnum[] = {
+      LUA_GCSTOP, LUA_GCRESTART,  LUA_GCCOLLECT,    LUA_GCCOUNT,
+      LUA_GCSTEP, LUA_GCSETPAUSE, LUA_GCSETSTEPMUL,
+  };
   int o = luaL_checkoption(L, 1, "collect", opts);
   int ex = luaL_optint(L, 2, 0);
   int res = lua_gc(L, optsnum[o], ex);
@@ -261,7 +261,7 @@ static int luaB_loadstring(lua_State *L) {
 }
 
 static int luaB_loadfile(lua_State *L) {
-  const char *fname = luaL_optstring(L, 1, NULL);
+  const char *fname = luaL_optstring(L, 1, nullptr);
   return load_aux(L, luaL_loadfile(L, fname));
 }
 
@@ -293,12 +293,12 @@ static int luaB_load(lua_State *L) {
   const char *cname = luaL_optstring(L, 2, "=(load)");
   luaL_checktype(L, 1, LUA_TYPE_FUNCTION);
   lua_settop(L, 3); /* function, eventual name, plus one reserved slot */
-  status = lua_load(L, generic_reader, NULL, cname);
+  status = lua_load(L, generic_reader, nullptr, cname);
   return load_aux(L, status);
 }
 
 static int luaB_dofile(lua_State *L) {
-  const char *fname = luaL_optstring(L, 1, NULL);
+  const char *fname = luaL_optstring(L, 1, nullptr);
   int n = lua_gettop(L);
   if (luaL_loadfile(L, fname) != 0) {
     lua_error(L);
@@ -420,31 +420,33 @@ static int luaB_newproxy(lua_State *L) {
   return 1;
 }
 
-static const luaL_Reg base_funcs[] = {{"assert", luaB_assert},
-                                      {"collectgarbage", luaB_collectgarbage},
-                                      {"dofile", luaB_dofile},
-                                      {"error", luaB_error},
-                                      {"gcinfo", luaB_gcinfo},
-                                      {"getfenv", luaB_getfenv},
-                                      {"getmetatable", luaB_getmetatable},
-                                      {"loadfile", luaB_loadfile},
-                                      {"load", luaB_load},
-                                      {"loadstring", luaB_loadstring},
-                                      {"next", luaB_next},
-                                      {"pcall", luaB_pcall},
-                                      {"print", luaB_print},
-                                      {"rawequal", luaB_rawequal},
-                                      {"rawget", luaB_rawget},
-                                      {"rawset", luaB_rawset},
-                                      {"select", luaB_select},
-                                      {"setfenv", luaB_setfenv},
-                                      {"setmetatable", luaB_setmetatable},
-                                      {"tonumber", luaB_tonumber},
-                                      {"tostring", luaB_tostring},
-                                      {"type", luaB_type},
-                                      {"unpack", luaB_unpack},
-                                      {"xpcall", luaB_xpcall},
-                                      {NULL, NULL}};
+static const luaL_Reg base_funcs[] = {
+    {"assert", luaB_assert},
+    {"collectgarbage", luaB_collectgarbage},
+    {"dofile", luaB_dofile},
+    {"error", luaB_error},
+    {"gcinfo", luaB_gcinfo},
+    {"getfenv", luaB_getfenv},
+    {"getmetatable", luaB_getmetatable},
+    {"loadfile", luaB_loadfile},
+    {"load", luaB_load},
+    {"loadstring", luaB_loadstring},
+    {"next", luaB_next},
+    {"pcall", luaB_pcall},
+    {"print", luaB_print},
+    {"rawequal", luaB_rawequal},
+    {"rawget", luaB_rawget},
+    {"rawset", luaB_rawset},
+    {"select", luaB_select},
+    {"setfenv", luaB_setfenv},
+    {"setmetatable", luaB_setmetatable},
+    {"tonumber", luaB_tonumber},
+    {"tostring", luaB_tostring},
+    {"type", luaB_type},
+    {"unpack", luaB_unpack},
+    {"xpcall", luaB_xpcall},
+    {nullptr, nullptr},
+};
 
 /*
 ** {======================================================
@@ -568,13 +570,12 @@ static int luaB_corunning(lua_State *L) {
   return 1;
 }
 
-static const luaL_Reg co_funcs[] = {{"create", luaB_cocreate},
-                                    {"resume", luaB_coresume},
-                                    {"running", luaB_corunning},
-                                    {"status", luaB_costatus},
-                                    {"wrap", luaB_cowrap},
-                                    {"yield", luaB_yield},
-                                    {NULL, NULL}};
+static const luaL_Reg co_funcs[] = {
+    {"create", luaB_cocreate},   {"resume", luaB_coresume},
+    {"running", luaB_corunning}, {"status", luaB_costatus},
+    {"wrap", luaB_cowrap},       {"yield", luaB_yield},
+    {nullptr, nullptr},
+};
 
 /* }====================================================== */
 
