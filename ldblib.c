@@ -40,8 +40,8 @@ static int db_setfenv(lua_State *L) {
   luaL_checktype(L, 2, LUA_TYPE_TABLE);
   lua_settop(L, 2);
   if (lua_setfenv(L, 1) == 0) {
-    luaL_error(L,
-               LUA_QL("setfenv") " cannot change environment of given object");
+    luaL_error(
+        L, LUA_QUOTE("setfenv") " cannot change environment of given object");
   }
   return 1;
 }
@@ -351,7 +351,7 @@ static int db_errorfb(lua_State *L) {
       lua_pushfstring(L, "%d:", ar.currentline);
     }
     if (*ar.namewhat != '\0') { /* is there a name? */
-      lua_pushfstring(L, " in function " LUA_QS, ar.name);
+      lua_pushfstring(L, " in function " LUA_QUOTE_FMT, ar.name);
     } else {
       if (*ar.what == 'm') { /* main? */
         lua_pushfstring(L, " in main chunk");

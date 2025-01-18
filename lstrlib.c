@@ -201,7 +201,7 @@ static const char *classend(MatchState *ms, const char *p) {
   switch (*p++) {
   case L_ESC: {
     if (*p == '\0') {
-      luaL_error(ms->L, "malformed pattern (ends with " LUA_QL("%%") ")");
+      luaL_error(ms->L, "malformed pattern (ends with " LUA_QUOTE("%%") ")");
     }
     return p + 1;
   }
@@ -211,7 +211,7 @@ static const char *classend(MatchState *ms, const char *p) {
     }
     do { /* look for a `]' */
       if (*p == '\0') {
-        luaL_error(ms->L, "malformed pattern (missing " LUA_QL("]") ")");
+        luaL_error(ms->L, "malformed pattern (missing " LUA_QUOTE("]") ")");
       }
       if (*(p++) == L_ESC && *p != '\0') {
         p++; /* skip escapes (e.g. `%]') */
@@ -423,7 +423,7 @@ init: /* using goto's to optimize tail recursion */
       char previous;
       p += 2;
       if (*p != '[') {
-        luaL_error(ms->L, "missing " LUA_QL("[") " after " LUA_QL(
+        luaL_error(ms->L, "missing " LUA_QUOTE("[") " after " LUA_QUOTE(
                               "%%f") " in pattern");
       }
       ep = classend(ms, p); /* points to what is next */
@@ -631,8 +631,8 @@ static int gmatch(lua_State *L) {
 }
 
 static int gfind_nodef(lua_State *L) {
-  return luaL_error(
-      L, LUA_QL("string.gfind") " was renamed to " LUA_QL("string.gmatch"));
+  return luaL_error(L, LUA_QUOTE("string.gfind") " was renamed to " LUA_QUOTE(
+                           "string.gmatch"));
 }
 
 static void add_s(MatchState *ms, luaL_Buffer *b, const char *s,
@@ -883,7 +883,7 @@ static int str_format(lua_State *L) {
       }
       default: { /* also treat cases `pnLlh' */
         return luaL_error(
-            L, "invalid option " LUA_QL("%%%c") " to " LUA_QL("format"),
+            L, "invalid option " LUA_QUOTE("%%%c") " to " LUA_QUOTE("format"),
             *(strfrmt - 1));
       }
       }

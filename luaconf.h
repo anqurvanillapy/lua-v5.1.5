@@ -99,11 +99,11 @@
 #define LUAI_DATA extern
 
 /*
-@@ LUA_QL describes how error messages quote program elements.
+@@ LUA_QUOTE describes how error messages quote program elements.
 ** CHANGE it if you want a different appearance.
 */
-#define LUA_QL(x) "'" x "'"
-#define LUA_QS LUA_QL("%s")
+#define LUA_QUOTE(x) "'" x "'"
+#define LUA_QUOTE_FMT LUA_QUOTE("%s")
 
 /*
 @@ LUA_IDSIZE gives the maximum size for the description of the source
@@ -264,7 +264,7 @@
 #else
 
 #define lua_popen(L, c, m)                                                     \
-  ((void)((void)c, m), luaL_error(L, LUA_QL("popen") " not supported"),        \
+  ((void)((void)c, m), luaL_error(L, LUA_QUOTE("popen") " not supported"),     \
    (FILE *)0)
 #define lua_pclose(L, file) ((void)((void)L, file), 0)
 

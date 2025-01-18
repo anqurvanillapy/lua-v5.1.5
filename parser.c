@@ -50,8 +50,8 @@ static void anchor_token(LexState *ls) {
 }
 
 static void error_expected(LexState *ls, int token) {
-  luaX_syntaxerror(ls, luaO_pushfstring(ls->L, LUA_QS " expected",
-                                        luaX_token2str(ls, token)));
+  Lex_throw(ls, luaO_pushfstring(ls->L, LUA_QUOTE_FMT " expected",
+                                 luaX_token2str(ls, token)));
 }
 
 static void errorlimit(FuncState *fs, int limit, const char *what) {
@@ -61,7 +61,7 @@ static void errorlimit(FuncState *fs, int limit, const char *what) {
                              what)
           : luaO_pushfstring(fs->L, "function at line %d has more than %d %s",
                              fs->f->lineDefined, limit, what);
-  luaX_lexerror(fs->ls, msg, 0);
+  Lex_throwWith(fs->ls, msg, 0);
 }
 
 static bool testNext(LexState *ls, int c) {
@@ -86,7 +86,7 @@ static void checknext(LexState *ls, int c) {
 #define check_condition(ls, c, msg)                                            \
   do {                                                                         \
     if (!(c)) {                                                                \
-      luaX_syntaxerror(ls, msg);                                               \
+      Lex_throw(ls, msg);                                                      \
     }                                                                          \
   } while (false)
 
@@ -95,10 +95,12 @@ static void check_match(LexState *ls, int what, int who, int where) {
     if (where == ls->linenumber) {
       error_expected(ls, what);
     } else {
-      luaX_syntaxerror(
-          ls, luaO_pushfstring(
-                  ls->L, LUA_QS " expected (to close " LUA_QS " at line %d)",
-                  luaX_token2str(ls, what), luaX_token2str(ls, who), where));
+      Lex_throw(ls, luaO_pushfstring(ls->L,
+                                     LUA_QUOTE_FMT
+                                     " expected (to close " LUA_QUOTE_FMT
+                                     " at line %d)",
+                                     luaX_token2str(ls, what),
+                                     luaX_token2str(ls, who), where));
     }
   }
 }
@@ -280,7 +282,7 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, ExprInfo *e) {
 static void enterLevel(LexState *ls) {
   ls->L->nestedCCallsNum++;
   if (ls->L->nestedCCallsNum > LUAI_MAX_C_CALLS) {
-    luaX_lexerror(ls, "chunk has too many syntax levels", 0);
+    Lex_throwWith(ls, "chunk has too many syntax levels", 0);
   }
 }
 
@@ -549,7 +551,7 @@ static void parlist(LexState *ls) {
         break;
       }
       default:
-        luaX_syntaxerror(ls, "<name> or " LUA_QL("...") " expected");
+        Lex_throw(ls, "<name> or " LUA_QUOTE("...") " expected");
       }
     } while (!f->varargMode && testNext(ls, ','));
   }
@@ -601,7 +603,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
   switch (ls->t.token) {
   case '(': { /* funcargs -> `(' [ exprList1 ] `)' */
     if (line != ls->lastline) {
-      luaX_syntaxerror(ls, "ambiguous syntax (function call x new stmt)");
+      Lex_throw(ls, "ambiguous syntax (function call x new stmt)");
     }
     luaX_next(ls);
     if (ls->t.token == ')') { /* arg list is empty? */
@@ -623,7 +625,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     break;
   }
   default: {
-    luaX_syntaxerror(ls, "function arguments expected");
+    Lex_throw(ls, "function arguments expected");
     return;
   }
   }
@@ -659,7 +661,7 @@ static void prefixexp(LexState *ls, ExprInfo *v) {
     return;
   }
   default: {
-    luaX_syntaxerror(ls, "unexpected symbol");
+    Lex_throw(ls, "unexpected symbol");
     return;
   }
   }
@@ -705,7 +707,7 @@ static void primaryexp(LexState *ls, ExprInfo *v) {
 }
 
 /// \code
-/// simpleexp
+/// simpleExpr
 ///     : NUMBER
 ///     | STRING
 ///     | NIL
@@ -717,7 +719,7 @@ static void primaryexp(LexState *ls, ExprInfo *v) {
 ///     | primaryexp
 ///     ;
 /// \endcode
-static void simpleexp(LexState *ls, ExprInfo *v) {
+static void simpleExpr(LexState *ls, ExprInfo *v) {
   switch (ls->t.token) {
   case TK_NUMBER:
     numberLiteral(v, ls->t.literal.num);
@@ -738,8 +740,8 @@ static void simpleexp(LexState *ls, ExprInfo *v) {
     // Vararg.
     FuncState *fs = ls->fs;
     if (!fs->f->varargMode) {
-      luaX_syntaxerror(
-          ls, "cannot use " LUA_QL("...") " outside a vararg function");
+      Lex_throw(ls,
+                "cannot use " LUA_QUOTE("...") " outside a vararg function");
     }
     fs->f->varargMode &= ~VARARG_NEEDS_ARG; /* don't need 'arg' */
     exprSetInfo(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
@@ -844,13 +846,12 @@ static const struct {
 
 /// \code
 /// subExpr
-///     : (unaryOp subExpr | simpleexp) (binop subExpr)*
+///     : (unaryOp subExpr | simpleExpr) (binaryOp subExpr)*
 ///     ;
 /// \endcode
 ///
-/// Where `binop` is any binary operator with a priority higher than
-/// `minPriority`.
-static OpKind subExpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
+/// Accept binary operators with their priority greater than `minPriority`.
+static OpKind subExpr(LexState *ls, ExprInfo *v, uint32_t minPriority) {
   enterLevel(ls);
 
   OpKind op = unaryOp(ls->t.token);
@@ -859,7 +860,7 @@ static OpKind subExpr(LexState *ls, ExprInfo *v, unsigned int minPriority) {
     subExpr(ls, v, UNARY_PRIORITY);
     Codegen_prefix(ls->fs, op, v);
   } else {
-    simpleexp(ls, v);
+    simpleExpr(ls, v);
   }
 
   /* expand while operators have priorities higher than `minPriority' */
@@ -993,7 +994,7 @@ static void breakStmt(LexState *ls) {
     bl = bl->previous;
   }
   if (!bl) {
-    luaX_syntaxerror(ls, "no loop to break");
+    Lex_throw(ls, "no loop to break");
   }
   if (upval) {
     luaK_codeABC(fs, OP_CLOSE, bl->nactvar, 0, 0);
@@ -1133,7 +1134,7 @@ static void forStmt(LexState *ls, int line) {
     forlist(ls, varname);
     break;
   default:
-    luaX_syntaxerror(ls, LUA_QL("=") " or " LUA_QL("in") " expected");
+    Lex_throw(ls, LUA_QUOTE("=") " or " LUA_QUOTE("in") " expected");
   }
   check_match(ls, TK_END, TK_FOR, line);
   leaveBlock(fs); /* loop scope (`break' jumps to this point) */

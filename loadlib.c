@@ -132,7 +132,7 @@ static void *ll_load(lua_State *L, const char *path) {
 static lua_CFunction ll_sym(lua_State *L, void *lib, const char *sym) {
   NSSymbol nss = NSLookupSymbolInModule((NSModule)lib, sym);
   if (nss == NULL) {
-    lua_pushfstring(L, "symbol " LUA_QS " not found", sym);
+    lua_pushfstring(L, "symbol " LUA_QUOTE_FMT " not found", sym);
     return NULL;
   }
   return (lua_CFunction)NSAddressOfSymbol(nss);
@@ -270,7 +270,7 @@ static const char *findfile(lua_State *L, const char *name, const char *pname) {
   lua_getfield(L, LUA_ENVIRONINDEX, pname);
   path = lua_tostring(L, -1);
   if (path == NULL) {
-    luaL_error(L, LUA_QL("package.%s") " must be a string", pname);
+    luaL_error(L, LUA_QUOTE("package.%s") " must be a string", pname);
   }
   lua_pushliteral(L, ""); /* error accumulator */
   while ((path = pushnexttemplate(L, path)) != NULL) {
@@ -280,7 +280,7 @@ static const char *findfile(lua_State *L, const char *name, const char *pname) {
     if (readable(filename)) { /* does file exist and is readable? */
       return filename;        /* return that file name */
     }
-    lua_pushfstring(L, "\n\tno file " LUA_QS, filename);
+    lua_pushfstring(L, "\n\tno file " LUA_QUOTE_FMT, filename);
     lua_remove(L, -2); /* remove file name */
     lua_concat(L, 2);  /* add entry to possible error message */
   }
@@ -288,7 +288,9 @@ static const char *findfile(lua_State *L, const char *name, const char *pname) {
 }
 
 static void loaderror(lua_State *L, const char *filename) {
-  luaL_error(L, "error loading module " LUA_QS " from file " LUA_QS ":\n\t%s",
+  luaL_error(L,
+             "error loading module " LUA_QUOTE_FMT " from file " LUA_QUOTE_FMT
+             ":\n\t%s",
              lua_tostring(L, 1), filename, lua_tostring(L, -1));
 }
 
@@ -350,8 +352,8 @@ static int loader_Croot(lua_State *L) {
     if (stat != ERRFUNC) {
       loaderror(L, filename); /* real error */
     }
-    lua_pushfstring(L, "\n\tno module " LUA_QS " in file " LUA_QS, name,
-                    filename);
+    lua_pushfstring(L, "\n\tno module " LUA_QUOTE_FMT " in file " LUA_QUOTE_FMT,
+                    name, filename);
     return 1; /* function not found */
   }
   return 1;
@@ -361,7 +363,7 @@ static int loader_preload(lua_State *L) {
   const char *name = luaL_checkstring(L, 1);
   lua_getfield(L, LUA_ENVIRONINDEX, "preload");
   if (!lua_istable(L, -1)) {
-    luaL_error(L, LUA_QL("package.preload") " must be a table");
+    luaL_error(L, LUA_QUOTE("package.preload") " must be a table");
   }
   lua_getfield(L, -1, name);
   if (lua_isnil(L, -1)) { /* not found? */
@@ -381,20 +383,21 @@ static int ll_require(lua_State *L) {
   lua_getfield(L, 2, name);
   if (lua_toboolean(L, -1)) {                /* is it there? */
     if (lua_touserdata(L, -1) == sentinel) { /* check loops */
-      luaL_error(L, "loop or previous error loading module " LUA_QS, name);
+      luaL_error(L, "loop or previous error loading module " LUA_QUOTE_FMT,
+                 name);
     }
     return 1; /* package is already loaded */
   }
   /* else must load it; iterate over available loaders */
   lua_getfield(L, LUA_ENVIRONINDEX, "loaders");
   if (!lua_istable(L, -1)) {
-    luaL_error(L, LUA_QL("package.loaders") " must be a table");
+    luaL_error(L, LUA_QUOTE("package.loaders") " must be a table");
   }
   lua_pushliteral(L, ""); /* error message accumulator */
   for (i = 1;; i++) {
     lua_rawgeti(L, -2, i); /* get a loader */
     if (lua_isnil(L, -1)) {
-      luaL_error(L, "module " LUA_QS " not found:%s", name,
+      luaL_error(L, "module " LUA_QUOTE_FMT " not found:%s", name,
                  lua_tostring(L, -2));
     }
     lua_pushstring(L, name);
@@ -436,7 +439,7 @@ static void setfenv(lua_State *L) {
   if (lua_getstack(L, 1, &ar) == 0 ||
       lua_getinfo(L, "f", &ar) == 0 || /* get calling function */
       lua_iscfunction(L, -1)) {
-    luaL_error(L, LUA_QL("module") " not called from a Lua function");
+    luaL_error(L, LUA_QUOTE("module") " not called from a Lua function");
   }
   lua_pushvalue(L, -2);
   lua_setfenv(L, -2);
@@ -478,7 +481,7 @@ static int ll_module(lua_State *L) {
     lua_pop(L, 1);                  /* remove previous result */
     /* try global variable (and create one if it does not exist) */
     if (luaL_findtable(L, LUA_GLOBALSINDEX, modname, 1) != NULL) {
-      return luaL_error(L, "name conflict for module " LUA_QS, modname);
+      return luaL_error(L, "name conflict for module " LUA_QUOTE_FMT, modname);
     }
     lua_pushvalue(L, -1);
     lua_setfield(L, loaded, modname); /* _LOADED[modname] = new table */

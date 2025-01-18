@@ -68,7 +68,7 @@ static void fixjump(FuncState *fs, int pc, int dest) {
   int offset = dest - (pc + 1);
   DEBUG_ASSERT(dest != NO_JUMP);
   if (abs(offset) > MAXARG_sBx) {
-    luaX_syntaxerror(fs->ls, "control structure too long");
+    Lex_throw(fs->ls, "control structure too long");
   }
   SETARG_sBx(*jmp, offset);
 }
@@ -185,7 +185,7 @@ void luaK_checkstack(FuncState *fs, int n) {
   int newstack = fs->freereg + n;
   if (newstack > fs->f->maxStackSize) {
     if (newstack >= MAXSTACK) {
-      luaX_syntaxerror(fs->ls, "function or expression too complex");
+      Lex_throw(fs->ls, "function or expression too complex");
     }
     fs->f->maxStackSize = (uint8_t)newstack;
   }

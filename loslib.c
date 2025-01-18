@@ -116,7 +116,8 @@ static int getfield(lua_State *L, const char *key, int d) {
     res = (int)lua_tointeger(L, -1);
   } else {
     if (d < 0) {
-      return luaL_error(L, "field " LUA_QS " missing in date table", key);
+      return luaL_error(L, "field " LUA_QUOTE_FMT " missing in date table",
+                        key);
     }
     res = d;
   }

@@ -34,7 +34,7 @@ static void save(LexState *ls, int c) {
   Mbuffer *b = ls->buff;
   if (b->n + 1 > b->buffsize) {
     if (b->buffsize >= SIZE_MAX / 2) {
-      luaX_lexerror(ls, "lexical element too long", 0);
+      Lex_throwWith(ls, "lexical element too long", 0);
     }
     size_t newSize = b->buffsize * 2;
     luaZ_resizebuffer(ls->L, b, newSize);
@@ -75,18 +75,18 @@ static const char *txtToken(LexState *ls, int token) {
   }
 }
 
-void luaX_lexerror(LexState *ls, const char *msg, int token) {
+void Lex_throwWith(LexState *ls, const char *msg, int token) {
   char buff[MAXSRC];
   luaO_chunkid(buff, STRING_CONTENT(ls->source), MAXSRC);
   msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
   if (token) {
-    luaO_pushfstring(ls->L, "%s near " LUA_QS, msg, txtToken(ls, token));
+    luaO_pushfstring(ls->L, "%s near " LUA_QUOTE_FMT, msg, txtToken(ls, token));
   }
   luaD_throw(ls->L, LUA_ERRSYNTAX);
 }
 
-void luaX_syntaxerror(LexState *ls, const char *msg) {
-  luaX_lexerror(ls, msg, ls->t.token);
+void Lex_throw(LexState *ls, const char *errmsg) {
+  Lex_throwWith(ls, errmsg, ls->t.token);
 }
 
 String *luaX_newstring(LexState *ls, const char *str, size_t l) {
@@ -108,7 +108,7 @@ static void inclinenumber(LexState *ls) {
     next(ls); /* skip `\n\r' or `\r\n' */
   }
   if (++ls->linenumber >= SAFE_INT_MAX) {
-    luaX_syntaxerror(ls, "chunk has too many lines");
+    Lex_throw(ls, "chunk has too many lines");
   }
 }
 
@@ -158,7 +158,7 @@ static void trydecpoint(LexState *ls, Literal *seminfo) {
   if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->num)) {
     /* format error with correct decimal point: no more options */
     buffreplace(ls, ls->decpoint, '.'); /* undo change (for error message) */
-    luaX_lexerror(ls, "malformed number", TK_NUMBER);
+    Lex_throwWith(ls, "malformed number", TK_NUMBER);
   }
 }
 
@@ -203,7 +203,7 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
   for (;;) {
     switch (ls->current) {
     case EOZ:
-      luaX_lexerror(
+      Lex_throwWith(
           ls, (seminfo) ? "unfinished long string" : "unfinished long comment",
           TK_EOS);
       break; /* to avoid warnings */
@@ -212,7 +212,7 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
         saveAndNext(ls); /* skip 2nd `[' */
         cont++;
         if (sep == 0) {
-          luaX_lexerror(ls, "nesting of [[...]] is deprecated", '[');
+          Lex_throwWith(ls, "nesting of [[...]] is deprecated", '[');
         }
       }
       break;
@@ -254,11 +254,11 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
   while (ls->current != del) {
     switch (ls->current) {
     case EOZ:
-      luaX_lexerror(ls, "unfinished string", TK_EOS);
+      Lex_throwWith(ls, "unfinished string", TK_EOS);
       continue; /* to avoid warnings */
     case '\n':
     case '\r':
-      luaX_lexerror(ls, "unfinished string", TK_STRING);
+      Lex_throwWith(ls, "unfinished string", TK_STRING);
       continue; /* to avoid warnings */
     case '\\': {
       int c;
@@ -303,7 +303,7 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
             next(ls);
           } while (++i < 3 && isdigit(ls->current));
           if (c > UCHAR_MAX) {
-            luaX_lexerror(ls, "escape sequence too large", TK_STRING);
+            Lex_throwWith(ls, "escape sequence too large", TK_STRING);
           }
           save(ls, c);
         }
@@ -362,7 +362,7 @@ static int llex(LexState *ls, Literal *seminfo) {
       } else if (sep == -1) {
         return '[';
       } else {
-        luaX_lexerror(ls, "invalid long string delimiter", TK_STRING);
+        Lex_throwWith(ls, "invalid long string delimiter", TK_STRING);
       }
     }
     case '=': {

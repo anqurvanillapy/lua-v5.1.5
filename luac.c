@@ -41,7 +41,8 @@ static void cannot(const char *what) {
 
 static void usage(const char *message) {
   if (*message == '-') {
-    fprintf(stderr, "%s: unrecognized option " LUA_QS "\n", progname, message);
+    fprintf(stderr, "%s: unrecognized option " LUA_QUOTE_FMT "\n", progname,
+            message);
   } else {
     fprintf(stderr, "%s: %s\n", progname, message);
   }
@@ -50,7 +51,7 @@ static void usage(const char *message) {
           "Available options are:\n"
           "  -        process stdin\n"
           "  -l       list\n"
-          "  -o name  output to file " LUA_QL(
+          "  -o name  output to file " LUA_QUOTE(
               "name") " (default is \"%s\")\n"
                       "  -p       parse only\n"
                       "  -s       strip debug information\n"
@@ -84,7 +85,7 @@ static int doargs(int argc, const char *argv[]) {
     } else if (IS("-o")) { /* output file */
       output = argv[++i];
       if (output == NULL || *output == 0) {
-        usage(LUA_QL("-o") " needs argument");
+        usage(LUA_QUOTE("-o") " needs argument");
       }
       if (IS("-")) {
         output = NULL;

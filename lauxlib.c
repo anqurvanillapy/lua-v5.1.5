@@ -35,15 +35,15 @@ LUALIB_API int luaL_argerror(lua_State *L, int narg, const char *extramsg) {
   if (strcmp(ar.namewhat, "method") == 0) {
     narg--;          /* do not count `self' */
     if (narg == 0) { /* error is in the self argument itself? */
-      return luaL_error(L, "calling " LUA_QS " on bad self (%s)", ar.name,
-                        extramsg);
+      return luaL_error(L, "calling " LUA_QUOTE_FMT " on bad self (%s)",
+                        ar.name, extramsg);
     }
   }
   if (ar.name == NULL) {
     ar.name = "?";
   }
-  return luaL_error(L, "bad argument #%d to " LUA_QS " (%s)", narg, ar.name,
-                    extramsg);
+  return luaL_error(L, "bad argument #%d to " LUA_QUOTE_FMT " (%s)", narg,
+                    ar.name, extramsg);
 }
 
 LUALIB_API int luaL_typerror(lua_State *L, int narg, const char *tname) {
@@ -90,8 +90,8 @@ LUALIB_API int luaL_checkoption(lua_State *L, int narg, const char *def,
       return i;
     }
   }
-  return luaL_argerror(L, narg,
-                       lua_pushfstring(L, "invalid option " LUA_QS, name));
+  return luaL_argerror(
+      L, narg, lua_pushfstring(L, "invalid option " LUA_QUOTE_FMT, name));
 }
 
 LUALIB_API int luaL_newmetatable(lua_State *L, const char *tname) {
@@ -233,7 +233,7 @@ LUALIB_API void luaI_openlib(lua_State *L, const char *libname,
       lua_pop(L, 1);              /* remove previous result */
       /* try global variable (and create one if it does not exist) */
       if (luaL_findtable(L, LUA_GLOBALSINDEX, libname, size) != NULL) {
-        luaL_error(L, "name conflict for module " LUA_QS, libname);
+        luaL_error(L, "name conflict for module " LUA_QUOTE_FMT, libname);
       }
       lua_pushvalue(L, -1);
       lua_setfield(L, -3, libname); /* _LOADED[libname] = new table */

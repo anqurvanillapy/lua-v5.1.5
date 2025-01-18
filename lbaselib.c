@@ -27,7 +27,8 @@ static int luaB_print(lua_State *L) {
     s = lua_tostring(L, -1); /* get result */
     if (s == NULL) {
       return luaL_error(
-          L, LUA_QL("tostring") " must return a string to " LUA_QL("print"));
+          L,
+          LUA_QUOTE("tostring") " must return a string to " LUA_QUOTE("print"));
     }
     if (i > 1) {
       fputs("\t", stdout);
@@ -139,8 +140,8 @@ static int luaB_setfenv(lua_State *L) {
     lua_setfenv(L, -2);
     return 0;
   } else if (lua_iscfunction(L, -2) || lua_setfenv(L, -2) == 0) {
-    luaL_error(L,
-               LUA_QL("setfenv") " cannot change environment of given object");
+    luaL_error(
+        L, LUA_QUOTE("setfenv") " cannot change environment of given object");
   }
   return 1;
 }
