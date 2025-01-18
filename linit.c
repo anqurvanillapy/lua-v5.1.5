@@ -14,12 +14,11 @@ static const luaL_Reg lualibs[] = {
     {LUA_STRLIBNAME, luaopen_string},
     {LUA_MATHLIBNAME, luaopen_math},
     {LUA_DBLIBNAME, luaopen_debug},
-    {NULL, NULL},
+    {nullptr, nullptr},
 };
 
 LUALIB_API void luaL_openlibs(lua_State *L) {
-  const luaL_Reg *lib = lualibs;
-  for (; lib->func; lib++) {
+  for (const luaL_Reg *lib = lualibs; lib->func; lib++) {
     lua_pushcfunction(L, lib->func);
     lua_pushstring(L, lib->name);
     lua_call(L, 1, 0);
