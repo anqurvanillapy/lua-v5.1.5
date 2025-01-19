@@ -179,7 +179,7 @@ static int computesizes(int nums[], int *narray) {
     }
   }
   *narray = n;
-  DEBUG_ASSERT(*narray / 2 <= na && na <= *narray);
+  assert(*narray / 2 <= na && na <= *narray);
   return na;
 }
 
@@ -375,7 +375,7 @@ static Value *newkey(lua_State *L, Table *t, const Value *key) {
       rehash(L, t, key);          /* grow table */
       return luaH_set(L, t, key); /* re-insert key into grown table */
     }
-    DEBUG_ASSERT(n != dummynode);
+    assert(n != dummynode);
     othern = mainposition(t, key2tval(mp));
     if (othern != mp) { /* is colliding node out of its main position? */
       /* yes; move colliding node into free position */
@@ -396,7 +396,7 @@ static Value *newkey(lua_State *L, Table *t, const Value *key) {
   gkey(mp)->variant = key->variant;
   gkey(mp)->tt = key->tt;
   luaC_barriert(L, t, key);
-  DEBUG_ASSERT(IS_TYPE_NIL(gval(mp)));
+  assert(IS_TYPE_NIL(gval(mp)));
   return gval(mp);
 }
 

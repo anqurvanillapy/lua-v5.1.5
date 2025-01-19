@@ -65,12 +65,11 @@ typedef struct Value {
 #define THREAD_VALUE(o) CHECK_EXPR(IS_TYPE_THREAD(o), &(o)->variant.gc->th)
 
 #define DEBUG_CHECK_CONSISTENCY(obj)                                           \
-  DEBUG_ASSERT(!IS_COLLECTABLE(obj) ||                                         \
-               (GET_TYPE(obj) == (obj)->variant.gc->gch.tt))
+  assert(!IS_COLLECTABLE(obj) || (GET_TYPE(obj) == (obj)->variant.gc->gch.tt))
 #define DEBUG_CHECK_LIVENESS(g, obj)                                           \
-  DEBUG_ASSERT(!IS_COLLECTABLE(obj) ||                                         \
-               ((GET_TYPE(obj) == (obj)->variant.gc->gch.tt) &&                \
-                !IS_DEAD(g, (obj)->variant.gc)))
+  assert(!IS_COLLECTABLE(obj) ||                                               \
+         ((GET_TYPE(obj) == (obj)->variant.gc->gch.tt) &&                      \
+          !IS_DEAD(g, (obj)->variant.gc)))
 
 // Setter macros.
 

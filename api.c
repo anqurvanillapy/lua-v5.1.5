@@ -15,20 +15,20 @@
 #include "undump.h"
 #include "vm.h"
 
-#define api_checknelems(L, n) api_check(L, (n) <= (L->top - L->base))
+#define api_checknelems(L, n) API_CHECK(L, (n) <= (L->top - L->base))
 
-#define api_checkvalidindex(L, i) api_check(L, (i) != luaO_nilobject)
+#define api_checkvalidindex(L, i) API_CHECK(L, (i) != luaO_nilobject)
 
 #define api_incr_top(L)                                                        \
   do {                                                                         \
-    api_check(L, L->top < L->ci->top);                                         \
+    API_CHECK(L, L->top < L->ci->top);                                         \
     L->top++;                                                                  \
   } while (false)
 
 static Value *indexToAddr(lua_State *L, int idx) {
   if (idx > 0) {
     Value *o = L->base + (idx - 1);
-    api_check(L, idx <= L->ci->top - L->base);
+    API_CHECK(L, idx <= L->ci->top - L->base);
     if (o >= L->top) {
       return (Value *)luaO_nilobject;
     }
@@ -36,7 +36,7 @@ static Value *indexToAddr(lua_State *L, int idx) {
   }
 
   if (idx > LUA_REGISTRYINDEX) {
-    api_check(L, idx != 0 && -idx <= L->top - L->base);
+    API_CHECK(L, idx != 0 && -idx <= L->top - L->base);
     return L->top + idx;
   }
 
@@ -91,8 +91,8 @@ LUA_API void lua_xmove(lua_State *from, lua_State *to, int n) {
   }
   lua_lock(to);
   api_checknelems(from, n);
-  api_check(from, G(from) == G(to));
-  api_check(from, to->ci->top - to->top >= n);
+  API_CHECK(from, G(from) == G(to));
+  API_CHECK(from, to->ci->top - to->top >= n);
   from->top -= n;
   for (i = 0; i < n; i++) {
     SET_OBJECT_TO_STACK(to, to->top++, from->top + i);
@@ -134,13 +134,13 @@ LUA_API int lua_gettop(lua_State *L) { return (int)(L->top - L->base); }
 LUA_API void lua_settop(lua_State *L, int idx) {
   lua_lock(L);
   if (idx >= 0) {
-    api_check(L, idx <= L->stackLast - L->base);
+    API_CHECK(L, idx <= L->stackLast - L->base);
     while (L->top < L->base + idx) {
       SET_NIL(L->top++);
     }
     L->top = L->base + idx;
   } else {
-    api_check(L, -(idx + 1) <= (L->top - L->base));
+    API_CHECK(L, -(idx + 1) <= (L->top - L->base));
     L->top += idx + 1; /* `subtract' index (index is negative) */
   }
   lua_unlock(L);
@@ -181,7 +181,7 @@ LUA_API void lua_replace(lua_State *L, int idx) {
   api_checkvalidindex(L, o);
   if (idx == LUA_ENVIRONINDEX) {
     Closure *func = curr_func(L);
-    api_check(L, IS_TYPE_TABLE(L->top - 1));
+    API_CHECK(L, IS_TYPE_TABLE(L->top - 1));
     func->c.header.env = TABLE_VALUE(L->top - 1);
     luaC_barrier(L, func, L->top - 1);
   } else {
@@ -442,7 +442,7 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
     SET_OBJECT_TO_NEW(L, &cl->c.upvalue[n], L->top + n);
   }
   SET_CLOSURE(L, L->top, cl);
-  DEBUG_ASSERT(iswhite(LuaObjectToGCObject(cl)));
+  assert(iswhite(LuaObjectToGCObject(cl)));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -495,7 +495,7 @@ LUA_API void lua_getfield(lua_State *L, int idx, const char *k) {
 LUA_API void lua_rawget(lua_State *L, int idx) {
   lua_lock(L);
   StackIndex t = indexToAddr(L, idx);
-  api_check(L, IS_TYPE_TABLE(t));
+  API_CHECK(L, IS_TYPE_TABLE(t));
   SET_OBJECT_TO_STACK(L, L->top - 1, luaH_get(TABLE_VALUE(t), L->top - 1));
   lua_unlock(L);
 }
@@ -503,7 +503,7 @@ LUA_API void lua_rawget(lua_State *L, int idx) {
 LUA_API void lua_rawgeti(lua_State *L, int idx, int n) {
   lua_lock(L);
   StackIndex o = indexToAddr(L, idx);
-  api_check(L, IS_TYPE_TABLE(o));
+  API_CHECK(L, IS_TYPE_TABLE(o));
   SET_OBJECT_TO_STACK(L, L->top, luaH_getnum(TABLE_VALUE(o), n));
   api_incr_top(L);
   lua_unlock(L);
@@ -596,7 +596,7 @@ LUA_API void lua_rawset(lua_State *L, int idx) {
   lua_lock(L);
   api_checknelems(L, 2);
   StackIndex t = indexToAddr(L, idx);
-  api_check(L, IS_TYPE_TABLE(t));
+  API_CHECK(L, IS_TYPE_TABLE(t));
   SET_OBJECT_TO_TABLE(L, luaH_set(L, TABLE_VALUE(t), L->top - 2), L->top - 1);
   luaC_barriert(L, TABLE_VALUE(t), L->top - 1);
   L->top -= 2;
@@ -607,7 +607,7 @@ LUA_API void lua_rawseti(lua_State *L, int idx, int n) {
   lua_lock(L);
   api_checknelems(L, 1);
   StackIndex o = indexToAddr(L, idx);
-  api_check(L, IS_TYPE_TABLE(o));
+  API_CHECK(L, IS_TYPE_TABLE(o));
   SET_OBJECT_TO_TABLE(L, luaH_setnum(L, TABLE_VALUE(o), n), L->top - 1);
   luaC_barriert(L, TABLE_VALUE(o), L->top - 1);
   L->top--;
@@ -621,7 +621,7 @@ LUA_API int lua_setmetatable(lua_State *L, int objindex) {
   api_checkvalidindex(L, obj);
   Table *mt = nullptr;
   if (!IS_TYPE_NIL(L->top - 1)) {
-    api_check(L, IS_TYPE_TABLE(L->top - 1));
+    API_CHECK(L, IS_TYPE_TABLE(L->top - 1));
     mt = TABLE_VALUE(L->top - 1);
   }
   switch (GET_TYPE(obj)) {
@@ -652,7 +652,7 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
   api_checknelems(L, 1);
   StackIndex o = indexToAddr(L, idx);
   api_checkvalidindex(L, o);
-  api_check(L, IS_TYPE_TABLE(L->top - 1));
+  API_CHECK(L, IS_TYPE_TABLE(L->top - 1));
   switch (GET_TYPE(o)) {
   case LUA_TYPE_FUNCTION:
     CLOSURE_VALUE(o)->c.header.env = TABLE_VALUE(L->top - 1);
@@ -687,7 +687,7 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
   } while (false)
 
 #define checkresults(L, na, nr)                                                \
-  api_check(L, (nr) == LUA_MULTRET || (L->ci->top - L->top >= (nr) - (na)))
+  API_CHECK(L, (nr) == LUA_MULTRET || (L->ci->top - L->top >= (nr) - (na)))
 
 LUA_API void lua_call(lua_State *L, int nargs, int nresults) {
   lua_lock(L);
@@ -861,7 +861,7 @@ LUA_API int lua_error(lua_State *L) {
 LUA_API int lua_next(lua_State *L, int idx) {
   lua_lock(L);
   StackIndex t = indexToAddr(L, idx);
-  api_check(L, IS_TYPE_TABLE(t));
+  API_CHECK(L, IS_TYPE_TABLE(t));
   int more = luaH_next(L, TABLE_VALUE(t), L->top - 1);
   if (more) {
     api_incr_top(L);

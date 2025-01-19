@@ -33,7 +33,7 @@ void luaT_init(lua_State *L) {
 */
 const Value *luaT_gettm(Table *events, TMS event, String *ename) {
   const Value *tm = luaH_getstr(events, ename);
-  DEBUG_ASSERT(event <= TM_EQ);
+  assert(event <= TM_EQ);
   if (IS_TYPE_NIL(tm)) {                     /* no tag method? */
     events->flags |= (uint8_t)(1u << event); /* cache this fact */
     return nullptr;

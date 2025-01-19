@@ -75,7 +75,7 @@ static void DumpConstants(const Prototype *f, DumpState *D) {
       DumpString(STRING_VALUE(o), D);
       break;
     default:
-      DEBUG_ASSERT(0); /* cannot happen */
+      assert(0); /* cannot happen */
       break;
     }
   }

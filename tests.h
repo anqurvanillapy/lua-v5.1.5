@@ -49,8 +49,8 @@ struct L_EXTRA {
 #define luai_userstateopen(l)                                                  \
   (getlock(l)->lock = 0, getlock(l)->plock = &(getlock(l)->lock))
 #define luai_userstatethread(l, l1) (getlock(l1)->plock = getlock(l)->plock)
-#define lua_lock(l) DEBUG_ASSERT((*getlock(l)->plock)++ == 0)
-#define lua_unlock(l) DEBUG_ASSERT(--(*getlock(l)->plock) == 0)
+#define lua_lock(l) assert((*getlock(l)->plock)++ == 0)
+#define lua_unlock(l) assert(--(*getlock(l)->plock) == 0)
 
 int luaB_opentests(lua_State *L);
 

@@ -79,7 +79,7 @@ int luaO_rawequalObj(const Value *t1, const Value *t2) {
     case LUA_TYPE_PTR:
       return PTR_VALUE(t1) == PTR_VALUE(t2);
     default:
-      DEBUG_ASSERT(IS_COLLECTABLE(t1));
+      assert(IS_COLLECTABLE(t1));
       return GC_VALUE(t1) == GC_VALUE(t2);
     }
   }

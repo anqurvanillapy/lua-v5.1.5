@@ -26,7 +26,7 @@ void StringPool_resize(lua_State *L, size_t newSize) {
       // New bucket position.
       uint32_t h = gco2ts(p)->hash;
       size_t pos = lmod(h, newSize);
-      DEBUG_ASSERT((int)(h % newSize) == lmod(h, newSize));
+      assert((int)(h % newSize) == lmod(h, newSize));
 
       // Chain it.
       GCObject *next = p->gch.next;

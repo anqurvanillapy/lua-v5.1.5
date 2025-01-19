@@ -22,9 +22,8 @@ typedef uint64_t MaxAlign;
 
 /* internal assertions for in-house debugging */
 #include <assert.h>
-#define DEBUG_ASSERT(c) assert(c)
-#define CHECK_EXPR(c, e) (DEBUG_ASSERT(c), (e))
-#define api_check(l, e) DEBUG_ASSERT(e)
+#define CHECK_EXPR(c, e) (assert(c), (e))
+#define API_CHECK(l, e) assert(e)
 
 #ifndef cast
 #define cast(t, exp) ((t)(exp))

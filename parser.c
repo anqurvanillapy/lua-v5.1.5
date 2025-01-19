@@ -181,7 +181,7 @@ static int indexupvalue(FuncState *fs, String *name, ExprInfo *v) {
   int oldsize = f->upvaluesSize;
   for (i = 0; i < f->upvaluesNum; i++) {
     if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
-      DEBUG_ASSERT(f->upvalues[i] == name);
+      assert(f->upvalues[i] == name);
       return i;
     }
   }
@@ -194,7 +194,7 @@ static int indexupvalue(FuncState *fs, String *name, ExprInfo *v) {
   }
   f->upvalues[f->upvaluesNum] = name;
   luaC_objbarrier(fs->L, f, name);
-  DEBUG_ASSERT(v->k == VLOCAL || v->k == VUPVAL);
+  assert(v->k == VLOCAL || v->k == VUPVAL);
   fs->upvalues[f->upvaluesNum].k = v->k;
   fs->upvalues[f->upvaluesNum].info = v->u.s.info;
   return f->upvaluesNum++;
@@ -293,7 +293,7 @@ static void enterBlock(FuncState *fs, BlockCnt *bl, uint8_t isbreakable) {
   bl->upval = 0;
   bl->previous = fs->bl;
   fs->bl = bl;
-  DEBUG_ASSERT(fs->freereg == fs->nactvar);
+  assert(fs->freereg == fs->nactvar);
 }
 
 static void leaveBlock(FuncState *fs) {
@@ -304,8 +304,8 @@ static void leaveBlock(FuncState *fs) {
     luaK_codeABC(fs, OP_CLOSE, bl->nactvar, 0, 0);
   }
   /* a block either controls scope or breaks (never both) */
-  DEBUG_ASSERT(!bl->isbreakable || !bl->upval);
-  DEBUG_ASSERT(bl->nactvar == fs->nactvar);
+  assert(!bl->isbreakable || !bl->upval);
+  assert(bl->nactvar == fs->nactvar);
   fs->freereg = fs->nactvar; /* free registers */
   luaK_patchtohere(fs, bl->breaklist);
 }
@@ -374,8 +374,8 @@ static void closeFunc(LexState *ls) {
   f->locVarsSize = fs->nlocvars;
   luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);
   f->upvaluesSize = f->upvaluesNum;
-  DEBUG_ASSERT(luaG_checkcode(f));
-  DEBUG_ASSERT(fs->bl == nullptr);
+  assert(luaG_checkcode(f));
+  assert(fs->bl == nullptr);
   ls->fs = fs->prev;
   /* last token read was anchored in defunct function; must re-anchor it */
   anchor_token(ls);
@@ -393,9 +393,9 @@ Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
   chunk(&lexstate);
   check(&lexstate, TK_EOS);
   closeFunc(&lexstate);
-  DEBUG_ASSERT(funcstate.prev == nullptr);
-  DEBUG_ASSERT(funcstate.f->upvaluesNum == 0);
-  DEBUG_ASSERT(lexstate.fs == nullptr);
+  assert(funcstate.prev == nullptr);
+  assert(funcstate.f->upvaluesNum == 0);
+  assert(lexstate.fs == nullptr);
   return funcstate.f;
 }
 
@@ -497,7 +497,7 @@ static void constructor(LexState *ls, ExprInfo *t) {
   luaK_exp2nextreg(ls->fs, t);  /* fix it at stack top (for gc) */
   checknext(ls, '{');
   do {
-    DEBUG_ASSERT(cc.v.k == VVOID || cc.tostore > 0);
+    assert(cc.v.k == VVOID || cc.tostore > 0);
     if (ls->t.token == '}') {
       break;
     }
@@ -631,7 +631,7 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     return;
   }
   }
-  DEBUG_ASSERT(f->k == VNONRELOC);
+  assert(f->k == VNONRELOC);
   base = f->u.s.info; /* base register for call */
   if (HAS_MULTI_RETURN(args.k)) {
     nparams = LUA_MULTRET; /* open call */
@@ -910,7 +910,7 @@ static void block(LexState *ls) {
   BlockCnt bl;
   enterBlock(fs, &bl, 0);
   chunk(ls);
-  DEBUG_ASSERT(bl.breaklist == NO_JUMP);
+  assert(bl.breaklist == NO_JUMP);
   leaveBlock(fs);
 }
 
@@ -1274,7 +1274,7 @@ static void returnStmt(LexState *ls) {
     Codegen_setReturnMulti(fs, &e, LUA_MULTRET);
     if (e.k == VCALL && nret == 1) {
       SET_OPCODE(getcode(fs, &e), OP_TAILCALL);
-      DEBUG_ASSERT(GETARG_A(getcode(fs, &e)) == fs->nactvar);
+      assert(GETARG_A(getcode(fs, &e)) == fs->nactvar);
     }
     luaK_ret(fs, fs->nactvar, LUA_MULTRET);
     return;
@@ -1288,7 +1288,7 @@ static void returnStmt(LexState *ls) {
     luaK_exp2nextreg(fs, &e);
     // Returns all active values.
     first = fs->nactvar;
-    DEBUG_ASSERT(nret == fs->freereg - first);
+    assert(nret == fs->freereg - first);
   }
   luaK_ret(fs, first, nret);
 }
@@ -1363,8 +1363,8 @@ static void chunk(LexState *ls) {
   while (!isLast && !isBlockEnded(ls->t.token)) {
     isLast = stmt(ls);
     testNext(ls, ';');
-    DEBUG_ASSERT(ls->fs->f->maxStackSize >= ls->fs->freereg &&
-                 ls->fs->freereg >= ls->fs->nactvar);
+    assert(ls->fs->f->maxStackSize >= ls->fs->freereg &&
+           ls->fs->freereg >= ls->fs->nactvar);
     ls->fs->freereg = ls->fs->nactvar; /* free registers */
   }
   leaveLevel(ls);

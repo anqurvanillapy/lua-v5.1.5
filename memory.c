@@ -57,12 +57,12 @@ void *luaM_toobig(lua_State *L) {
 
 void *luaM_realloc_(lua_State *L, void *block, size_t osize, size_t nsize) {
   GlobalState *g = G(L);
-  DEBUG_ASSERT((osize == 0) == (block == nullptr));
+  assert((osize == 0) == (block == nullptr));
   block = (*g->frealloc)(g->ud, block, osize, nsize);
   if (block == nullptr && nsize > 0) {
     luaD_throw(L, LUA_ERRMEM);
   }
-  DEBUG_ASSERT((nsize == 0) == (block == nullptr));
+  assert((nsize == 0) == (block == nullptr));
   g->totalbytes = (g->totalbytes - osize) + nsize;
   return block;
 }

@@ -59,14 +59,14 @@ static void *checkblock(void *block, size_t size) {
   void *b = blockhead(block);
   int i;
   for (i = 0; i < MARKSIZE; i++)
-    DEBUG_ASSERT(*(cast(char *, b) + HEADER + size + i) ==
-                 MARK + i); /* corrupted block? */
+    assert(*(cast(char *, b) + HEADER + size + i) ==
+           MARK + i); /* corrupted block? */
   return b;
 }
 
 static void freeblock(Memcontrol *mc, void *block, size_t size) {
   if (block) {
-    DEBUG_ASSERT(checkblocksize(block, size));
+    assert(checkblocksize(block, size));
     block = checkblock(block, size);
     fillmem(block, size + HEADER + MARKSIZE); /* erase block */
     free(block);                              /* free original block */
@@ -77,7 +77,7 @@ static void freeblock(Memcontrol *mc, void *block, size_t size) {
 
 void *debug_realloc(void *ud, void *block, size_t oldsize, size_t size) {
   Memcontrol *mc = cast(Memcontrol *, ud);
-  DEBUG_ASSERT(oldsize == 0 || checkblocksize(block, oldsize));
+  assert(oldsize == 0 || checkblocksize(block, oldsize));
   if (size == 0) {
     freeblock(mc, block, oldsize);
     return NULL;
@@ -156,13 +156,11 @@ static int testobjref(GlobalState *g, GCObject *f, GCObject *t) {
   return r;
 }
 
-#define checkobjref(g, f, t)                                                   \
-  DEBUG_ASSERT(testobjref(g, f, LuaObjectToGCObject(t)))
+#define checkobjref(g, f, t) assert(testobjref(g, f, LuaObjectToGCObject(t)))
 
 #define checkvalref(g, f, t)                                                   \
-  DEBUG_ASSERT(!IS_COLLECTABLE(t) ||                                           \
-               ((GET_TYPE(t) == (t)->variant.gc->gch.tt) &&                    \
-                testobjref(g, f, GC_VALUE(t))))
+  assert(!IS_COLLECTABLE(t) || ((GET_TYPE(t) == (t)->variant.gc->gch.tt) &&    \
+                                testobjref(g, f, GC_VALUE(t))))
 
 static void checktable(GlobalState *g, Table *h) {
   int i;
@@ -176,7 +174,7 @@ static void checktable(GlobalState *g, Table *h) {
   while (i--) {
     Node *n = gnode(h, i);
     if (!IS_TYPE_NIL(gval(n))) {
-      DEBUG_ASSERT(!IS_TYPE_NIL(gkey(n)));
+      assert(!IS_TYPE_NIL(gkey(n)));
       checkvalref(g, hgc, gkey(n));
       checkvalref(g, hgc, gval(n));
     }
@@ -219,11 +217,11 @@ static void checkclosure(GlobalState *g, Closure *cl) {
       checkvalref(g, clgc, &cl->c.upvalue[i]);
   } else {
     int i;
-    DEBUG_ASSERT(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
+    assert(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
     checkobjref(g, clgc, cl->l.p);
     for (i = 0; i < cl->l.header.nupvalues; i++) {
       if (cl->l.upvalues[i]) {
-        DEBUG_ASSERT(cl->l.upvalues[i]->header.tt == LUA_TYPE_UPVALUE);
+        assert(cl->l.upvalues[i]->header.tt == LUA_TYPE_UPVALUE);
         checkobjref(g, clgc, cl->l.upvalues[i]);
       }
     }
@@ -234,42 +232,42 @@ static void checkstack(GlobalState *g, lua_State *L1) {
   StackIndex o;
   CallInfo *ci;
   GCObject *uvo;
-  DEBUG_ASSERT(!IS_DEAD(g, LuaObjectToGCObject(L1)));
+  assert(!IS_DEAD(g, LuaObjectToGCObject(L1)));
   for (uvo = L1->openUpval; uvo != NULL; uvo = uvo->gch.next) {
     Upvalue *uv = gco2uv(uvo);
-    DEBUG_ASSERT(uv->v != &uv->u.value); /* must be open */
-    DEBUG_ASSERT(!isblack(uvo));         /* open upvalues cannot be black */
+    assert(uv->v != &uv->u.value); /* must be open */
+    assert(!isblack(uvo));         /* open upvalues cannot be black */
   }
   DEBUG_CHECK_LIVENESS(g, gt(L1));
   if (L1->baseCI) {
     for (ci = L1->baseCI; ci <= L1->ci; ci++) {
-      DEBUG_ASSERT(ci->top <= L1->stackLast);
-      DEBUG_ASSERT(lua_checkpc(L1, ci));
+      assert(ci->top <= L1->stackLast);
+      assert(lua_checkpc(L1, ci));
     }
   } else
-    DEBUG_ASSERT(L1->ciSize == 0);
+    assert(L1->ciSize == 0);
   if (L1->stack) {
     for (o = L1->stack; o < L1->top; o++)
       DEBUG_CHECK_LIVENESS(g, o);
   } else
-    DEBUG_ASSERT(L1->stackSize == 0);
+    assert(L1->stackSize == 0);
 }
 
 static void checkobject(GlobalState *g, GCObject *o) {
   if (IS_DEAD(g, o))
-  /*    DEBUG_ASSERT(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep);*/
+  /*    assert(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep);*/
   {
     if (!(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep))
       printf(">>> %d  %s  %02x\n", g->gcstate, luaT_typenames[o->gch.tt],
              o->gch.marked);
   } else {
     if (g->gcstate == GCSfinalize)
-      DEBUG_ASSERT(iswhite(o));
+      assert(iswhite(o));
     switch (o->gch.tt) {
     case LUA_TYPE_UPVALUE: {
       Upvalue *uv = gco2uv(o);
-      DEBUG_ASSERT(uv->v == &uv->u.value); /* must be closed */
-      DEBUG_ASSERT(!isgray(o));            /* closed upvalues are never gray */
+      assert(uv->v == &uv->u.value); /* must be closed */
+      assert(!isgray(o));            /* closed upvalues are never gray */
       checkvalref(g, o, uv->v);
       break;
     }
@@ -296,7 +294,7 @@ static void checkobject(GlobalState *g, GCObject *o) {
       break;
     }
     default:
-      DEBUG_ASSERT(0);
+      assert(0);
     }
   }
 }
@@ -321,13 +319,13 @@ int lua_checkmemory(lua_State *L) {
   for (o = g->rootgc; o != LuaObjectToGCObject(g->mainthread); o = o->gch.next)
     checkobject(g, o);
   for (o = o->gch.next; o != NULL; o = o->gch.next) {
-    DEBUG_ASSERT(o->gch.tt == LUA_TYPE_USERDATA);
+    assert(o->gch.tt == LUA_TYPE_USERDATA);
     checkobject(g, o);
   }
   for (uv = g->uvhead.u.l.next; uv != &g->uvhead; uv = uv->u.l.next) {
-    DEBUG_ASSERT(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
-    DEBUG_ASSERT(uv->v != &uv->u.value); /* must be open */
-    DEBUG_ASSERT(
+    assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
+    assert(uv->v != &uv->u.value); /* must be open */
+    assert(
         !isblack(LuaObjectToGCObject(uv))); /* open upvalues are never black */
     checkvalref(g, LuaObjectToGCObject(uv), uv->v);
   }
@@ -564,21 +562,21 @@ static int tref(lua_State *L) {
   luaL_checkany(L, 1);
   lua_pushvalue(L, 1);
   lua_pushinteger(L, lua_ref(L, lock));
-  DEBUG_ASSERT(lua_gettop(L) == level + 1); /* +1 for result */
+  assert(lua_gettop(L) == level + 1); /* +1 for result */
   return 1;
 }
 
 static int getref(lua_State *L) {
   int level = lua_gettop(L);
   lua_getref(L, luaL_checkint(L, 1));
-  DEBUG_ASSERT(lua_gettop(L) == level + 1);
+  assert(lua_gettop(L) == level + 1);
   return 1;
 }
 
 static int unref(lua_State *L) {
   int level = lua_gettop(L);
   lua_unref(L, luaL_checkint(L, 1));
-  DEBUG_ASSERT(lua_gettop(L) == level);
+  assert(lua_gettop(L) == level);
   return 0;
 }
 
@@ -960,7 +958,7 @@ static int auxgsub(lua_State *L) {
   const char *s3 = luaL_checkstring(L, 3);
   lua_settop(L, 3);
   luaL_gsub(L, s1, s2, s3);
-  DEBUG_ASSERT(lua_gettop(L) == 4);
+  assert(lua_gettop(L) == 4);
   return 1;
 }
 
@@ -1006,8 +1004,8 @@ static const struct luaL_Reg tests_funcs[] = {
 
 int luaB_opentests(lua_State *L) {
   void *ud;
-  DEBUG_ASSERT(lua_getallocf(L, &ud) == debug_realloc);
-  DEBUG_ASSERT(ud == cast(void *, &memcontrol));
+  assert(lua_getallocf(L, &ud) == debug_realloc);
+  assert(ud == cast(void *, &memcontrol));
   lua_setallocf(L, lua_getallocf(L, NULL), ud);
   lua_state = L; /* keep first state to be opened */
   luaL_register(L, "T", tests_funcs);
@@ -1021,8 +1019,8 @@ int main(int argc, const char *argv[]) {
   if (limit)
     memcontrol.memlimit = strtoul(limit, NULL, 10);
   ret = l_main(argc, argv);
-  DEBUG_ASSERT(memcontrol.numblocks == 0);
-  DEBUG_ASSERT(memcontrol.total == 0);
+  assert(memcontrol.numblocks == 0);
+  assert(memcontrol.total == 0);
   return ret;
 }
 

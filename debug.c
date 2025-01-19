@@ -205,13 +205,13 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
   lua_lock(L);
   if (*what == '>') {
     StackIndex func = L->top - 1;
-    DEBUG_ASSERT(IS_TYPE_FUNCTION(func));
+    assert(IS_TYPE_FUNCTION(func));
     what++; /* skip the '>' */
     f = CLOSURE_VALUE(func);
     L->top--;                 /* pop function */
   } else if (ar->i_ci != 0) { /* no tail call? */
     ci = L->baseCI + ar->i_ci;
-    DEBUG_ASSERT(IS_TYPE_FUNCTION(ci->func));
+    assert(IS_TYPE_FUNCTION(ci->func));
     f = CLOSURE_VALUE(ci->func);
   }
   status = auxgetinfo(L, what, ar, f, ci);
@@ -503,11 +503,11 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
       return "local";
     }
     i = symbexec(p, pc, stackpos); /* try symbolic execution */
-    DEBUG_ASSERT(pc != -1);
+    assert(pc != -1);
     switch (GET_OPCODE(i)) {
     case OP_GETGLOBAL: {
       int g = GETARG_Bx(i); /* global index */
-      DEBUG_ASSERT(IS_TYPE_STRING(&p->k[g]));
+      assert(IS_TYPE_STRING(&p->k[g]));
       *name = VALUE_STRING_CONTENT(&p->k[g]);
       return "global";
     }
@@ -584,7 +584,7 @@ void luaG_concaterror(lua_State *L, StackIndex p1, StackIndex p2) {
   if (IS_TYPE_STRING(p1) || IS_TYPE_NUMBER(p1)) {
     p1 = p2;
   }
-  DEBUG_ASSERT(!IS_TYPE_STRING(p1) && !IS_TYPE_NUMBER(p1));
+  assert(!IS_TYPE_STRING(p1) && !IS_TYPE_NUMBER(p1));
   luaG_typeerror(L, p1, "concatenate");
 }
 
@@ -641,6 +641,6 @@ void luaG_runerror(lua_State *L, const char *fmt, ...) {
 
 void luaA_pushobject(lua_State *L, const Value *o) {
   SET_OBJECT_TO_STACK(L, L->top, o);
-  api_check(L, L->top < L->ci->top);
+  API_CHECK(L, L->top < L->ci->top);
   L->top++;
 }
