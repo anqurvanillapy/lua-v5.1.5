@@ -7,11 +7,11 @@
 #include "gc.h"
 #include "intern.h"
 #include "lexer.h"
-#include "ltm.h"
 #include "memory.h"
 #include "stack.h"
 #include "state.h"
 #include "table.h"
+#include "tag.h"
 
 #define state_size(x) (sizeof(x) + LUAI_EXTRASPACE)
 #define fromstate(l) (cast(uint8_t *, (l)) - LUAI_EXTRASPACE)

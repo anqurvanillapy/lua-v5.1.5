@@ -9,13 +9,13 @@
 #include "debug.h"
 #include "gc.h"
 #include "intern.h"
-#include "ltm.h"
 #include "lundump.h"
 #include "lvm.h"
 #include "object.h"
 #include "stack.h"
 #include "state.h"
 #include "table.h"
+#include "tag.h"
 
 #define api_checknelems(L, n) api_check(L, (n) <= (L->top - L->base))
 

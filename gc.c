@@ -5,12 +5,12 @@
 #include "closure.h"
 #include "gc.h"
 #include "intern.h"
-#include "ltm.h"
 #include "memory.h"
 #include "object.h"
 #include "stack.h"
 #include "state.h"
 #include "table.h"
+#include "tag.h"
 
 #define GCSTEPSIZE 1024u
 #define GCSWEEPMAX 40

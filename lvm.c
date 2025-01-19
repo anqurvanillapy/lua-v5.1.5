@@ -9,13 +9,13 @@
 #include "debug.h"
 #include "gc.h"
 #include "intern.h"
-#include "ltm.h"
 #include "lvm.h"
 #include "object.h"
 #include "opcodes.h"
 #include "stack.h"
 #include "state.h"
 #include "table.h"
+#include "tag.h"
 
 /* limit for table tag-method chains (to avoid loops) */
 #define MAXTAGLOOP 100

@@ -1,14 +1,12 @@
-/* Tag methods. */
-
 #include <string.h>
 
 #include "lua.h"
 
 #include "intern.h"
-#include "ltm.h"
 #include "object.h"
 #include "state.h"
 #include "table.h"
+#include "tag.h"
 
 const char *const luaT_typenames[] = {
     "nil",      "boolean",  "userdata", "number", "string", "table",
