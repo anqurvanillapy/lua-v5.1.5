@@ -1,14 +1,11 @@
-/* Debug Interface. */
-
 #include <stdarg.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "lua.h"
 
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
+#include "closure.h"
+#include "debug.h"
 #include "lgc.h"
 #include "lopcodes.h"
 #include "lstate.h"
@@ -16,6 +13,7 @@
 #include "ltm.h"
 #include "lvm.h"
 #include "object.h"
+#include "stack.h"
 
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name);
 

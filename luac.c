@@ -10,13 +10,13 @@
 #include "lua.h"
 #include "std.h"
 
+#include "closure.h"
 #include "intern.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lmem.h"
 #include "lopcodes.h"
 #include "lundump.h"
 #include "object.h"
+#include "stack.h"
 
 #define PROGNAME "luac"        /* default program name */
 #define OUTPUT PROGNAME ".out" /* default output file */

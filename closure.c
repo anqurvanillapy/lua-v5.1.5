@@ -4,7 +4,7 @@
 
 #include "lua.h"
 
-#include "lfunc.h"
+#include "closure.h"
 #include "lgc.h"
 #include "lmem.h"
 #include "lstate.h"

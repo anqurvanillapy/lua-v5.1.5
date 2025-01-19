@@ -4,14 +4,14 @@
 
 #include "lua.h"
 
+#include "closure.h"
+#include "debug.h"
 #include "intern.h"
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lmem.h"
 #include "lundump.h"
 #include "lzio.h"
 #include "object.h"
+#include "stack.h"
 
 typedef struct {
   lua_State *L;

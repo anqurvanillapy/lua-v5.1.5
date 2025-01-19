@@ -5,10 +5,9 @@
 
 #include "lua.h"
 
+#include "closure.h"
+#include "debug.h"
 #include "intern.h"
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lgc.h"
 #include "lstate.h"
 #include "ltable.h"
@@ -16,6 +15,7 @@
 #include "lundump.h"
 #include "lvm.h"
 #include "object.h"
+#include "stack.h"
 
 #define api_checknelems(L, n) api_check(L, (n) <= (L->top - L->base))
 

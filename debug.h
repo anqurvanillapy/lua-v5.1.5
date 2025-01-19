@@ -1,4 +1,4 @@
-/* Auxiliary functions from Debug Interface module. */
+// Debugging utilities.
 
 #pragma once
 

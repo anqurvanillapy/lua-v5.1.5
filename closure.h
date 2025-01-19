@@ -1,4 +1,4 @@
-/* Auxiliary functions to manipulate prototypes and closures. */
+// Closure utilities.
 
 #pragma once
 

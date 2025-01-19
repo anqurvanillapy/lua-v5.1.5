@@ -1,4 +1,4 @@
-/* Stack and Call structure of Lua. */
+// Stack utilities.
 
 #pragma once
 

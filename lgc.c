@@ -4,15 +4,15 @@
 
 #include "lua.h"
 
+#include "closure.h"
 #include "intern.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
 #include "lstate.h"
 #include "ltable.h"
 #include "ltm.h"
 #include "object.h"
+#include "stack.h"
 
 #define GCSTEPSIZE 1024u
 #define GCSWEEPMAX 40

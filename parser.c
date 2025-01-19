@@ -4,11 +4,10 @@
 
 #include "lua.h"
 
+#include "closure.h"
 #include "codegen.h"
+#include "debug.h"
 #include "intern.h"
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "llex.h"
 #include "lmem.h"
 #include "lopcodes.h"
@@ -16,6 +15,7 @@
 #include "ltable.h"
 #include "object.h"
 #include "parser.h"
+#include "stack.h"
 
 #define HAS_MULTI_RETURN(k) ((k) == VCALL || (k) == VVARARG)
 

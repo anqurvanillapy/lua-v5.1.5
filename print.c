@@ -5,7 +5,7 @@
 
 #define luac_c
 
-#include "ldebug.h"
+#include "debug.h"
 #include "lopcodes.h"
 #include "lundump.h"
 #include "object.h"

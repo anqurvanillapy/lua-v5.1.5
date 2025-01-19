@@ -17,7 +17,7 @@
 
 #include "lua.h"
 
-#include "ldebug.h"
+#include "debug.h"
 #include "lgc.h"
 #include "lmem.h"
 #include "lstate.h"

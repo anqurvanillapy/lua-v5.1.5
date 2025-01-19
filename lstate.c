@@ -4,16 +4,16 @@
 
 #include "lua.h"
 
+#include "closure.h"
+#include "debug.h"
 #include "intern.h"
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lgc.h"
 #include "llex.h"
 #include "lmem.h"
 #include "lstate.h"
 #include "ltable.h"
 #include "ltm.h"
+#include "stack.h"
 
 #define state_size(x) (sizeof(x) + LUAI_EXTRASPACE)
 #define fromstate(l) (cast(uint8_t *, (l)) - LUAI_EXTRASPACE)

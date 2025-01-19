@@ -3,7 +3,7 @@
 #include "lua.h"
 
 #include "codegen.h"
-#include "ldebug.h"
+#include "debug.h"
 #include "lgc.h"
 #include "llex.h"
 #include "lmem.h"

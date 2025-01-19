@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "ldo.h"
 #include "ltm.h"
 #include "object.h"
+#include "stack.h"
 
 #define tostring(L, o)                                                         \
   ((GET_TYPE(o) == LUA_TYPE_STRING) || (luaV_tostring(L, o)))

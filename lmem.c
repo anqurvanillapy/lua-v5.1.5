@@ -4,11 +4,11 @@
 
 #include "lua.h"
 
-#include "ldebug.h"
-#include "ldo.h"
+#include "debug.h"
 #include "lmem.h"
 #include "lstate.h"
 #include "object.h"
+#include "stack.h"
 
 /*
 ** About the realloc function:

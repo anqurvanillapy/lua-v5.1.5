@@ -8,14 +8,14 @@
 
 #include "lua.h"
 
+#include "closure.h"
+#include "debug.h"
 #include "intern.h"
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lmem.h"
 #include "lopcodes.h"
 #include "lstate.h"
 #include "ltable.h"
+#include "stack.h"
 #include "std.h"
 
 /*

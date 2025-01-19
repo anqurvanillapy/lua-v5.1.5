@@ -7,13 +7,13 @@
 #include "lua.h"
 
 #include "intern.h"
-#include "ldo.h"
 #include "llex.h"
 #include "lstate.h"
 #include "ltable.h"
 #include "lzio.h"
 #include "object.h"
 #include "parser.h"
+#include "stack.h"
 
 #define next(ls) (ls->current = zgetc(ls->z))
 

@@ -6,10 +6,9 @@
 
 #include "lua.h"
 
+#include "closure.h"
+#include "debug.h"
 #include "intern.h"
-#include "ldebug.h"
-#include "ldo.h"
-#include "lfunc.h"
 #include "lgc.h"
 #include "lmem.h"
 #include "lopcodes.h"
@@ -21,6 +20,7 @@
 #include "lzio.h"
 #include "object.h"
 #include "parser.h"
+#include "stack.h"
 
 /*
 ** {======================================================
