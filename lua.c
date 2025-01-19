@@ -12,11 +12,6 @@
 
 #ifdef LUA_INTERNAL_TESTING
 #define luaL_newstate() lua_newstate(debug_realloc, &memcontrol)
-#define luaL_openlibs(L)                                                       \
-  {                                                                            \
-    (luaL_openlibs)(L);                                                        \
-    luaB_opentests(L);                                                         \
-  }
 #endif
 
 /*
@@ -419,7 +414,10 @@ static int Interpreter_main(lua_State *L) {
     progname = argv[0];
   }
   lua_gc(L, LUA_GCSTOP, 0); /* stop collector during initialization */
-  luaL_openlibs(L);         /* open libraries */
+  luaL_openlibs(L);
+#ifdef LUA_INTERNAL_TESTING
+  luaB_opentests(L);
+#endif
   lua_gc(L, LUA_GCRESTART, 0);
   s->status = handle_luainit(L);
   if (s->status != 0) {
