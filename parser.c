@@ -562,23 +562,27 @@ static void parlist(LexState *ls) {
   luaK_reserveregs(fs, fs->nactvar); /* reserve register for parameters */
 }
 
-static void body(LexState *ls, ExprInfo *e, int needself, int line) {
-  /* body ->  `(' parlist `)' chunk END */
-  FuncState new_fs;
-  openFunc(ls, &new_fs);
-  new_fs.f->lineDefined = line;
+/// \code
+/// body
+///     : '(' parlist ')' chunk END
+///     ;
+/// \endcode
+static void body(LexState *ls, ExprInfo *e, bool hasSelf, int line) {
+  FuncState fs;
+  openFunc(ls, &fs);
+  fs.f->lineDefined = line;
   checknext(ls, '(');
-  if (needself) {
+  if (hasSelf) {
     new_localvarliteral(ls, "self", 0);
     adjustlocalvars(ls, 1);
   }
   parlist(ls);
   checknext(ls, ')');
   chunk(ls);
-  new_fs.f->lineDefinedLast = ls->linenumber;
+  fs.f->lineDefinedLast = ls->linenumber;
   check_match(ls, TK_END, TK_FUNCTION, line);
   closeFunc(ls);
-  pushclosure(ls, &new_fs, e);
+  pushclosure(ls, &fs, e);
 }
 
 /// \code
@@ -597,13 +601,19 @@ static int exprList1(LexState *ls, ExprInfo *v) {
   return exprNum;
 }
 
-static void funcargs(LexState *ls, ExprInfo *f) {
+/// \code
+/// arguments
+///     : '(' exprList1? ')'
+///     | constructor
+///     | STRING
+///     ;
+/// \endcode
+static void arguments(LexState *ls, ExprInfo *f) {
   FuncState *fs = ls->fs;
   ExprInfo args;
-  int base, nparams;
   int line = ls->linenumber;
   switch (ls->t.token) {
-  case '(': { /* funcargs -> `(' [ exprList1 ] `)' */
+  case '(':
     if (line != ls->lastline) {
       Lex_throw(ls, "ambiguous syntax (function call x new stmt)");
     }
@@ -616,26 +626,21 @@ static void funcargs(LexState *ls, ExprInfo *f) {
     }
     check_match(ls, ')', '(', line);
     break;
-  }
-  case '{': { /* funcargs -> constructor */
+  case '{':
     constructor(ls, &args);
     break;
-  }
-  case TK_STRING: { /* funcargs -> STRING */
+  case TK_STRING:
     stringLiteral(ls, &args, ls->t.literal.str);
     luaX_next(ls); /* must use `literal' before `next' */
     break;
-  }
-  default: {
+  default:
     Lex_throw(ls, "function arguments expected");
     return;
   }
-  }
   assert(f->k == VNONRELOC);
-  base = f->u.s.info; /* base register for call */
-  if (HAS_MULTI_RETURN(args.k)) {
-    nparams = LUA_MULTRET; /* open call */
-  } else {
+  int base = f->u.s.info;    /* base register for call */
+  int nparams = LUA_MULTRET; /* open call */
+  if (!HAS_MULTI_RETURN(args.k)) {
     if (args.k != VVOID) {
       luaK_exp2nextreg(fs, &args); /* close last argument */
     }
@@ -674,7 +679,7 @@ static void prefixExpr(LexState *ls, ExprInfo *v) {
 
 /// \code
 /// primaryExpr
-///     : prefixExpr ('.' NAME | indexing | ':' NAME funcargs | funcargs)*
+///     : prefixExpr ('.' NAME | indexing | ':' NAME arguments | arguments)*
 ///     ;
 /// \endcode
 static void primaryExpr(LexState *ls, ExprInfo *v) {
@@ -697,14 +702,14 @@ static void primaryExpr(LexState *ls, ExprInfo *v) {
       ExprInfo key;
       checkname(ls, &key);
       luaK_self(fs, v, &key);
-      funcargs(ls, v);
+      arguments(ls, v);
       break;
     }
     case '(':
     case TK_STRING:
     case '{':
       luaK_exp2nextreg(fs, v);
-      funcargs(ls, v);
+      arguments(ls, v);
       break;
     default:
       return;
@@ -758,7 +763,7 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
     return;
   case TK_FUNCTION:
     luaX_next(ls);
-    body(ls, v, 0, ls->linenumber);
+    body(ls, v, false, ls->linenumber);
     return;
   default:
     primaryExpr(ls, v);
@@ -1190,7 +1195,7 @@ static void localFuncStmt(LexState *ls) {
   exprSetInfo(&v, VLOCAL, fs->freereg);
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
-  body(ls, &b, 0, ls->linenumber);
+  body(ls, &b, false, ls->linenumber);
   luaK_storevar(fs, &v, &b);
   /* debug information will only see the variable after this point! */
   getlocvar(fs, fs->nactvar - 1).startPC = fs->pc;
@@ -1214,27 +1219,27 @@ static void localStmt(LexState *ls) {
   adjustlocalvars(ls, nvars);
 }
 
-static int funcname(LexState *ls, ExprInfo *v) {
+static bool funcname(LexState *ls, ExprInfo *v) {
   /* funcname -> NAME {field} [`:' NAME] */
-  int needself = 0;
+  bool hasSelf = false;
   singlevar(ls, v);
   while (ls->t.token == '.') {
     field(ls, v);
   }
   if (ls->t.token == ':') {
-    needself = 1;
+    hasSelf = true;
     field(ls, v);
   }
-  return needself;
+  return hasSelf;
 }
 
 static void funcStmt(LexState *ls, int line) {
   /* funcStmt -> FUNCTION funcname body */
-  int needself;
-  ExprInfo v, b;
   luaX_next(ls); /* skip FUNCTION */
-  needself = funcname(ls, &v);
-  body(ls, &b, needself, line);
+  ExprInfo v;
+  bool hasSelf = funcname(ls, &v);
+  ExprInfo b;
+  body(ls, &b, hasSelf, line);
   luaK_storevar(ls->fs, &v, &b);
   luaK_fixline(ls->fs, line); /* definition `happens' in the first line */
 }

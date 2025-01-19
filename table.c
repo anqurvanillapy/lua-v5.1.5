@@ -552,20 +552,17 @@ int luaH_getn(Table *t) {
     }
     return i;
   }
-  /* else must find a boundary in hash part */
-  else if (t->node == dummynode) { /* hash part is empty? */
-    return j;                      /* that is easy... */
-  } else {
-    return unbound_search(t, j);
+  if (t->node == dummynode) { /* hash part is empty? */
+    return j;
   }
+  /* else must find a boundary in hash part */
+  return unbound_search(t, j);
 }
 
-#if defined(LUA_DEBUG)
-
+#ifdef LUA_INTERNAL_TESTING
 Node *luaH_mainposition(const Table *t, const Value *key) {
   return mainposition(t, key);
 }
 
 int luaH_isdummy(Node *n) { return n == dummynode; }
-
 #endif

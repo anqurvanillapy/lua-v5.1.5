@@ -23,7 +23,7 @@ LUAI_FUNC void luaH_free(lua_State *L, Table *t);
 LUAI_FUNC int luaH_next(lua_State *L, Table *t, StackIndex key);
 LUAI_FUNC int luaH_getn(Table *t);
 
-#if defined(LUA_DEBUG)
+#ifdef LUA_INTERNAL_TESTING
 LUAI_FUNC Node *luaH_mainposition(const Table *t, const Value *key);
 LUAI_FUNC int luaH_isdummy(Node *n);
 #endif

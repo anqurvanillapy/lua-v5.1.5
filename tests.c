@@ -18,14 +18,9 @@
 #include "std.h"
 #include "table.h"
 
-/*
-** The whole module only makes sense with LUA_DEBUG on
-*/
-#if defined(LUA_DEBUG)
-
 int Trick = 0;
 
-static lua_State *lua_state = NULL;
+static lua_State *lua_state = nullptr;
 
 int islocked = 0;
 
@@ -1023,5 +1018,3 @@ int main(int argc, const char *argv[]) {
   assert(memcontrol.total == 0);
   return ret;
 }
-
-#endif

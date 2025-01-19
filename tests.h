@@ -6,9 +6,9 @@
 
 #include <stdlib.h>
 
-#define LUA_DEBUG
-
-#undef NDEBUG
+#ifdef NDBUG
+#error "unexpected internal testing on release mode"
+#endif
 
 /* memory allocator control variables */
 typedef struct Memcontrol {
