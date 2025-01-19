@@ -1,4 +1,4 @@
-/* Basic library. */
+// Builtin definitions.
 
 #include <ctype.h>
 #include <stdio.h>
