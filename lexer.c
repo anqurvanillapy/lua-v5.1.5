@@ -1,5 +1,3 @@
-// Lexical Analyzer.
-
 #include <ctype.h>
 #include <locale.h>
 #include <string.h>
@@ -7,13 +5,13 @@
 #include "lua.h"
 
 #include "intern.h"
-#include "llex.h"
-#include "lstate.h"
-#include "ltable.h"
+#include "lexer.h"
 #include "lzio.h"
 #include "object.h"
 #include "parser.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 #define next(ls) (ls->current = zgetc(ls->z))
 

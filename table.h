@@ -1,4 +1,4 @@
-/* Lua tables (hash). */
+// Tables (arrays and hash maps).
 
 #pragma once
 

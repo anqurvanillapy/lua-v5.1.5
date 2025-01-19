@@ -1,4 +1,4 @@
-/* Global State. */
+// Global and (thread-)local states.
 
 #pragma once
 

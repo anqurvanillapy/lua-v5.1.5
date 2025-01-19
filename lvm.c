@@ -7,15 +7,15 @@
 
 #include "closure.h"
 #include "debug.h"
+#include "gc.h"
 #include "intern.h"
-#include "lgc.h"
-#include "lopcodes.h"
-#include "lstate.h"
-#include "ltable.h"
 #include "ltm.h"
 #include "lvm.h"
 #include "object.h"
+#include "opcodes.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 /* limit for table tag-method chains (to avoid loops) */
 #define MAXTAGLOOP 100

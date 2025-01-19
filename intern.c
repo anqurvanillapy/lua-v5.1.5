@@ -3,9 +3,9 @@
 #include "lua.h"
 
 #include "intern.h"
-#include "lmem.h"
-#include "lstate.h"
+#include "memory.h"
 #include "object.h"
+#include "state.h"
 
 void StringPool_resize(lua_State *L, size_t newSize) {
   if (G(L)->gcstate == GCSsweepstring) {

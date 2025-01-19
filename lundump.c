@@ -7,9 +7,9 @@
 #include "closure.h"
 #include "debug.h"
 #include "intern.h"
-#include "lmem.h"
 #include "lundump.h"
 #include "lzio.h"
+#include "memory.h"
 #include "object.h"
 #include "stack.h"
 

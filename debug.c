@@ -6,14 +6,14 @@
 
 #include "closure.h"
 #include "debug.h"
-#include "lgc.h"
-#include "lopcodes.h"
-#include "lstate.h"
-#include "ltable.h"
+#include "gc.h"
 #include "ltm.h"
 #include "lvm.h"
 #include "object.h"
+#include "opcodes.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name);
 

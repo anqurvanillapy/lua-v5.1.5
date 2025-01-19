@@ -1,4 +1,4 @@
-/* Interface to Memory Manager. */
+// Memory management.
 
 #pragma once
 

@@ -12,10 +12,10 @@
 
 #include "closure.h"
 #include "intern.h"
-#include "lmem.h"
-#include "lopcodes.h"
 #include "lundump.h"
+#include "memory.h"
 #include "object.h"
+#include "opcodes.h"
 #include "stack.h"
 
 #define PROGNAME "luac"        /* default program name */

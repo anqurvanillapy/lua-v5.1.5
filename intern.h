@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "lgc.h"
-#include "lstate.h"
+#include "gc.h"
 #include "object.h"
+#include "state.h"
 
 #define STRING_SIZE(s) (sizeof(struct String) + ((s)->len + 1) * sizeof(char))
 

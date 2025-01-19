@@ -8,19 +8,19 @@
 
 #include "closure.h"
 #include "debug.h"
+#include "gc.h"
 #include "intern.h"
-#include "lgc.h"
-#include "lmem.h"
-#include "lopcodes.h"
-#include "lstate.h"
-#include "ltable.h"
 #include "ltm.h"
 #include "lundump.h"
 #include "lvm.h"
 #include "lzio.h"
+#include "memory.h"
 #include "object.h"
+#include "opcodes.h"
 #include "parser.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 /*
 ** {======================================================

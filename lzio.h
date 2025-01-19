@@ -4,7 +4,7 @@
 
 #include "lua.h"
 
-#include "lmem.h"
+#include "memory.h"
 
 #define EOZ (-1) /* end of stream */
 

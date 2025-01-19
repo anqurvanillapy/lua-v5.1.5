@@ -1,5 +1,3 @@
-/* Lua tables (hash). */
-
 /*
 ** Implementation of tables (aka arrays, objects, or hash tables).
 ** Tables keep its elements in two parts: an array part and a hash part.
@@ -18,11 +16,11 @@
 #include "lua.h"
 
 #include "debug.h"
-#include "lgc.h"
-#include "lmem.h"
-#include "lstate.h"
-#include "ltable.h"
+#include "gc.h"
+#include "memory.h"
 #include "object.h"
+#include "state.h"
+#include "table.h"
 
 // Max size of array part is 2^MAXBITS.
 #define MAXBITS 26

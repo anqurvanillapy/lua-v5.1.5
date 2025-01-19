@@ -1,18 +1,16 @@
-/* Garbage Collector. */
-
 #include <string.h>
 
 #include "lua.h"
 
 #include "closure.h"
+#include "gc.h"
 #include "intern.h"
-#include "lgc.h"
-#include "lmem.h"
-#include "lstate.h"
-#include "ltable.h"
 #include "ltm.h"
+#include "memory.h"
 #include "object.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 #define GCSTEPSIZE 1024u
 #define GCSWEEPMAX 40

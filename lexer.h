@@ -1,4 +1,4 @@
-/* Lexical Analyzer. */
+// Lexer.
 
 #pragma once
 

@@ -4,13 +4,13 @@
 
 #include "codegen.h"
 #include "debug.h"
-#include "lgc.h"
-#include "llex.h"
-#include "lmem.h"
-#include "lopcodes.h"
-#include "ltable.h"
+#include "gc.h"
+#include "lexer.h"
+#include "memory.h"
 #include "object.h"
+#include "opcodes.h"
 #include "parser.h"
+#include "table.h"
 
 #define hasjumps(e) ((e)->t != (e)->f)
 

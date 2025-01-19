@@ -6,9 +6,9 @@
 #define luac_c
 
 #include "debug.h"
-#include "lopcodes.h"
 #include "lundump.h"
 #include "object.h"
+#include "opcodes.h"
 
 #define PrintFunction luaU_print
 

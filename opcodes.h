@@ -1,4 +1,4 @@
-/* Opcodes for Lua virtual machine. */
+// VM opcodes.
 
 #pragma once
 

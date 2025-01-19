@@ -8,14 +8,14 @@
 #include "codegen.h"
 #include "debug.h"
 #include "intern.h"
-#include "llex.h"
-#include "lmem.h"
-#include "lopcodes.h"
-#include "lstate.h"
-#include "ltable.h"
+#include "lexer.h"
+#include "memory.h"
 #include "object.h"
+#include "opcodes.h"
 #include "parser.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 #define HAS_MULTI_RETURN(k) ((k) == VCALL || (k) == VVARARG)
 

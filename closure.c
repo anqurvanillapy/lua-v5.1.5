@@ -5,10 +5,10 @@
 #include "lua.h"
 
 #include "closure.h"
-#include "lgc.h"
-#include "lmem.h"
-#include "lstate.h"
+#include "gc.h"
+#include "memory.h"
 #include "object.h"
+#include "state.h"
 
 Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
   Closure *c = cast(Closure *, luaM_malloc(L, sizeCclosure(nelems)));

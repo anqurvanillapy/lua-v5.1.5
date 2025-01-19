@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "lstate.h"
+#include "state.h"
 
 #define pcRel(pc, p) (cast(int, (pc) - (p)->code) - 1)
 

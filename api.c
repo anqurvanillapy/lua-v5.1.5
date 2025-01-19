@@ -7,15 +7,15 @@
 
 #include "closure.h"
 #include "debug.h"
+#include "gc.h"
 #include "intern.h"
-#include "lgc.h"
-#include "lstate.h"
-#include "ltable.h"
 #include "ltm.h"
 #include "lundump.h"
 #include "lvm.h"
 #include "object.h"
 #include "stack.h"
+#include "state.h"
+#include "table.h"
 
 #define api_checknelems(L, n) api_check(L, (n) <= (L->top - L->base))
 

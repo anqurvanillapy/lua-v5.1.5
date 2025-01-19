@@ -5,9 +5,9 @@
 #include "lua.h"
 
 #include "limits.h"
-#include "lmem.h"
-#include "lstate.h"
 #include "lzio.h"
+#include "memory.h"
+#include "state.h"
 
 int luaZ_fill(ZIO *z) {
   size_t size;

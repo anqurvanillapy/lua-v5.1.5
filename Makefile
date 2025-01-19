@@ -4,7 +4,7 @@ CFLAGS = -std=c23 \
 	-g -O2 \
 	-fsanitize=address \
 	-Werror -Wall -Wextra -Wpedantic \
-	-DLUA_USE_LINUX -DLUA_USER_H='"ltests.h"'
+	-DLUA_USE_LINUX -DLUA_USER_H='"tests.h"'
 AR = ar rcu
 RANLIB = ranlib
 RM = rm -f
@@ -12,9 +12,9 @@ LIBS = -fsanitize=address \
 	-lm -lreadline
 
 LUA_A = liblua.a
-CORE_O = api.o codegen.o debug.o stack.o ldump.o closure.o lgc.o llex.o lmem.o \
-	object.o lopcodes.o parser.o lstate.o intern.o ltable.o ltm.o  \
-	lundump.o lvm.o lzio.o ltests.o
+CORE_O = api.o codegen.o debug.o stack.o dump.o closure.o gc.o lexer.o \
+	memory.o object.o opcodes.o parser.o state.o intern.o table.o ltm.o  \
+	lundump.o lvm.o lzio.o tests.o
 LIB_O = std.o std_builtin.o std_debug.o std_io.o std_math.o std_os.o \
 	std_table.o std_string.o std_package.o
 

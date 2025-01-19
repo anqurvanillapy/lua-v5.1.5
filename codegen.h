@@ -1,8 +1,8 @@
 #pragma once
 
-#include "llex.h"
-#include "lopcodes.h"
+#include "lexer.h"
 #include "object.h"
+#include "opcodes.h"
 #include "parser.h"
 
 /*

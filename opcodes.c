@@ -1,8 +1,4 @@
-
-
-#include "lopcodes.h"
-
-/* ORDER OP */
+#include "opcodes.h"
 
 const char *const luaP_opnames[NUM_OPCODES + 1] = {
     "MOVE",     "LOADK",     "LOADBOOL", "LOADNIL",  "GETUPVAL", "GETGLOBAL",
@@ -11,7 +7,7 @@ const char *const luaP_opnames[NUM_OPCODES + 1] = {
     "UNM",      "NOT",       "LEN",      "CONCAT",   "JMP",      "EQ",
     "LT",       "LE",        "TEST",     "TESTSET",  "CALL",     "TAILCALL",
     "RETURN",   "FORLOOP",   "FORPREP",  "TFORLOOP", "SETLIST",  "CLOSE",
-    "CLOSURE",  "VARARG",    NULL,
+    "CLOSURE",  "VARARG",    nullptr,
 };
 
 #define opmode(t, a, b, c, m)                                                  \

@@ -1,4 +1,4 @@
-/* Garbage Collector. */
+// Garbage collector.
 
 #pragma once
 

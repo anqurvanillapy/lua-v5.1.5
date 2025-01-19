@@ -5,10 +5,10 @@
 #include "lua.h"
 
 #include "debug.h"
-#include "lmem.h"
-#include "lstate.h"
+#include "memory.h"
 #include "object.h"
 #include "stack.h"
+#include "state.h"
 
 /*
 ** About the realloc function:

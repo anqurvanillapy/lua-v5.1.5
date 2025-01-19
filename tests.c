@@ -11,12 +11,12 @@
 #include "closure.h"
 #include "debug.h"
 #include "intern.h"
-#include "lmem.h"
-#include "lopcodes.h"
-#include "lstate.h"
-#include "ltable.h"
+#include "memory.h"
+#include "opcodes.h"
 #include "stack.h"
+#include "state.h"
 #include "std.h"
+#include "table.h"
 
 /*
 ** The whole module only makes sense with LUA_DEBUG on
