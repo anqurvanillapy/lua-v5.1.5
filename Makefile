@@ -74,16 +74,16 @@ echo:
 # Use `make depend` to generate the following targets.
 
 lapi.o: lapi.c lua.h luaconf.h ltests.h intern.h lgc.h object.h limits.h \
-  lstate.h ltm.h lzio.h lmem.h lapi.h ldebug.h ldo.h lfunc.h ltable.h \
-  lundump.h lvm.h
+  lstate.h ltm.h lzio.h lmem.h ldebug.h ldo.h lfunc.h ltable.h lundump.h \
+  lvm.h
 lauxlib.o: lauxlib.c lua.h luaconf.h ltests.h lauxlib.h
 lbaselib.o: lbaselib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 lcode.o: lcode.c lua.h luaconf.h ltests.h lcode.h llex.h lzio.h lmem.h \
   limits.h object.h lopcodes.h parser.h ldebug.h lstate.h ltm.h lgc.h \
   ltable.h
 ldblib.o: ldblib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
-ldebug.o: ldebug.c lua.h luaconf.h ltests.h lapi.h object.h limits.h \
-  ldebug.h lstate.h ltm.h lzio.h lmem.h ldo.h lfunc.h lgc.h lopcodes.h \
+ldebug.o: ldebug.c lua.h luaconf.h ltests.h ldebug.h lstate.h ltm.h \
+  object.h limits.h lzio.h lmem.h ldo.h lfunc.h lgc.h lopcodes.h \
   ltable.h lvm.h
 ldo.o: ldo.c lua.h luaconf.h ltests.h intern.h lgc.h object.h limits.h \
   lstate.h ltm.h lzio.h lmem.h ldebug.h ldo.h lfunc.h lopcodes.h \
@@ -112,8 +112,8 @@ ltable.o: ltable.c lua.h luaconf.h ltests.h ldebug.h lstate.h ltm.h \
   object.h limits.h lzio.h lmem.h lgc.h ltable.h
 ltablib.o: ltablib.c lua.h luaconf.h ltests.h lauxlib.h lualib.h
 ltests.o: ltests.c lua.h luaconf.h ltests.h intern.h lgc.h object.h \
-  limits.h lstate.h ltm.h lzio.h lmem.h lapi.h lauxlib.h ldebug.h ldo.h \
-  lfunc.h lopcodes.h ltable.h lualib.h
+  limits.h lstate.h ltm.h lzio.h lmem.h lauxlib.h ldebug.h ldo.h lfunc.h \
+  lopcodes.h ltable.h lualib.h
 ltm.o: ltm.c lua.h luaconf.h ltests.h intern.h lgc.h object.h limits.h \
   lstate.h ltm.h lzio.h lmem.h ltable.h
 lua.o: lua.c lua.h luaconf.h ltests.h lauxlib.h lualib.h

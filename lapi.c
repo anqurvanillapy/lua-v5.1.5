@@ -6,7 +6,6 @@
 #include "lua.h"
 
 #include "intern.h"
-#include "lapi.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
@@ -70,11 +69,6 @@ static Table *getcurrenv(lua_State *L) {
     Closure *func = curr_func(L);
     return func->c.header.env;
   }
-}
-
-void luaA_pushobject(lua_State *L, const Value *o) {
-  SET_OBJECT_TO_STACK(L, L->top, o);
-  api_incr_top(L);
 }
 
 LUA_API int lua_checkstack(lua_State *L, int size) {

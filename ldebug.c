@@ -6,7 +6,6 @@
 
 #include "lua.h"
 
-#include "lapi.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
@@ -640,4 +639,10 @@ void luaG_runerror(lua_State *L, const char *fmt, ...) {
   addinfo(L, luaO_pushvfstring(L, fmt, argp));
   va_end(argp);
   luaG_errormsg(L);
+}
+
+void luaA_pushobject(lua_State *L, const Value *o) {
+  SET_OBJECT_TO_STACK(L, L->top, o);
+  api_check(L, L->top < L->ci->top);
+  L->top++;
 }

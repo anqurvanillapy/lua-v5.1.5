@@ -9,7 +9,6 @@
 #include "lua.h"
 
 #include "intern.h"
-#include "lapi.h"
 #include "lauxlib.h"
 #include "ldebug.h"
 #include "ldo.h"
