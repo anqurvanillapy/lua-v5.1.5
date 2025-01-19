@@ -4,7 +4,6 @@
 
 #include "lua.h"
 
-#include "lualib.h"
 #include "std.h"
 
 #define FILE_HANDLE "FILE*"

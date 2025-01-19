@@ -16,7 +16,6 @@
 #include "lopcodes.h"
 #include "lstate.h"
 #include "ltable.h"
-#include "lualib.h"
 #include "std.h"
 
 /*

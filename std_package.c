@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lua.h"
-
-#include "lualib.h"
 #include "std.h"
 
 /* prefix for open functions in C libraries */

@@ -7,9 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lua.h"
-
-#include "lualib.h"
 #include "std.h"
 
 #define FREELIST_REF 0 /* free list of references */

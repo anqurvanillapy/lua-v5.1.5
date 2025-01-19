@@ -1,9 +1,7 @@
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "lua.h"
-
-#include "lualib.h"
 #include "std.h"
 
 static int db_getregistry(lua_State *L) {
@@ -194,7 +192,7 @@ static void hookf(lua_State *L, lua_Debug *ar) {
     } else {
       lua_pushnil(L);
     }
-    DEBUG_ASSERT(lua_getinfo(L, "lS", ar));
+    assert(lua_getinfo(L, "lS", ar));
     lua_call(L, 2, 0);
   }
 }

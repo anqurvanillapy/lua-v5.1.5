@@ -1,13 +1,11 @@
 /* Lua stand-alone interpreter. */
 
+#include <assert.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "lua.h"
-
-#include "lualib.h"
 #include "std.h"
 
 #ifdef LUA_INTERNAL_TESTING
@@ -356,14 +354,14 @@ static int runargs(lua_State *L, const char **argv, int n) {
     if (argv[i] == NULL) {
       continue;
     }
-    DEBUG_ASSERT(argv[i][0] == '-');
+    assert(argv[i][0] == '-');
     switch (argv[i][1]) { /* option */
     case 'e': {
       const char *chunk = argv[i] + 2;
       if (*chunk == '\0') {
         chunk = argv[++i];
       }
-      DEBUG_ASSERT(chunk != NULL);
+      assert(chunk != NULL);
       if (dostring(L, chunk, "=(command line)") != 0) {
         return 1;
       }
@@ -374,7 +372,7 @@ static int runargs(lua_State *L, const char **argv, int n) {
       if (*filename == '\0') {
         filename = argv[++i];
       }
-      DEBUG_ASSERT(filename != NULL);
+      assert(filename != NULL);
       if (dolibrary(L, filename)) {
         return 1; /* stop if file fails */
       }

@@ -3,9 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lua.h"
-
-#include "lualib.h"
 #include "std.h"
 
 /* macro to `unsign' a character */

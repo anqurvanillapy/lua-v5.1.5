@@ -3,7 +3,6 @@
 
 #include "lua.h"
 
-#include "lualib.h"
 #include "std.h"
 
 #undef PI
