@@ -6,13 +6,11 @@
 
 #include "lua.h"
 
+#include "buffer.h"
 #include "closure.h"
 #include "debug.h"
 #include "gc.h"
 #include "intern.h"
-#include "lundump.h"
-#include "lvm.h"
-#include "lzio.h"
 #include "memory.h"
 #include "object.h"
 #include "opcodes.h"
@@ -21,6 +19,8 @@
 #include "state.h"
 #include "table.h"
 #include "tag.h"
+#include "undump.h"
+#include "vm.h"
 
 /*
 ** {======================================================

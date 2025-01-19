@@ -4,9 +4,9 @@
 
 #include "lua.h"
 
+#include "buffer.h"
 #include "intern.h"
 #include "lexer.h"
-#include "lzio.h"
 #include "object.h"
 #include "parser.h"
 #include "stack.h"

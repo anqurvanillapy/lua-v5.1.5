@@ -1,8 +1,8 @@
-/* Load precompiled Lua chunks. */
+// Load precompiled Lua chunks.
 
 #pragma once
 
-#include "lzio.h"
+#include "buffer.h"
 #include "object.h"
 
 /* load one chunk; from lundump.c */

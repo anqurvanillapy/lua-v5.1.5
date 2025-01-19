@@ -1,4 +1,4 @@
-/* Lua virtual machine. */
+// Virtual machine.
 
 #pragma once
 

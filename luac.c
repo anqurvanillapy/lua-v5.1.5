@@ -12,11 +12,11 @@
 
 #include "closure.h"
 #include "intern.h"
-#include "lundump.h"
 #include "memory.h"
 #include "object.h"
 #include "opcodes.h"
 #include "stack.h"
+#include "undump.h"
 
 #define PROGNAME "luac"        /* default program name */
 #define OUTPUT PROGNAME ".out" /* default output file */

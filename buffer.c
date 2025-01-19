@@ -4,8 +4,8 @@
 
 #include "lua.h"
 
+#include "buffer.h"
 #include "limits.h"
-#include "lzio.h"
 #include "memory.h"
 #include "state.h"
 

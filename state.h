@@ -4,7 +4,7 @@
 
 #include "lua.h"
 
-#include "lzio.h"
+#include "buffer.h"
 #include "object.h"
 #include "tag.h"
 

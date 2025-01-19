@@ -14,7 +14,7 @@ LIBS = -fsanitize=address \
 LUA_A = liblua.a
 CORE_O = api.o codegen.o debug.o stack.o dump.o closure.o gc.o lexer.o \
 	memory.o object.o opcodes.o parser.o state.o intern.o table.o tag.o  \
-	lundump.o lvm.o lzio.o tests.o
+	undump.o vm.o buffer.o tests.o
 LIB_O = std.o std_builtin.o std_debug.o std_io.o std_math.o std_os.o \
 	std_table.o std_string.o std_package.o
 

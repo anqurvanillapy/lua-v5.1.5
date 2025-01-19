@@ -1,12 +1,12 @@
-/* Save precompiled Lua chunks. */
+// Save precompiled Lua chunks.
 
 #include <stddef.h>
 
 #include "lua.h"
 
-#include "lundump.h"
 #include "object.h"
 #include "state.h"
+#include "undump.h"
 
 typedef struct {
   lua_State *L;

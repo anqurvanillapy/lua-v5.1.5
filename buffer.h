@@ -1,4 +1,4 @@
-/* Buffered streams. */
+// Buffered streams.
 
 #pragma once
 

@@ -1,17 +1,15 @@
-/* Load precompiled Lua chunks. */
-
 #include <string.h>
 
 #include "lua.h"
 
+#include "buffer.h"
 #include "closure.h"
 #include "debug.h"
 #include "intern.h"
-#include "lundump.h"
-#include "lzio.h"
 #include "memory.h"
 #include "object.h"
 #include "stack.h"
+#include "undump.h"
 
 typedef struct {
   lua_State *L;

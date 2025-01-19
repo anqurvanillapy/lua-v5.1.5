@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "buffer.h"
 #include "limits.h"
-#include "lzio.h"
 #include "object.h"
 
 typedef enum ExprKind {

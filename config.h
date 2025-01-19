@@ -1,4 +1,4 @@
-/* Configuration file for Lua. */
+// Configuration file for Lua.
 
 #pragma once
 

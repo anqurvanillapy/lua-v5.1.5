@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "lzio.h"
+#include "buffer.h"
 #include "object.h"
 
 #define FIRST_RESERVED 257
