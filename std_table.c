@@ -3,7 +3,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 #define aux_getn(L, n) (luaL_checktype(L, n, LUA_TYPE_TABLE), luaL_getn(L, n))
 
@@ -274,6 +274,6 @@ static const luaL_Reg tab_funcs[] = {
 };
 
 LUALIB_API int luaopen_table(lua_State *L) {
-  luaL_register(L, LUA_TABLIBNAME, tab_funcs);
+  luaL_register(L, "table", tab_funcs);
   return 1;
 }

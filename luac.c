@@ -8,7 +8,7 @@
 #define luac_c
 
 #include "lua.h"
-#include "util.h"
+#include "std.h"
 
 #include "intern.h"
 #include "ldo.h"

@@ -17,7 +17,7 @@
 #include "lstate.h"
 #include "ltable.h"
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 /*
 ** The whole module only makes sense with LUA_DEBUG on

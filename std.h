@@ -1,4 +1,4 @@
-/* Utilities for building Lua libraries. */
+// Lua standard libraries.
 
 #pragma once
 

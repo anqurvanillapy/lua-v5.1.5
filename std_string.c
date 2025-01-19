@@ -6,7 +6,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 /* macro to `unsign' a character */
 #define uchar(c) ((unsigned char)(c))
@@ -914,7 +914,7 @@ static void createmetatable(lua_State *L) {
 ** Open string library
 */
 LUALIB_API int luaopen_string(lua_State *L) {
-  luaL_register(L, LUA_STRLIBNAME, strlib);
+  luaL_register(L, "string", strlib);
   lua_getfield(L, -1, "gmatch");
   lua_setfield(L, -2, "gfind");
   createmetatable(L);

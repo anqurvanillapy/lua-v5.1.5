@@ -5,8 +5,9 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
+#define FILE_HANDLE "FILE*"
 #define IO_INPUT 1
 #define IO_OUTPUT 2
 
@@ -34,13 +35,13 @@ static void fileerror(lua_State *L, int arg, const char *filename) {
   luaL_argerror(L, arg, lua_tostring(L, -1));
 }
 
-#define tofilep(L) ((FILE **)luaL_checkudata(L, 1, LUA_FILEHANDLE))
+#define tofilep(L) ((FILE **)luaL_checkudata(L, 1, FILE_HANDLE))
 
 static int io_type(lua_State *L) {
   void *ud;
   luaL_checkany(L, 1);
   ud = lua_touserdata(L, 1);
-  lua_getfield(L, LUA_REGISTRYINDEX, LUA_FILEHANDLE);
+  lua_getfield(L, LUA_REGISTRYINDEX, FILE_HANDLE);
   if (ud == nullptr || !lua_getmetatable(L, 1) || !lua_rawequal(L, -2, -1)) {
     lua_pushnil(L); /* not a file */
   } else if (*((FILE **)ud) == nullptr) {
@@ -67,7 +68,7 @@ static FILE *tofile(lua_State *L) {
 static FILE **newfile(lua_State *L) {
   FILE **pf = (FILE **)lua_newuserdata(L, sizeof(FILE *));
   *pf = nullptr; /* file handle is currently `closed' */
-  luaL_getmetatable(L, LUA_FILEHANDLE);
+  luaL_getmetatable(L, FILE_HANDLE);
   lua_setmetatable(L, -2);
   return pf;
 }
@@ -434,10 +435,10 @@ static const luaL_Reg flib[] = {
 };
 
 static void createmeta(lua_State *L) {
-  luaL_newmetatable(L, LUA_FILEHANDLE); /* create metatable for file handles */
-  lua_pushvalue(L, -1);                 /* push metatable */
-  lua_setfield(L, -2, "__index");       /* metatable.__index = metatable */
-  luaL_register(L, nullptr, flib);      /* file methods */
+  luaL_newmetatable(L, FILE_HANDLE); /* create metatable for file handles */
+  lua_pushvalue(L, -1);              /* push metatable */
+  lua_setfield(L, -2, "__index");    /* metatable.__index = metatable */
+  luaL_register(L, nullptr, flib);   /* file methods */
 }
 
 static void createstdfile(lua_State *L, FILE *f, int k, const char *fname) {
@@ -463,7 +464,7 @@ LUALIB_API int luaopen_io(lua_State *L) {
   newfenv(L, io_fclose);
   lua_replace(L, LUA_ENVIRONINDEX);
   /* open library */
-  luaL_register(L, LUA_IOLIBNAME, iolib);
+  luaL_register(L, "io", iolib);
   /* create (and set) default files */
   newfenv(L, io_noclose); /* close function for default files */
   createstdfile(L, stdin, IO_INPUT, "stdin");

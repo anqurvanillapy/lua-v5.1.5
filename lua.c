@@ -8,7 +8,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 #ifdef LUA_INTERNAL_TESTING
 #define luaL_newstate() lua_newstate(debug_realloc, &memcontrol)

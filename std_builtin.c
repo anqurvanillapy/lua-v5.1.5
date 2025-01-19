@@ -7,7 +7,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 /*
 ** If your system does not support `stdout', you can just remove this function.
@@ -609,6 +609,6 @@ static void base_open(lua_State *L) {
 
 LUALIB_API int luaopen_base(lua_State *L) {
   base_open(L);
-  luaL_register(L, LUA_COLIBNAME, co_funcs);
+  luaL_register(L, "coroutine", co_funcs);
   return 2;
 }

@@ -4,7 +4,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 static int db_getregistry(lua_State *L) {
   lua_pushvalue(L, LUA_REGISTRYINDEX);
@@ -384,6 +384,6 @@ static const luaL_Reg dblib[] = {
 };
 
 LUALIB_API int luaopen_debug(lua_State *L) {
-  luaL_register(L, LUA_DBLIBNAME, dblib);
+  luaL_register(L, "debug", dblib);
   return 1;
 }

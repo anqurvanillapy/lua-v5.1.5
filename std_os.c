@@ -7,7 +7,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 /*
 @@ lua_tmpnam is the function that the OS library uses to create a
@@ -227,6 +227,6 @@ static const luaL_Reg syslib[] = {
 /* }====================================================== */
 
 LUALIB_API int luaopen_os(lua_State *L) {
-  luaL_register(L, LUA_OSLIBNAME, syslib);
+  luaL_register(L, "os", syslib);
   return 1;
 }

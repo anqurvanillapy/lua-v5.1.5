@@ -5,7 +5,7 @@
 #include "lua.h"
 
 #include "lualib.h"
-#include "util.h"
+#include "std.h"
 
 /* prefix for open functions in C libraries */
 #define LUA_POF "luaopen_"
@@ -425,7 +425,7 @@ LUALIB_API int luaopen_package(lua_State *L) {
   lua_pushcfunction(L, gctm);
   lua_setfield(L, -2, "__gc");
   /* create `package' table */
-  luaL_register(L, LUA_LOADLIBNAME, pk_funcs);
+  luaL_register(L, "package", pk_funcs);
 
   lua_pushvalue(L, -1);
   lua_replace(L, LUA_ENVIRONINDEX);
