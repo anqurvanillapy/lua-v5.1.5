@@ -53,5 +53,5 @@ const Value *luaT_gettmbyobj(lua_State *L, const Value *o, TMS event) {
   default:
     mt = G(L)->mt[GET_TYPE(o)];
   }
-  return (mt ? luaH_getstr(mt, G(L)->tmname[event]) : luaO_nilobject);
+  return (mt ? luaH_getstr(mt, G(L)->tmname[event]) : objectNil);
 }

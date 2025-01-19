@@ -17,7 +17,7 @@
 
 #define api_checknelems(L, n) API_CHECK(L, (n) <= (L->top - L->base))
 
-#define api_checkvalidindex(L, i) API_CHECK(L, (i) != luaO_nilobject)
+#define api_checkvalidindex(L, i) API_CHECK(L, (i) != objectNil)
 
 #define api_incr_top(L)                                                        \
   do {                                                                         \
@@ -30,7 +30,7 @@ static Value *indexToAddr(lua_State *L, int idx) {
     Value *o = L->base + (idx - 1);
     API_CHECK(L, idx <= L->ci->top - L->base);
     if (o >= L->top) {
-      return (Value *)luaO_nilobject;
+      return (Value *)objectNil;
     }
     return o;
   }
@@ -55,7 +55,7 @@ static Value *indexToAddr(lua_State *L, int idx) {
     Closure *func = curr_func(L);
     idx = LUA_GLOBALSINDEX - idx;
     return (idx <= func->c.header.nupvalues) ? &func->c.upvalue[idx - 1]
-                                             : (Value *)luaO_nilobject;
+                                             : (Value *)objectNil;
   }
   }
 }
@@ -206,7 +206,7 @@ LUA_API void lua_pushvalue(lua_State *L, int idx) {
 
 LUA_API int lua_type(lua_State *L, int idx) {
   StackIndex o = indexToAddr(L, idx);
-  return o == luaO_nilobject ? LUA_TYPE_NONE : GET_TYPE(o);
+  return o == objectNil ? LUA_TYPE_NONE : GET_TYPE(o);
 }
 
 LUA_API const char *lua_typename(lua_State *, int t) {
@@ -237,17 +237,14 @@ LUA_API int lua_isuserdata(lua_State *L, int idx) {
 LUA_API int lua_rawequal(lua_State *L, int index1, int index2) {
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  return (o1 == luaO_nilobject || o2 == luaO_nilobject)
-             ? 0
-             : luaO_rawequalObj(o1, o2);
+  return (o1 == objectNil || o2 == objectNil) ? 0 : luaO_rawequalObj(o1, o2);
 }
 
 LUA_API int lua_equal(lua_State *L, int index1, int index2) {
   lua_lock(L); /* may call tag method */
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  int i =
-      o1 == luaO_nilobject || o2 == luaO_nilobject ? 0 : equalobj(L, o1, o2);
+  int i = o1 == objectNil || o2 == objectNil ? 0 : equalobj(L, o1, o2);
   lua_unlock(L);
   return i;
 }
@@ -256,9 +253,7 @@ LUA_API int lua_lessthan(lua_State *L, int index1, int index2) {
   lua_lock(L); /* may call tag method */
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  int i = o1 == luaO_nilobject || o2 == luaO_nilobject
-              ? 0
-              : luaV_lessthan(L, o1, o2);
+  int i = o1 == objectNil || o2 == objectNil ? 0 : luaV_lessthan(L, o1, o2);
   lua_unlock(L);
   return i;
 }

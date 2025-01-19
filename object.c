@@ -14,7 +14,7 @@
 #include "state.h"
 #include "vm.h"
 
-const Value luaO_nilobject_ = {{nullptr}, LUA_TYPE_NIL};
+const Value valueNil = {{nullptr}, LUA_TYPE_NIL};
 
 /*
 ** converts an integer to a "floating point byte", represented as

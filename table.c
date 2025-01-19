@@ -56,13 +56,12 @@ static const Node dummynode_ = {
 ** hash for lua_Numbers
 */
 static Node *hashnum(const Table *t, double n) {
-  unsigned int a[numints];
-  int i;
-  if (luai_numeq(n, 0)) { /* avoid problems with -0 */
+  if (n == 0) {
     return gnode(t, 0);
   }
+  unsigned int a[numints];
   memcpy(a, &n, sizeof(a));
-  for (i = 1; i < numints; i++) {
+  for (int i = 1; i < numints; i++) {
     a[0] += a[i];
   }
   return hashmod(t, a[0]);
@@ -160,7 +159,7 @@ int luaH_next(lua_State *L, Table *t, StackIndex key) {
 ** ==============================================================
 */
 
-static int computesizes(int nums[], int *narray) {
+static int computesizes(const int nums[], int *narray) {
   int i;
   int twotoi; /* 2^i */
   int a = 0;  /* number of elements smaller than 2^i */
@@ -245,18 +244,17 @@ static void setarrayvector(lua_State *L, Table *t, int size) {
 
 static void setnodevector(lua_State *L, Table *t, int size) {
   int lsize;
-  if (size == 0) {                     /* no elements to hash part? */
-    t->node = cast(Node *, dummynode); /* use common `dummynode' */
+  if (size == 0) {               /* no elements to hash part? */
+    t->node = (Node *)dummynode; /* use common `dummynode' */
     lsize = 0;
   } else {
-    int i;
     lsize = ceillog2(size);
     if (lsize > MAXBITS) {
       luaG_runerror(L, "table overflow");
     }
     size = twoto(lsize);
     t->node = luaM_newvector(L, size, Node);
-    for (i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       Node *n = gnode(t, i);
       gnext(n) = nullptr;
       SET_NIL(gkey(n));
@@ -417,7 +415,7 @@ const Value *luaH_getnum(Table *t, int key) {
         n = gnext(n);
       }
     } while (n);
-    return luaO_nilobject;
+    return objectNil;
   }
 }
 
@@ -433,7 +431,7 @@ const Value *luaH_getstr(Table *t, String *key) {
       n = gnext(n);
     }
   } while (n);
-  return luaO_nilobject;
+  return objectNil;
 }
 
 /*
@@ -442,7 +440,7 @@ const Value *luaH_getstr(Table *t, String *key) {
 const Value *luaH_get(Table *t, const Value *key) {
   switch (GET_TYPE(key)) {
   case LUA_TYPE_NIL:
-    return luaO_nilobject;
+    return objectNil;
   case LUA_TYPE_STRING:
     return luaH_getstr(t, STRING_VALUE(key));
   case LUA_TYPE_NUMBER: {
@@ -463,7 +461,7 @@ const Value *luaH_get(Table *t, const Value *key) {
         n = gnext(n);
       }
     } while (n);
-    return luaO_nilobject;
+    return objectNil;
   }
   }
 }
@@ -471,7 +469,7 @@ const Value *luaH_get(Table *t, const Value *key) {
 Value *luaH_set(lua_State *L, Table *t, const Value *key) {
   const Value *p = luaH_get(t, key);
   t->flags = 0;
-  if (p != luaO_nilobject) {
+  if (p != objectNil) {
     return cast(Value *, p);
   } else {
     if (IS_TYPE_NIL(key)) {
@@ -485,24 +483,22 @@ Value *luaH_set(lua_State *L, Table *t, const Value *key) {
 
 Value *luaH_setnum(lua_State *L, Table *t, int key) {
   const Value *p = luaH_getnum(t, key);
-  if (p != luaO_nilobject) {
-    return cast(Value *, p);
-  } else {
-    Value k;
-    SET_NUMBER(&k, (double)key);
-    return newkey(L, t, &k);
+  if (p != objectNil) {
+    return (Value *)p;
   }
+  Value k;
+  SET_NUMBER(&k, (double)key);
+  return newkey(L, t, &k);
 }
 
 Value *luaH_setstr(lua_State *L, Table *t, String *key) {
   const Value *p = luaH_getstr(t, key);
-  if (p != luaO_nilobject) {
-    return cast(Value *, p);
-  } else {
-    Value k;
-    SET_STRING(L, &k, key);
-    return newkey(L, t, &k);
+  if (p != objectNil) {
+    return (Value *)p;
   }
+  Value k;
+  SET_STRING(L, &k, key);
+  return newkey(L, t, &k);
 }
 
 static int unbound_search(Table *t, unsigned int j) {
@@ -512,7 +508,7 @@ static int unbound_search(Table *t, unsigned int j) {
   while (!IS_TYPE_NIL(luaH_getnum(t, j))) {
     i = j;
     j *= 2;
-    if (j > cast(unsigned int, SAFE_INT_MAX)) { /* overflow? */
+    if (j > SAFE_INT_MAX) { /* overflow? */
       /* table was built with bad purposes: resort to linear search */
       i = 1;
       while (!IS_TYPE_NIL(luaH_getnum(t, i))) {
