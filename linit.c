@@ -2,8 +2,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 static const luaL_Reg lualibs[] = {
     {"", luaopen_base},

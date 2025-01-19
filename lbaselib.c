@@ -6,8 +6,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 /*
 ** If your system does not support `stdout', you can just remove this function.

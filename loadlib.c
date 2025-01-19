@@ -11,8 +11,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 /* prefix for open functions in C libraries */
 #define LUA_POF "luaopen_"

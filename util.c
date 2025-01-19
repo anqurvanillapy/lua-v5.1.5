@@ -1,4 +1,5 @@
-/* Auxiliary functions for building Lua libraries. */
+// This file uses only the official API of Lua. Any function declared here could
+// be written as an application function.
 
 #include <errno.h>
 #include <stdarg.h>
@@ -6,13 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* This file uses only the official API of Lua.
-** Any function declared here could be written as an application function.
-*/
-
 #include "lua.h"
 
-#include "lauxlib.h"
+#include "util.h"
 
 #define FREELIST_REF 0 /* free list of references */
 

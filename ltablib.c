@@ -4,8 +4,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 #define aux_getn(L, n) (luaL_checktype(L, n, LUA_TYPE_TABLE), luaL_getn(L, n))
 

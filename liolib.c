@@ -6,8 +6,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 #define IO_INPUT 1
 #define IO_OUTPUT 2

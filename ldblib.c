@@ -5,8 +5,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 static int db_getregistry(lua_State *L) {
   lua_pushvalue(L, LUA_REGISTRYINDEX);

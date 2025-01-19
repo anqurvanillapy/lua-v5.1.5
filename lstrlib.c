@@ -7,8 +7,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 /* macro to `unsign' a character */
 #define uchar(c) ((unsigned char)(c))

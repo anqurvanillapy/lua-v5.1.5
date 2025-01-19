@@ -8,8 +8,8 @@
 
 #include "lua.h"
 
-#include "lauxlib.h"
 #include "lualib.h"
+#include "util.h"
 
 /*
 @@ lua_tmpnam is the function that the OS library uses to create a

@@ -9,7 +9,6 @@
 #include "lua.h"
 
 #include "intern.h"
-#include "lauxlib.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"
@@ -18,6 +17,7 @@
 #include "lstate.h"
 #include "ltable.h"
 #include "lualib.h"
+#include "util.h"
 
 /*
 ** The whole module only makes sense with LUA_DEBUG on
