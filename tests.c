@@ -75,19 +75,19 @@ void *debug_realloc(void *ud, void *block, size_t oldsize, size_t size) {
   assert(oldsize == 0 || checkblocksize(block, oldsize));
   if (size == 0) {
     freeblock(mc, block, oldsize);
-    return NULL;
+    return nullptr;
   } else if (size > oldsize && mc->total + size - oldsize > mc->memlimit)
-    return NULL; /* to test memory allocation errors */
+    return nullptr; /* to test memory allocation errors */
   else {
     void *newblock;
     int i;
     size_t realsize = HEADER + size + MARKSIZE;
     size_t commonsize = (oldsize < size) ? oldsize : size;
     if (realsize < size)
-      return NULL;               /* overflow! */
+      return nullptr;            /* overflow! */
     newblock = malloc(realsize); /* alloc a new block */
-    if (newblock == NULL)
-      return NULL;
+    if (newblock == nullptr)
+      return nullptr;
     if (block) {
       memcpy(cast(char *, newblock) + HEADER, block, commonsize);
       freeblock(mc, block, oldsize); /* erase (and check) old copy */
@@ -127,9 +127,9 @@ static int testobjref1(GlobalState *g, GCObject *f, GCObject *t) {
 static void printobj(GlobalState *g, GCObject *o) {
   int i = 0;
   GCObject *p;
-  for (p = g->rootgc; p != o && p != NULL; p = p->gch.next)
+  for (p = g->rootgc; p != o && p != nullptr; p = p->gch.next)
     i++;
-  if (p == NULL)
+  if (p == nullptr)
     i = -1;
   printf("%d:%s(%p)-%c(%02X)", i, luaT_typenames[o->gch.tt], (void *)o,
          IS_DEAD(g, o) ? 'd'
@@ -228,7 +228,7 @@ static void checkstack(GlobalState *g, lua_State *L1) {
   CallInfo *ci;
   GCObject *uvo;
   assert(!IS_DEAD(g, LuaObjectToGCObject(L1)));
-  for (uvo = L1->openUpval; uvo != NULL; uvo = uvo->gch.next) {
+  for (uvo = L1->openUpval; uvo != nullptr; uvo = uvo->gch.next) {
     Upvalue *uv = gco2uv(uvo);
     assert(uv->v != &uv->u.value); /* must be open */
     assert(!isblack(uvo));         /* open upvalues cannot be black */
@@ -313,7 +313,7 @@ int lua_checkmemory(lua_State *L) {
   checkstack(g, g->mainthread);
   for (o = g->rootgc; o != LuaObjectToGCObject(g->mainthread); o = o->gch.next)
     checkobject(g, o);
-  for (o = o->gch.next; o != NULL; o = o->gch.next) {
+  for (o = o->gch.next; o != nullptr; o = o->gch.next) {
     assert(o->gch.tt == LUA_TYPE_USERDATA);
     checkobject(g, o);
   }
@@ -405,7 +405,7 @@ static int listlocals(lua_State *L) {
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
   p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
-  while ((name = luaF_getlocalname(p, ++i, pc)) != NULL)
+  while ((name = luaF_getlocalname(p, ++i, pc)) != nullptr)
     lua_pushstring(L, name);
   return i - 1;
 }
@@ -580,7 +580,7 @@ static int upvalue(lua_State *L) {
   luaL_checktype(L, 1, LUA_TYPE_FUNCTION);
   if (lua_isnone(L, 3)) {
     const char *name = lua_getupvalue(L, 1, n);
-    if (name == NULL)
+    if (name == nullptr)
       return 0;
     lua_pushstring(L, name);
     return 2;
@@ -652,11 +652,12 @@ static int loadlib(lua_State *L) {
       {"baselibopen", luaopen_base},    {"dblibopen", luaopen_debug},
       {"iolibopen", luaopen_io},        {"mathlibopen", luaopen_math},
       {"strlibopen", luaopen_string},   {"tablibopen", luaopen_table},
-      {"packageopen", luaopen_package}, {NULL, NULL}};
+      {"packageopen", luaopen_package}, {nullptr, nullptr},
+  };
   lua_State *L1 =
       cast(lua_State *, cast(unsigned long, luaL_checknumber(L, 1)));
   lua_pushvalue(L1, LUA_GLOBALSINDEX);
-  luaL_register(L1, NULL, libs);
+  luaL_register(L1, nullptr, libs);
   return 0;
 }
 
@@ -910,7 +911,7 @@ static void yieldf(lua_State *L, lua_Debug *ar) {
 
 static int setyhook(lua_State *L) {
   if (lua_isnoneornil(L, 1))
-    lua_sethook(L, NULL, 0, 0); /* turn off hooks */
+    lua_sethook(L, nullptr, 0, 0); /* turn off hooks */
   else {
     const char *smask = luaL_checkstring(L, 1);
     int count = luaL_optint(L, 2, 0);
@@ -994,14 +995,14 @@ static const struct luaL_Reg tests_funcs[] = {
     {"udataval", udataval},
     {"unref", unref},
     {"upvalue", upvalue},
-    {NULL, NULL},
+    {nullptr, nullptr},
 };
 
 int luaB_opentests(lua_State *L) {
   void *ud;
   assert(lua_getallocf(L, &ud) == debug_realloc);
   assert(ud == cast(void *, &memcontrol));
-  lua_setallocf(L, lua_getallocf(L, NULL), ud);
+  lua_setallocf(L, lua_getallocf(L, nullptr), ud);
   lua_state = L; /* keep first state to be opened */
   luaL_register(L, "T", tests_funcs);
   return 0;
@@ -1012,7 +1013,7 @@ int main(int argc, const char *argv[]) {
   int ret;
   char *limit = getenv("MEMLIMIT");
   if (limit)
-    memcontrol.memlimit = strtoul(limit, NULL, 10);
+    memcontrol.memlimit = strtoul(limit, nullptr, 10);
   ret = l_main(argc, argv);
   assert(memcontrol.numblocks == 0);
   assert(memcontrol.total == 0);

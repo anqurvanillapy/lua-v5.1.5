@@ -617,7 +617,7 @@ static void addinfo(lua_State *L, const char *msg) {
   }
 }
 
-void luaG_errormsg(lua_State *L) {
+[[noreturn]] void luaG_errormsg(lua_State *L) {
   if (L->errFunc != 0) { /* is there an error handling function? */
     StackIndex errfunc = restorestack(L, L->errFunc);
     if (!IS_TYPE_FUNCTION(errfunc)) {

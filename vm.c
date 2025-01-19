@@ -557,7 +557,7 @@ reentry: /* entry point */
         break;
       }
       default: { /* try metamethod */
-        Protect(if (!call_binTM(L, rb, objectNil, ra, TM_LEN))
+        Protect(if (!call_binTM(L, rb, &valueNil, ra, TM_LEN))
                     luaG_typeerror(L, rb, "get length of");)
       }
       }

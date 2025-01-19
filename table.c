@@ -13,8 +13,6 @@
 
 #include <string.h>
 
-#include "lua.h"
-
 #include "debug.h"
 #include "gc.h"
 #include "memory.h"
@@ -415,7 +413,7 @@ const Value *luaH_getnum(Table *t, int key) {
         n = gnext(n);
       }
     } while (n);
-    return objectNil;
+    return &valueNil;
   }
 }
 
@@ -431,7 +429,7 @@ const Value *luaH_getstr(Table *t, String *key) {
       n = gnext(n);
     }
   } while (n);
-  return objectNil;
+  return &valueNil;
 }
 
 /*
@@ -440,7 +438,7 @@ const Value *luaH_getstr(Table *t, String *key) {
 const Value *luaH_get(Table *t, const Value *key) {
   switch (GET_TYPE(key)) {
   case LUA_TYPE_NIL:
-    return objectNil;
+    return &valueNil;
   case LUA_TYPE_STRING:
     return luaH_getstr(t, STRING_VALUE(key));
   case LUA_TYPE_NUMBER: {
@@ -461,7 +459,7 @@ const Value *luaH_get(Table *t, const Value *key) {
         n = gnext(n);
       }
     } while (n);
-    return objectNil;
+    return &valueNil;
   }
   }
 }
@@ -469,7 +467,7 @@ const Value *luaH_get(Table *t, const Value *key) {
 Value *luaH_set(lua_State *L, Table *t, const Value *key) {
   const Value *p = luaH_get(t, key);
   t->flags = 0;
-  if (p != objectNil) {
+  if (p != &valueNil) {
     return cast(Value *, p);
   } else {
     if (IS_TYPE_NIL(key)) {
@@ -483,7 +481,7 @@ Value *luaH_set(lua_State *L, Table *t, const Value *key) {
 
 Value *luaH_setnum(lua_State *L, Table *t, int key) {
   const Value *p = luaH_getnum(t, key);
-  if (p != objectNil) {
+  if (p != &valueNil) {
     return (Value *)p;
   }
   Value k;
@@ -493,7 +491,7 @@ Value *luaH_setnum(lua_State *L, Table *t, int key) {
 
 Value *luaH_setstr(lua_State *L, Table *t, String *key) {
   const Value *p = luaH_getstr(t, key);
-  if (p != objectNil) {
+  if (p != &valueNil) {
     return (Value *)p;
   }
   Value k;

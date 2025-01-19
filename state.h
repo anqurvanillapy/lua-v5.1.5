@@ -38,7 +38,7 @@ typedef struct CallInfo {
   int tailcalls; /* number of tail calls lost under this entry */
 } CallInfo;
 
-#define curr_func(L) (CLOSURE_VALUE(L->ci->func))
+#define CUR_FUNC(L) (CLOSURE_VALUE(L->ci->func))
 #define ci_func(ci) (CLOSURE_VALUE((ci)->func))
 #define f_isLua(ci) (!ci_func(ci)->c.header.isC)
 #define isLua(ci) (IS_TYPE_FUNCTION((ci)->func) && f_isLua(ci))

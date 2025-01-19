@@ -1,8 +1,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "lua.h"
-
 #include "closure.h"
 #include "debug.h"
 #include "gc.h"
@@ -15,9 +13,9 @@
 #include "undump.h"
 #include "vm.h"
 
-#define api_checknelems(L, n) API_CHECK(L, (n) <= (L->top - L->base))
+#define api_checknelems(L, n) API_CHECK(L, (n) <= ((L)->top - (L)->base))
 
-#define api_checkvalidindex(L, i) API_CHECK(L, (i) != objectNil)
+#define api_checkvalidindex(L, i) API_CHECK(L, (i) != &valueNil)
 
 #define api_incr_top(L)                                                        \
   do {                                                                         \
@@ -30,7 +28,7 @@ static Value *indexToAddr(lua_State *L, int idx) {
     Value *o = L->base + (idx - 1);
     API_CHECK(L, idx <= L->ci->top - L->base);
     if (o >= L->top) {
-      return (Value *)objectNil;
+      return (Value *)&valueNil;
     }
     return o;
   }
@@ -45,17 +43,17 @@ static Value *indexToAddr(lua_State *L, int idx) {
   case LUA_REGISTRYINDEX:
     return registry(L);
   case LUA_ENVIRONINDEX: {
-    Closure *func = curr_func(L);
+    Closure *func = CUR_FUNC(L);
     SET_TABLE(L, &L->env, func->c.header.env);
     return &L->env;
   }
   case LUA_GLOBALSINDEX:
     return gt(L);
   default: {
-    Closure *func = curr_func(L);
+    Closure *func = CUR_FUNC(L);
     idx = LUA_GLOBALSINDEX - idx;
-    return (idx <= func->c.header.nupvalues) ? &func->c.upvalue[idx - 1]
-                                             : (Value *)objectNil;
+    return idx <= func->c.header.nupvalues ? &func->c.upvalue[idx - 1]
+                                           : (Value *)&valueNil;
   }
   }
 }
@@ -63,10 +61,8 @@ static Value *indexToAddr(lua_State *L, int idx) {
 static Table *getcurrenv(lua_State *L) {
   if (L->ci == L->baseCI) {    /* no enclosing function? */
     return TABLE_VALUE(gt(L)); /* use global table as environment */
-  } else {
-    Closure *func = curr_func(L);
-    return func->c.header.env;
   }
+  return CUR_FUNC(L)->c.header.env;
 }
 
 LUA_API int lua_checkstack(lua_State *L, int size) {
@@ -85,7 +81,6 @@ LUA_API int lua_checkstack(lua_State *L, int size) {
 }
 
 LUA_API void lua_xmove(lua_State *from, lua_State *to, int n) {
-  int i;
   if (from == to) {
     return;
   }
@@ -94,7 +89,7 @@ LUA_API void lua_xmove(lua_State *from, lua_State *to, int n) {
   API_CHECK(from, G(from) == G(to));
   API_CHECK(from, to->ci->top - to->top >= n);
   from->top -= n;
-  for (i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     SET_OBJECT_TO_STACK(to, to->top++, from->top + i);
   }
   lua_unlock(to);
@@ -104,20 +99,18 @@ LUA_API void lua_setlevel(lua_State *from, lua_State *to) {
   to->nestedCCallsNum = from->nestedCCallsNum;
 }
 
-LUA_API lua_CFunction lua_atpanic(lua_State *L, lua_CFunction panicf) {
-  lua_CFunction old;
+LUA_API lua_CFunction lua_atpanic(lua_State *L, lua_CFunction f) {
   lua_lock(L);
-  old = G(L)->panic;
-  G(L)->panic = panicf;
+  lua_CFunction old = G(L)->panic;
+  G(L)->panic = f;
   lua_unlock(L);
   return old;
 }
 
 LUA_API lua_State *lua_newthread(lua_State *L) {
-  lua_State *L1;
   lua_lock(L);
   luaC_checkGC(L);
-  L1 = luaE_newthread(L);
+  lua_State *L1 = luaE_newthread(L);
   SET_THREAD(L, L->top, L1);
   api_incr_top(L);
   lua_unlock(L);
@@ -147,47 +140,45 @@ LUA_API void lua_settop(lua_State *L, int idx) {
 }
 
 LUA_API void lua_remove(lua_State *L, int idx) {
-  StackIndex p;
   lua_lock(L);
-  p = indexToAddr(L, idx);
+  StackIndex p = indexToAddr(L, idx);
   api_checkvalidindex(L, p);
-  while (++p < L->top)
+  while (++p < L->top) {
     SET_OBJECT_TO_SAME_STACK(L, p - 1, p);
+  }
   L->top--;
   lua_unlock(L);
 }
 
 LUA_API void lua_insert(lua_State *L, int idx) {
-  StackIndex p;
-  StackIndex q;
   lua_lock(L);
-  p = indexToAddr(L, idx);
+  StackIndex p = indexToAddr(L, idx);
   api_checkvalidindex(L, p);
-  for (q = L->top; q > p; q--)
+  for (StackIndex q = L->top; q > p; q--) {
     SET_OBJECT_TO_SAME_STACK(L, q, q - 1);
+  }
   SET_OBJECT_TO_SAME_STACK(L, p, L->top);
   lua_unlock(L);
 }
 
 LUA_API void lua_replace(lua_State *L, int idx) {
-  StackIndex o;
   lua_lock(L);
   /* explicit test for incompatible code */
   if (idx == LUA_ENVIRONINDEX && L->ci == L->baseCI) {
     luaG_runerror(L, "no calling environment");
   }
   api_checknelems(L, 1);
-  o = indexToAddr(L, idx);
+  StackIndex o = indexToAddr(L, idx);
   api_checkvalidindex(L, o);
   if (idx == LUA_ENVIRONINDEX) {
-    Closure *func = curr_func(L);
+    Closure *func = CUR_FUNC(L);
     API_CHECK(L, IS_TYPE_TABLE(L->top - 1));
     func->c.header.env = TABLE_VALUE(L->top - 1);
     luaC_barrier(L, func, L->top - 1);
   } else {
     SET_OBJECT(L, o, L->top - 1);
     if (idx < LUA_GLOBALSINDEX) /* function upvalue? */
-      luaC_barrier(L, curr_func(L), L->top - 1);
+      luaC_barrier(L, CUR_FUNC(L), L->top - 1);
   }
   L->top--;
   lua_unlock(L);
@@ -206,7 +197,7 @@ LUA_API void lua_pushvalue(lua_State *L, int idx) {
 
 LUA_API int lua_type(lua_State *L, int idx) {
   StackIndex o = indexToAddr(L, idx);
-  return o == objectNil ? LUA_TYPE_NONE : GET_TYPE(o);
+  return o == &valueNil ? LUA_TYPE_NONE : GET_TYPE(o);
 }
 
 LUA_API const char *lua_typename(lua_State *, int t) {
@@ -237,14 +228,14 @@ LUA_API int lua_isuserdata(lua_State *L, int idx) {
 LUA_API int lua_rawequal(lua_State *L, int index1, int index2) {
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  return (o1 == objectNil || o2 == objectNil) ? 0 : luaO_rawequalObj(o1, o2);
+  return (o1 == &valueNil || o2 == &valueNil) ? 0 : luaO_rawequalObj(o1, o2);
 }
 
 LUA_API int lua_equal(lua_State *L, int index1, int index2) {
   lua_lock(L); /* may call tag method */
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  int i = o1 == objectNil || o2 == objectNil ? 0 : equalobj(L, o1, o2);
+  int i = o1 == &valueNil || o2 == &valueNil ? 0 : equalobj(L, o1, o2);
   lua_unlock(L);
   return i;
 }
@@ -253,7 +244,7 @@ LUA_API int lua_lessthan(lua_State *L, int index1, int index2) {
   lua_lock(L); /* may call tag method */
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  int i = o1 == objectNil || o2 == objectNil ? 0 : luaV_lessthan(L, o1, o2);
+  int i = o1 == &valueNil || o2 == &valueNil ? 0 : luaV_lessthan(L, o1, o2);
   lua_unlock(L);
   return i;
 }
@@ -313,13 +304,11 @@ LUA_API size_t lua_objlen(lua_State *L, int idx) {
     return USERDATA_VALUE(o)->len;
   case LUA_TYPE_TABLE:
     return luaH_getn(TABLE_VALUE(o));
-  case LUA_TYPE_NUMBER: {
-    size_t l;
+  case LUA_TYPE_NUMBER:
     lua_lock(L); /* `luaV_tostring' may create a new string */
-    l = (luaV_tostring(L, o) ? STRING_VALUE(o)->len : 0);
+    size_t l = (luaV_tostring(L, o) ? STRING_VALUE(o)->len : 0);
     lua_unlock(L);
     return l;
-  }
   default:
     return 0;
   }
@@ -415,12 +404,11 @@ LUA_API const char *lua_pushvfstring(lua_State *L, const char *fmt,
 }
 
 LUA_API const char *lua_pushfstring(lua_State *L, const char *fmt, ...) {
-  const char *ret;
-  va_list argp;
   lua_lock(L);
   luaC_checkGC(L);
+  va_list argp;
   va_start(argp, fmt);
-  ret = luaO_pushvfstring(L, fmt, argp);
+  const char *ret = luaO_pushvfstring(L, fmt, argp);
   va_end(argp);
   lua_unlock(L);
   return ret;
@@ -787,28 +775,23 @@ LUA_API int lua_gc(lua_State *L, int what, int data) {
   lua_lock(L);
   GlobalState *g = G(L);
   switch (what) {
-  case LUA_GCSTOP: {
+  case LUA_GCSTOP:
     g->GCthreshold = SIZE_MAX;
     break;
-  }
-  case LUA_GCRESTART: {
+  case LUA_GCRESTART:
     g->GCthreshold = g->totalbytes;
     break;
-  }
-  case LUA_GCCOLLECT: {
+  case LUA_GCCOLLECT:
     luaC_fullgc(L);
     break;
-  }
-  case LUA_GCCOUNT: {
+  case LUA_GCCOUNT:
     /* GC values are expressed in Kbytes: #bytes/2^10 */
     res = (int)(g->totalbytes >> 10);
     break;
-  }
-  case LUA_GCCOUNTB: {
+  case LUA_GCCOUNTB:
     res = (int)(g->totalbytes & 0x3ff);
     break;
-  }
-  case LUA_GCSTEP: {
+  case LUA_GCSTEP:
     size_t a = (size_t)data << 10;
     if (a <= g->totalbytes) {
       g->GCthreshold = g->totalbytes - a;
@@ -823,17 +806,14 @@ LUA_API int lua_gc(lua_State *L, int what, int data) {
       }
     }
     break;
-  }
-  case LUA_GCSETPAUSE: {
+  case LUA_GCSETPAUSE:
     res = g->gcpause;
     g->gcpause = data;
     break;
-  }
-  case LUA_GCSETSTEPMUL: {
+  case LUA_GCSETSTEPMUL:
     res = g->gcstepmul;
     g->gcstepmul = data;
     break;
-  }
   default:
     res = -1; /* invalid option */
   }

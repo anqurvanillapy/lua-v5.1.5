@@ -80,7 +80,7 @@ static void resetstack(lua_State *L, int status) {
   L->errorJmp = nullptr;
 }
 
-void luaD_throw(lua_State *L, int errcode) {
+[[noreturn]] void luaD_throw(lua_State *L, int errcode) {
   if (L->errorJmp) {
     L->errorJmp->status = errcode;
     LUAI_THROW(L, L->errorJmp);
@@ -306,7 +306,7 @@ int luaD_precall(lua_State *L, StackIndex func, int nresults) {
       luaD_callhook(L, LUA_HOOKCALL, -1);
     }
     lua_unlock(L);
-    n = (*curr_func(L)->c.f)(L); /* do the actual call */
+    n = (*CUR_FUNC(L)->c.f)(L); /* do the actual call */
     lua_lock(L);
     if (n < 0) { /* yielding? */
       return PCRYIELD;

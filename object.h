@@ -320,8 +320,6 @@ typedef struct Table {
 #define twoto(x) (1 << (x))
 #define sizenode(t) (twoto((t)->lsizenode))
 
-#define objectNil (&valueNil)
-
 LUAI_DATA const Value valueNil;
 
 #define ceillog2(x) (luaO_log2((x) - 1) + 1)
