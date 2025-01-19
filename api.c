@@ -1,5 +1,3 @@
-/* Lua API. */
-
 #include <stdarg.h>
 #include <string.h>
 

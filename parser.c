@@ -409,8 +409,12 @@ static void field(LexState *ls, ExprInfo *v) {
   luaK_indexed(fs, v, &key);
 }
 
-static void yindex(LexState *ls, ExprInfo *v) {
-  /* index -> '[' expr ']' */
+/// \code
+/// index
+///     : '[' expr ']'
+///     ;
+/// \endcode
+static void indexing(LexState *ls, ExprInfo *v) {
   luaX_next(ls); /* skip the '[' */
   expr(ls, v);
   luaK_exp2val(ls->fs, v);
@@ -435,7 +439,7 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
     luaY_checklimit(fs, cc->nh, SAFE_INT_MAX, "items in a constructor");
     checkname(ls, &key);
   } else { /* ls->t.token == '[' */
-    yindex(ls, &key);
+    indexing(ls, &key);
   }
   cc->nh++;
   checknext(ls, '=');
@@ -643,8 +647,13 @@ static void funcargs(LexState *ls, ExprInfo *f) {
                              (unless changed) one result */
 }
 
-static void prefixexp(LexState *ls, ExprInfo *v) {
-  /* prefixexp -> NAME | '(' expr ')' */
+/// \code
+/// prefixExpr
+///     : NAME
+///     | '(' expr ')'
+///     ;
+/// \endcode
+static void prefixExpr(LexState *ls, ExprInfo *v) {
   switch (ls->t.token) {
   case '(': {
     int line = ls->linenumber;
@@ -654,38 +663,38 @@ static void prefixexp(LexState *ls, ExprInfo *v) {
     Codegen_releaseVars(ls->fs, v);
     return;
   }
-  case TK_NAME: {
+  case TK_NAME:
     singlevar(ls, v);
     return;
-  }
-  default: {
+  default:
     Lex_throw(ls, "unexpected symbol");
     return;
   }
-  }
 }
 
-static void primaryexp(LexState *ls, ExprInfo *v) {
-  /* primaryexp ->
-        prefixexp { `.' NAME | `[' exp `]' | `:' NAME funcargs | funcargs } */
+/// \code
+/// primaryExpr
+///     : prefixExpr ('.' NAME | indexing | ':' NAME funcargs | funcargs)*
+///     ;
+/// \endcode
+static void primaryExpr(LexState *ls, ExprInfo *v) {
   FuncState *fs = ls->fs;
-  prefixexp(ls, v);
-  for (;;) {
+  prefixExpr(ls, v);
+  while (true) {
     switch (ls->t.token) {
-    case '.': { /* field */
+    case '.':
       field(ls, v);
       break;
-    }
-    case '[': { /* `[' exp1 `]' */
-      ExprInfo key;
+    case '[': {
       luaK_exp2anyreg(fs, v);
-      yindex(ls, &key);
+      ExprInfo key;
+      indexing(ls, &key);
       luaK_indexed(fs, v, &key);
       break;
     }
-    case ':': { /* `:' NAME funcargs */
-      ExprInfo key;
+    case ':': {
       luaX_next(ls);
+      ExprInfo key;
       checkname(ls, &key);
       luaK_self(fs, v, &key);
       funcargs(ls, v);
@@ -693,11 +702,10 @@ static void primaryexp(LexState *ls, ExprInfo *v) {
     }
     case '(':
     case TK_STRING:
-    case '{': { /* funcargs */
+    case '{':
       luaK_exp2nextreg(fs, v);
       funcargs(ls, v);
       break;
-    }
     default:
       return;
     }
@@ -714,7 +722,7 @@ static void primaryexp(LexState *ls, ExprInfo *v) {
 ///     | ... # vararg
 ///     | constructor
 ///     | FUNCTION body
-///     | primaryexp
+///     | primaryExpr
 ///     ;
 /// \endcode
 static void simpleExpr(LexState *ls, ExprInfo *v) {
@@ -753,7 +761,7 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
     body(ls, v, 0, ls->linenumber);
     return;
   default:
-    primaryexp(ls, v);
+    primaryExpr(ls, v);
     return;
   }
   luaX_next(ls);
@@ -892,8 +900,12 @@ static bool isBlockEnded(int token) {
   }
 }
 
+/// \code
+/// block
+///     : chunk
+///     ;
+/// \endcode
 static void block(LexState *ls) {
-  /* block -> chunk */
   FuncState *fs = ls->fs;
   BlockCnt bl;
   enterBlock(fs, &bl, 0);
@@ -942,10 +954,10 @@ static void check_conflict(LexState *ls, struct LHS_assign *lh, ExprInfo *v) {
 static void assignment(LexState *ls, struct LHS_assign *lh, int nvars) {
   ExprInfo e;
   check_condition(ls, VLOCAL <= lh->v.k && lh->v.k <= VINDEXED, "syntax error");
-  if (testNext(ls, ',')) { /* assignment -> `,' primaryexp assignment */
+  if (testNext(ls, ',')) { /* assignment -> `,' primaryExpr assignment */
     struct LHS_assign nv;
     nv.prev = lh;
-    primaryexp(ls, &nv.v);
+    primaryExpr(ls, &nv.v);
     if (nv.v.k == VLOCAL) {
       check_conflict(ls, lh, &nv.v);
     }
@@ -1231,7 +1243,7 @@ static void exprStmt(LexState *ls) {
   /* stat -> func | assignment */
   FuncState *fs = ls->fs;
   struct LHS_assign v;
-  primaryexp(ls, &v.v);
+  primaryExpr(ls, &v.v);
   if (v.v.k == VCALL) {             /* stat -> func */
     SETARG_C(getcode(fs, &v.v), 1); /* call stmt uses no results */
   } else {                          /* stat -> assignment */
