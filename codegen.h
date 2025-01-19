@@ -1,5 +1,3 @@
-// Code generator.
-
 #pragma once
 
 #include "llex.h"

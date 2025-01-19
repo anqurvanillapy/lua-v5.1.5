@@ -1,5 +1,3 @@
-/* Code generator for Lua. */
-
 #include <stdlib.h>
 
 #include "lua.h"

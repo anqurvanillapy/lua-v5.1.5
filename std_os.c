@@ -1,5 +1,3 @@
-/* Standard Operating System library. */
-
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>

@@ -1,5 +1,3 @@
-/* Standard mathematical library. */
-
 #include <math.h>
 #include <stdlib.h>
 

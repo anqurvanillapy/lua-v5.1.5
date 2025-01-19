@@ -1,5 +1,3 @@
-/* Interface from Lua to its debug API. */
-
 #include <stdio.h>
 #include <string.h>
 

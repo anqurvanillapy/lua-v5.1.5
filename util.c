@@ -9,6 +9,7 @@
 
 #include "lua.h"
 
+#include "lualib.h"
 #include "util.h"
 
 #define FREELIST_REF 0 /* free list of references */
@@ -551,4 +552,24 @@ LUALIB_API lua_State *luaL_newstate(void) {
     lua_atpanic(L, &panic);
   }
   return L;
+}
+
+static const luaL_Reg lualibs[] = {
+    {"", luaopen_base},
+    {LUA_LOADLIBNAME, luaopen_package},
+    {LUA_TABLIBNAME, luaopen_table},
+    {LUA_IOLIBNAME, luaopen_io},
+    {LUA_OSLIBNAME, luaopen_os},
+    {LUA_STRLIBNAME, luaopen_string},
+    {LUA_MATHLIBNAME, luaopen_math},
+    {LUA_DBLIBNAME, luaopen_debug},
+    {nullptr, nullptr},
+};
+
+LUALIB_API void luaL_openlibs(lua_State *L) {
+  for (const luaL_Reg *lib = lualibs; lib->func; lib++) {
+    lua_pushcfunction(L, lib->func);
+    lua_pushstring(L, lib->name);
+    lua_call(L, 1, 0);
+  }
 }

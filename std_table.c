@@ -1,5 +1,3 @@
-/* Library for Table Manipulation. */
-
 #include <stddef.h>
 
 #include "lua.h"
