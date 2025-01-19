@@ -1,4 +1,4 @@
-/* Code generator for Lua. */
+// Code generator.
 
 #pragma once
 

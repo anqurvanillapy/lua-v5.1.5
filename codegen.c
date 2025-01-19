@@ -4,7 +4,7 @@
 
 #include "lua.h"
 
-#include "lcode.h"
+#include "codegen.h"
 #include "ldebug.h"
 #include "lgc.h"
 #include "llex.h"

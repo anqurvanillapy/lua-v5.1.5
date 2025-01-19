@@ -12,7 +12,7 @@ LIBS = -fsanitize=address \
 	-lm -lreadline
 
 LUA_A = liblua.a
-CORE_O = api.o lcode.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
+CORE_O = api.o codegen.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o \
 	object.o lopcodes.o parser.o lstate.o intern.o ltable.o ltm.o  \
 	lundump.o lvm.o lzio.o ltests.o
 LIB_O = util.o builtin.o ldblib.o liolib.o lmathlib.o loslib.o ltablib.o \
