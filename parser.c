@@ -27,8 +27,8 @@
 /*
 ** nodes for block list (list of active blocks)
 */
-typedef struct BlockCnt {
-  struct BlockCnt *prev;
+typedef struct Block {
+  struct Block *prev;
   // List of jumps out of this loop.
   int breaklist;
   // Number of active locals outside the breakable structure.
@@ -37,11 +37,8 @@ typedef struct BlockCnt {
   bool hasUpvalues;
   // True if this block is a loop.
   bool isBreakable;
-} BlockCnt;
+} Block;
 
-/*
-** prototypes for recursive non-terminal functions
-*/
 static void chunk(LexState *ls);
 static void expr(LexState *ls, ExprInfo *v);
 
@@ -81,17 +78,10 @@ static void check(LexState *ls, int c) {
   }
 }
 
-static void checknext(LexState *ls, int c) {
+static void checkNext(LexState *ls, int c) {
   check(ls, c);
   luaX_next(ls);
 }
-
-#define check_condition(ls, c, msg)                                            \
-  do {                                                                         \
-    if (!(c)) {                                                                \
-      Lex_throw(ls, msg);                                                      \
-    }                                                                          \
-  } while (false)
 
 static void check_match(LexState *ls, int what, int who, int where) {
   if (!testNext(ls, what)) {
@@ -213,7 +203,7 @@ static int lookupLocalVar(FuncState *fs, String *name) {
 }
 
 static void markUpvalue(FuncState *fs, int level) {
-  BlockCnt *bl = fs->bl;
+  Block *bl = fs->bl;
   while (bl && bl->nactvar > level) {
     bl = bl->prev;
   }
@@ -288,7 +278,7 @@ static void enterLevel(LexState *ls) {
 
 #define leaveLevel(ls) ((ls)->L->nestedCCallsNum--)
 
-static void enterBlock(FuncState *fs, BlockCnt *bl, bool isBreakable) {
+static void enterBlock(FuncState *fs, Block *bl, bool isBreakable) {
   bl->breaklist = NO_JUMP;
   bl->isBreakable = isBreakable;
   bl->nactvar = fs->nactvar;
@@ -299,7 +289,7 @@ static void enterBlock(FuncState *fs, BlockCnt *bl, bool isBreakable) {
 }
 
 static void leaveBlock(FuncState *fs) {
-  BlockCnt *bl = fs->bl;
+  Block *bl = fs->bl;
   fs->bl = bl->prev;
   removevars(fs->ls, bl->nactvar);
   if (bl->hasUpvalues) {
@@ -420,7 +410,7 @@ static void indexing(LexState *ls, ExprInfo *v) {
   luaX_next(ls); /* skip the '[' */
   expr(ls, v);
   luaK_exp2val(ls->fs, v);
-  checknext(ls, ']');
+  checkNext(ls, ']');
 }
 
 struct ConsControl {
@@ -444,7 +434,7 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
     indexing(ls, &key);
   }
   cc->nh++;
-  checknext(ls, '=');
+  checkNext(ls, '=');
   rkkey = luaK_exp2RK(fs, &key);
   expr(ls, &val);
   luaK_codeABC(fs, OP_SETTABLE, cc->t->u.s.info, rkkey, luaK_exp2RK(fs, &val));
@@ -497,7 +487,7 @@ static void constructor(LexState *ls, ExprInfo *t) {
   exprSetInfo(t, VRELOCABLE, pc);
   exprSetInfo(&cc.v, VVOID, 0); /* no value (yet) */
   luaK_exp2nextreg(ls->fs, t);  /* fix it at stack top (for gc) */
-  checknext(ls, '{');
+  checkNext(ls, '{');
   do {
     assert(cc.v.k == VVOID || cc.tostore > 0);
     if (ls->t.token == '}') {
@@ -573,13 +563,13 @@ static void body(LexState *ls, ExprInfo *e, bool hasSelf, int line) {
   FuncState fs;
   openFunc(ls, &fs);
   fs.f->lineDefined = line;
-  checknext(ls, '(');
+  checkNext(ls, '(');
   if (hasSelf) {
     new_localvarliteral(ls, "self", 0);
     adjustlocalvars(ls, 1);
   }
   parlist(ls);
-  checknext(ls, ')');
+  checkNext(ls, ')');
   chunk(ls);
   fs.f->lineDefinedLast = ls->linenumber;
   check_match(ls, TK_END, TK_FUNCTION, line);
@@ -913,7 +903,7 @@ static bool isBlockEnded(int token) {
 /// \endcode
 static void block(LexState *ls) {
   FuncState *fs = ls->fs;
-  BlockCnt bl;
+  Block bl;
   enterBlock(fs, &bl, false);
   chunk(ls);
   assert(bl.breaklist == NO_JUMP);
@@ -957,7 +947,9 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
 
 static void assignment(LexState *ls, LExpr *lh, int nvars) {
   ExprInfo e;
-  check_condition(ls, VLOCAL <= lh->v.k && lh->v.k <= VINDEXED, "syntax error");
+  if (!(VLOCAL <= lh->v.k && lh->v.k <= VINDEXED)) {
+    Lex_throw(ls, "syntax error");
+  }
   if (testNext(ls, ',')) { /* assignment -> `,' primaryExpr assignment */
     LExpr nv;
     nv.prev = lh;
@@ -970,7 +962,7 @@ static void assignment(LexState *ls, LExpr *lh, int nvars) {
     assignment(ls, &nv, nvars + 1);
   } else { /* assignment -> `=' exprList1 */
     int nexps;
-    checknext(ls, '=');
+    checkNext(ls, '=');
     nexps = exprList1(ls, &e);
     if (nexps != nvars) {
       adjust_assign(ls, nvars, nexps, &e);
@@ -1000,7 +992,7 @@ static int cond(LexState *ls) {
 
 static void breakStmt(LexState *ls) {
   FuncState *fs = ls->fs;
-  BlockCnt *bl = fs->bl;
+  Block *bl = fs->bl;
   int upval = 0;
   while (bl && !bl->isBreakable) {
     upval |= bl->hasUpvalues;
@@ -1020,12 +1012,12 @@ static void whileStmt(LexState *ls, int line) {
   FuncState *fs = ls->fs;
   int whileinit;
   int condexit;
-  BlockCnt bl;
+  Block bl;
   luaX_next(ls); /* skip WHILE */
   whileinit = luaK_getlabel(fs);
   condexit = cond(ls);
   enterBlock(fs, &bl, true);
-  checknext(ls, TK_DO);
+  checkNext(ls, TK_DO);
   block(ls);
   luaK_patchlist(fs, luaK_jump(fs), whileinit);
   check_match(ls, TK_END, TK_WHILE, line);
@@ -1038,7 +1030,7 @@ static void repeatStmt(LexState *ls, int line) {
   int condexit;
   FuncState *fs = ls->fs;
   int repeat_init = luaK_getlabel(fs);
-  BlockCnt bl1, bl2;
+  Block bl1, bl2;
   enterBlock(fs, &bl1, true);  /* loop block */
   enterBlock(fs, &bl2, false); /* scope block */
   luaX_next(ls);               /* skip REPEAT */
@@ -1068,11 +1060,11 @@ static int exp1(LexState *ls) {
 
 static void forbody(LexState *ls, int base, int line, int nvars, int isnum) {
   /* forbody -> DO block */
-  BlockCnt bl;
+  Block bl;
   FuncState *fs = ls->fs;
   int prep, endfor;
   adjustlocalvars(ls, 3); /* control variables */
-  checknext(ls, TK_DO);
+  checkNext(ls, TK_DO);
   prep = isnum ? luaK_codeAsBx(fs, OP_FORPREP, base, NO_JUMP) : luaK_jump(fs);
   enterBlock(fs, &bl, false); /* scope for declared variables */
   adjustlocalvars(ls, nvars);
@@ -1094,9 +1086,9 @@ static void fornum(LexState *ls, String *varname, int line) {
   new_localvarliteral(ls, "(for limit)", 1);
   new_localvarliteral(ls, "(for step)", 2);
   new_localvar(ls, varname, 3);
-  checknext(ls, '=');
+  checkNext(ls, '=');
   exp1(ls); /* initial value */
-  checknext(ls, ',');
+  checkNext(ls, ',');
   exp1(ls); /* limit */
   if (testNext(ls, ',')) {
     exp1(ls); /* optional step */
@@ -1123,7 +1115,7 @@ static void forlist(LexState *ls, String *indexname) {
   while (testNext(ls, ',')) {
     new_localvar(ls, checkName(ls), nvars++);
   }
-  checknext(ls, TK_IN);
+  checkNext(ls, TK_IN);
   line = ls->linenumber;
   adjust_assign(ls, 3, exprList1(ls, &e), &e);
   luaK_checkstack(fs, 3); /* extra space to call generator */
@@ -1134,7 +1126,7 @@ static void forStmt(LexState *ls, int line) {
   /* forStmt -> FOR (fornum | forlist) END */
   FuncState *fs = ls->fs;
   String *varname;
-  BlockCnt bl;
+  Block bl;
   enterBlock(fs, &bl, true); /* scope for loop and control variables */
   luaX_next(ls);             /* skip `for' */
   varname = checkName(ls);   /* first variable name */
@@ -1158,7 +1150,7 @@ static int test_then_block(LexState *ls) {
   int condexit;
   luaX_next(ls); /* skip IF or ELSEIF */
   condexit = cond(ls);
-  checknext(ls, TK_THEN);
+  checkNext(ls, TK_THEN);
   block(ls); /* `then' part */
   return condexit;
 }

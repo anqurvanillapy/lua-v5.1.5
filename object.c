@@ -115,7 +115,7 @@ static void pushstr(lua_State *L, const char *str) {
 const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
   int n = 1;
   pushstr(L, "");
-  for (;;) {
+  while (true) {
     const char *e = strchr(fmt, '%');
     if (e == NULL) {
       break;

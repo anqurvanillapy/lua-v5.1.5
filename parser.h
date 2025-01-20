@@ -44,7 +44,7 @@ typedef struct UpvalueInfo {
   int info;
 } UpvalueInfo;
 
-struct BlockCnt;
+struct Block;
 
 /* state needed to generate code for a given function */
 typedef struct FuncState {
@@ -53,7 +53,7 @@ typedef struct FuncState {
   struct FuncState *prev; /* enclosing function */
   struct LexState *ls;    /* lexical state */
   struct lua_State *L;    /* copy of the Lua state */
-  struct BlockCnt *bl;    /* chain of current blocks */
+  struct Block *bl;       /* chain of current blocks */
   int pc;                 /* next position to code (equivalent to `ncode') */
   int lasttarget;         /* `pc' of last `jump target' */
   int jpc;                /* list of pending jumps to `pc' */
