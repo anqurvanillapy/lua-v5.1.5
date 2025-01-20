@@ -67,13 +67,12 @@
 
 /* }================================================================== */
 
-static lua_State *globalL = NULL;
+static lua_State *globalL = nullptr;
 
 static const char *progname = LUA_PROGNAME;
 
-static void lstop(lua_State *L, lua_Debug *ar) {
-  (void)ar; /* unused arg. */
-  lua_sethook(L, NULL, 0, 0);
+static void lstop(lua_State *L, lua_Debug *) {
+  lua_sethook(L, nullptr, 0, 0);
   luaL_error(L, "interrupted!");
 }
 
@@ -108,7 +107,7 @@ static void l_message(const char *pname, const char *msg) {
 static int report(lua_State *L, int status) {
   if (status && !lua_isnil(L, -1)) {
     const char *msg = lua_tostring(L, -1);
-    if (msg == NULL) {
+    if (msg == nullptr) {
       msg = "(error object is not a string)";
     }
     l_message(progname, msg);

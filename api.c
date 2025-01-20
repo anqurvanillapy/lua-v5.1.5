@@ -5,12 +5,12 @@
 #include "debug.h"
 #include "gc.h"
 #include "intern.h"
+#include "load.h"
 #include "object.h"
 #include "stack.h"
 #include "state.h"
 #include "table.h"
 #include "tag.h"
-#include "undump.h"
 #include "vm.h"
 
 #define api_checknelems(L, n) API_CHECK(L, (n) <= ((L)->top - (L)->base))

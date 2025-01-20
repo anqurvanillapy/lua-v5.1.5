@@ -11,6 +11,7 @@
 #include "debug.h"
 #include "gc.h"
 #include "intern.h"
+#include "load.h"
 #include "memory.h"
 #include "object.h"
 #include "opcodes.h"
@@ -19,7 +20,6 @@
 #include "state.h"
 #include "table.h"
 #include "tag.h"
-#include "undump.h"
 #include "vm.h"
 
 /*

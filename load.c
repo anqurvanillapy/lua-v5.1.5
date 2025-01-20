@@ -1,15 +1,13 @@
 #include <string.h>
 
-#include "lua.h"
-
 #include "buffer.h"
 #include "closure.h"
 #include "debug.h"
 #include "intern.h"
+#include "load.h"
 #include "memory.h"
 #include "object.h"
 #include "stack.h"
-#include "undump.h"
 
 typedef struct {
   lua_State *L;
@@ -18,19 +16,10 @@ typedef struct {
   const char *name;
 } LoadState;
 
-#ifdef LUAC_TRUST_BINARIES
-#define IF(c, s)
-#define error(S, s)
-#else
-#define IF(c, s)                                                               \
-  if (c)                                                                       \
-  error(S, s)
-
 static void error(LoadState *S, const char *why) {
   luaO_pushfstring(S->L, "%s: %s in precompiled chunk", S->name, why);
   luaD_throw(S->L, LUA_ERRSYNTAX);
 }
-#endif
 
 #define LoadMem(S, b, n, size) LoadBlock(S, b, (n) * (size))
 #define LoadByte(S) (uint8_t)LoadChar(S)
@@ -39,7 +28,9 @@ static void error(LoadState *S, const char *why) {
 
 static void LoadBlock(LoadState *S, void *b, size_t size) {
   size_t r = luaZ_read(S->Z, b, size);
-  IF(r != 0, "unexpected end");
+  if (r != 0) {
+    error(S, "unexpected end");
+  }
 }
 
 static int LoadChar(LoadState *S) {
@@ -51,7 +42,9 @@ static int LoadChar(LoadState *S) {
 static int LoadInt(LoadState *S) {
   int x;
   LoadVar(S, x);
-  IF(x < 0, "bad integer");
+  if (x < 0) {
+    error(S, "bad integer");
+  }
   return x;
 }
 
@@ -171,18 +164,22 @@ static Prototype *LoadFunction(LoadState *S, String *p) {
   LoadCode(S, f);
   LoadConstants(S, f);
   LoadDebug(S, f);
-  IF(!luaG_checkcode(f), "bad code");
+  if (!luaG_checkcode(f)) {
+    error(S, "bad code");
+  }
   S->L->top--;
   S->L->nestedCCallsNum--;
   return f;
 }
 
 static void LoadHeader(LoadState *S) {
-  char h[LUAC_HEADERSIZE];
-  char s[LUAC_HEADERSIZE];
+  char h[HEADER_SIZE];
+  char s[HEADER_SIZE];
   luaU_header(h);
-  LoadBlock(S, s, LUAC_HEADERSIZE);
-  IF(memcmp(h, s, LUAC_HEADERSIZE) != 0, "bad header");
+  LoadBlock(S, s, HEADER_SIZE);
+  if (memcmp(h, s, 12) != 0) {
+    error(S, "bad header");
+  }
 }
 
 /*
@@ -211,8 +208,8 @@ void luaU_header(char *h) {
   int x = 1;
   memcpy(h, LUA_SIGNATURE, sizeof(LUA_SIGNATURE) - 1);
   h += sizeof(LUA_SIGNATURE) - 1;
-  *h++ = (char)LUAC_VERSION;
-  *h++ = (char)LUAC_FORMAT;
+  *h++ = (char)HEADER_VERSION;
+  *h++ = (char)HEADER_FORMAT;
   *h++ = (char)*(char *)&x; /* endianness */
   *h++ = (char)sizeof(int);
   *h++ = (char)sizeof(size_t);

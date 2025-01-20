@@ -4,9 +4,9 @@
 
 #include "lua.h"
 
+#include "load.h"
 #include "object.h"
 #include "state.h"
-#include "undump.h"
 
 typedef struct {
   lua_State *L;
@@ -118,9 +118,9 @@ static void DumpFunction(const Prototype *f, const String *p, DumpState *D) {
 }
 
 static void DumpHeader(DumpState *D) {
-  char h[LUAC_HEADERSIZE];
+  char h[HEADER_SIZE];
   luaU_header(h);
-  DumpBlock(h, LUAC_HEADERSIZE, D);
+  DumpBlock(h, HEADER_SIZE, D);
 }
 
 /*

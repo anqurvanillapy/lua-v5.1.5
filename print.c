@@ -1,26 +1,15 @@
-/* Print bytecodes. */
-
 #include <ctype.h>
 #include <stdio.h>
-
-#define luac_c
 
 #include "debug.h"
 #include "object.h"
 #include "opcodes.h"
-#include "undump.h"
 
-#define PrintFunction luaU_print
-
-#define Sizeof(x) ((int)sizeof(x))
-#define VOID(p) ((const void *)(p))
-
-static void PrintString(const String *ts) {
+static void printQuotedString(const String *ts) {
   const char *s = STRING_CONTENT(ts);
-  size_t i, n = ts->len;
   putchar('"');
-  for (i = 0; i < n; i++) {
-    int c = s[i];
+  for (size_t i = 0; i < ts->len; i++) {
+    int c = (uint8_t)s[i];
     switch (c) {
     case '"':
       printf("\\\"");
@@ -60,7 +49,7 @@ static void PrintString(const String *ts) {
   putchar('"');
 }
 
-static void PrintConstant(const Prototype *f, int i) {
+static void printLiteral(const Prototype *f, int i) {
   const Value *o = &f->k[i];
   switch (GET_TYPE(o)) {
   case LUA_TYPE_NIL:
@@ -73,18 +62,26 @@ static void PrintConstant(const Prototype *f, int i) {
     printf(LUA_NUMBER_FMT, NUMBER_VALUE(o));
     break;
   case LUA_TYPE_STRING:
-    PrintString(STRING_VALUE(o));
+    printQuotedString(STRING_VALUE(o));
     break;
-  default: /* cannot happen */
+  default:
     printf("? type=%d", GET_TYPE(o));
     break;
   }
 }
 
-static void PrintCode(const Prototype *f) {
+static void printLiterals(const Prototype *f) {
+  printf("constants (%d) for %p:\n", f->kSize, (const void *)f);
+  for (int i = 0; i < f->kSize; i++) {
+    printf("\t%d\t", i + 1);
+    printLiteral(f, i);
+    printf("\n");
+  }
+}
+
+static void printCode(const Prototype *f) {
   const Instruction *code = f->code;
-  int pc, n = f->codeSize;
-  for (pc = 0; pc < n; pc++) {
+  for (int pc = 0; pc < f->codeSize; pc++) {
     Instruction i = code[pc];
     OpCode o = GET_OPCODE(i);
     int a = GETARG_A(i);
@@ -128,7 +125,7 @@ static void PrintCode(const Prototype *f) {
     switch (o) {
     case OP_LOADK:
       printf("\t; ");
-      PrintConstant(f, bx);
+      printLiteral(f, bx);
       break;
     case OP_GETUPVAL:
     case OP_SETUPVAL:
@@ -143,7 +140,7 @@ static void PrintCode(const Prototype *f) {
     case OP_SELF:
       if (ISK(c)) {
         printf("\t; ");
-        PrintConstant(f, INDEXK(c));
+        printLiteral(f, INDEXK(c));
       }
       break;
     case OP_SETTABLE:
@@ -158,13 +155,13 @@ static void PrintCode(const Prototype *f) {
       if (ISK(b) || ISK(c)) {
         printf("\t; ");
         if (ISK(b)) {
-          PrintConstant(f, INDEXK(b));
+          printLiteral(f, INDEXK(b));
         } else {
           printf("-");
         }
         printf(" ");
         if (ISK(c)) {
-          PrintConstant(f, INDEXK(c));
+          printLiteral(f, INDEXK(c));
         } else {
           printf("-");
         }
@@ -176,7 +173,7 @@ static void PrintCode(const Prototype *f) {
       printf("\t; to %d", sbx + pc + 2);
       break;
     case OP_CLOSURE:
-      printf("\t; %p", VOID(f->inners[bx]));
+      printf("\t; %p", (const void *)f->inners[bx]);
       break;
     case OP_SETLIST:
       if (c == 0) {
@@ -195,7 +192,7 @@ static void PrintCode(const Prototype *f) {
 #define SS(x) (x == 1) ? "" : "s"
 #define S(x) x, SS(x)
 
-static void PrintHeader(const Prototype *f) {
+static void printHeader(const Prototype *f) {
   const char *s = STRING_CONTENT(f->source);
   if (*s == '@' || *s == '=') {
     s++;
@@ -206,8 +203,8 @@ static void PrintHeader(const Prototype *f) {
   }
   printf("\n%s <%s:%d,%d> (%d instruction%s, %d bytes at %p)\n",
          (f->lineDefined == 0) ? "main" : "function", s, f->lineDefined,
-         f->lineDefinedLast, S(f->codeSize), f->codeSize * Sizeof(Instruction),
-         VOID(f));
+         f->lineDefinedLast, S(f->codeSize),
+         f->codeSize * (int)sizeof(Instruction), (const void *)f);
   printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->paramsNum,
          f->varargMode ? "+" : "", SS(f->paramsNum), S(f->maxStackSize),
          S(f->upvaluesNum));
@@ -215,46 +212,33 @@ static void PrintHeader(const Prototype *f) {
          S(f->kSize), S(f->pSize));
 }
 
-static void PrintConstants(const Prototype *f) {
-  int i, n = f->kSize;
-  printf("constants (%d) for %p:\n", n, VOID(f));
-  for (i = 0; i < n; i++) {
-    printf("\t%d\t", i + 1);
-    PrintConstant(f, i);
-    printf("\n");
-  }
-}
-
 static void PrintLocals(const Prototype *f) {
-  int i, n = f->locVarsSize;
-  printf("locals (%d) for %p:\n", n, VOID(f));
-  for (i = 0; i < n; i++) {
+  printf("locals (%d) for %p:\n", f->locVarsSize, (const void *)f);
+  for (int i = 0; i < f->locVarsSize; i++) {
     printf("\t%d\t%s\t%d\t%d\n", i, STRING_CONTENT(f->locVars[i].varname),
            f->locVars[i].startPC + 1, f->locVars[i].endPC + 1);
   }
 }
 
 static void PrintUpvalues(const Prototype *f) {
-  int i, n = f->upvaluesSize;
-  printf("upvalues (%d) for %p:\n", n, VOID(f));
-  if (f->upvalues == NULL) {
+  printf("upvalues (%d) for %p:\n", f->upvaluesSize, (const void *)f);
+  if (f->upvalues == nullptr) {
     return;
   }
-  for (i = 0; i < n; i++) {
+  for (int i = 0; i < f->upvaluesSize; i++) {
     printf("\t%d\t%s\n", i, STRING_CONTENT(f->upvalues[i]));
   }
 }
 
-void PrintFunction(const Prototype *f, int full) {
-  int i, n = f->pSize;
-  PrintHeader(f);
-  PrintCode(f);
+void luaU_print(const Prototype *f, int full) {
+  printHeader(f);
+  printCode(f);
   if (full) {
-    PrintConstants(f);
+    printLiterals(f);
     PrintLocals(f);
     PrintUpvalues(f);
   }
-  for (i = 0; i < n; i++) {
-    PrintFunction(f->inners[i], full);
+  for (int i = 0; i < f->pSize; i++) {
+    luaU_print(f->inners[i], full);
   }
 }
