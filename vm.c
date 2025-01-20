@@ -19,10 +19,10 @@
 #define MAXTAGLOOP 100
 
 const Value *luaV_tonumber(const Value *obj, Value *n) {
-  double num;
   if (IS_TYPE_NUMBER(obj)) {
     return obj;
   }
+  double num;
   if (IS_TYPE_STRING(obj) && luaO_str2d(VALUE_STRING_CONTENT(obj), &num)) {
     SET_NUMBER(n, num);
     return n;
@@ -30,15 +30,15 @@ const Value *luaV_tonumber(const Value *obj, Value *n) {
   return nullptr;
 }
 
-int luaV_tostring(lua_State *L, StackIndex obj) {
+bool luaV_tostring(lua_State *L, StackIndex obj) {
   if (!IS_TYPE_NUMBER(obj)) {
-    return 0;
+    return false;
   }
   char s[LUAI_MAXNUMBER2STR];
   double n = NUMBER_VALUE(obj);
   snprintf(s, sizeof(s), LUA_NUMBER_FMT, n);
   SET_STRING_TO_STACK(L, obj, String_create(L, s));
-  return 1;
+  return true;
 }
 
 static void traceexec(lua_State *L, const Instruction *pc) {
@@ -87,14 +87,14 @@ static void callTM(lua_State *L, const Value *f, const Value *p1,
 }
 
 void luaV_gettable(lua_State *L, const Value *t, Value *key, StackIndex val) {
-  int loop;
-  for (loop = 0; loop < MAXTAGLOOP; loop++) {
+  for (int loop = 0; loop < MAXTAGLOOP; loop++) {
     const Value *tm;
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = TABLE_VALUE(t);
       const Value *res = Table_get(h, key); /* do a primitive get */
       if (!IS_TYPE_NIL(res) ||              /* result is no nil? */
-          (tm = FAST_TM(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
+          (tm = FAST_TM(L, h->metatable, TM_INDEX)) ==
+              nullptr) { /* or no TM? */
         SET_OBJECT_TO_STACK(L, val, res);
         return;
       }
@@ -121,7 +121,7 @@ void luaV_settable(lua_State *L, const Value *t, Value *key, StackIndex val) {
       Value *oldval = Table_insert(L, h, key); /* do a primitive set */
       if (!IS_TYPE_NIL(oldval) ||              /* result is no nil? */
           (tm = FAST_TM(L, h->metatable, TM_NEWINDEX)) ==
-              NULL) { /* or no TM? */
+              nullptr) { /* or no TM? */
         SET_OBJECT_TO_TABLE(L, oldval, val);
         h->flags = 0;
         luaC_barriert(L, h, val);
@@ -159,20 +159,20 @@ static const Value *get_compTM(lua_State *L, Table *mt1, Table *mt2,
                                TMS event) {
   const Value *tm1 = FAST_TM(L, mt1, event);
   const Value *tm2;
-  if (tm1 == NULL) {
-    return NULL; /* no metamethod */
+  if (tm1 == nullptr) {
+    return nullptr; /* no metamethod */
   }
   if (mt1 == mt2) {
     return tm1; /* same metatables => same metamethods */
   }
   tm2 = FAST_TM(L, mt2, event);
-  if (tm2 == NULL) {
-    return NULL; /* no metamethod */
+  if (tm2 == nullptr) {
+    return nullptr; /* no metamethod */
   }
   if (luaO_rawequalObj(tm1, tm2)) { /* same metamethods? */
     return tm1;
   }
-  return NULL;
+  return nullptr;
 }
 
 static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
@@ -277,7 +277,7 @@ int luaV_equalval(lua_State *L, const Value *t1, const Value *t2) {
   default:
     return GC_VALUE(t1) == GC_VALUE(t2);
   }
-  if (tm == NULL) {
+  if (tm == nullptr) {
     return 0; /* no TM? */
   }
   callTMres(L, L->top, tm, t1, t2); /* call TM */
@@ -326,8 +326,8 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
                   TMS op) {
   Value tempb, tempc;
   const Value *b, *c;
-  if ((b = luaV_tonumber(rb, &tempb)) != NULL &&
-      (c = luaV_tonumber(rc, &tempc)) != NULL) {
+  if ((b = luaV_tonumber(rb, &tempb)) != nullptr &&
+      (c = luaV_tonumber(rc, &tempc)) != nullptr) {
     double nb = NUMBER_VALUE(b), nc = NUMBER_VALUE(c);
     switch (op) {
     case TM_ADD:
@@ -615,21 +615,18 @@ reentry: /* entry point */
       }
       L->savedPC = pc;
       switch (luaD_precall(L, ra, nresults)) {
-      case PCRLUA: {
+      case PCRLUA:
         nexeccalls++;
         goto reentry; /* restart luaV_execute over new Lua function */
-      }
-      case PCRC: {
+      case PCRC:
         /* it was a C function (`precall' called it); adjust results */
         if (nresults >= 0) {
           L->top = L->ci->top;
         }
         base = L->base;
         continue;
-      }
-      default: {
+      default:
         return; /* yield */
-      }
       }
     }
     case OP_TAILCALL: {

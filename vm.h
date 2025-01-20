@@ -18,7 +18,7 @@
 LUAI_FUNC int luaV_lessthan(lua_State *L, const Value *l, const Value *r);
 LUAI_FUNC int luaV_equalval(lua_State *L, const Value *t1, const Value *t2);
 LUAI_FUNC const Value *luaV_tonumber(const Value *obj, Value *n);
-LUAI_FUNC int luaV_tostring(lua_State *L, StackIndex obj);
+LUAI_FUNC bool luaV_tostring(lua_State *L, StackIndex obj);
 LUAI_FUNC void luaV_gettable(lua_State *L, const Value *t, Value *key,
                              StackIndex val);
 LUAI_FUNC void luaV_settable(lua_State *L, const Value *t, Value *key,
