@@ -485,7 +485,7 @@ static int hash_query(lua_State *L) {
     Table *t;
     luaL_checktype(L, 2, LUA_TYPE_TABLE);
     t = TABLE_VALUE(obj_at(L, 2));
-    lua_pushinteger(L, luaH_mainposition(t, o) - t->node);
+    lua_pushinteger(L, Table_internalGetBucket(t, o) - t->node);
   }
   return 1;
 }
@@ -507,7 +507,7 @@ static int table_query(lua_State *L) {
   t = TABLE_VALUE(obj_at(L, 1));
   if (i == -1) {
     lua_pushinteger(L, t->sizearray);
-    lua_pushinteger(L, luaH_isdummy(t->node) ? 0 : sizenode(t));
+    lua_pushinteger(L, Table_internalIsDummy(t->node) ? 0 : sizenode(t));
     lua_pushinteger(L, t->lastfree - t->node);
   } else if (i < t->sizearray) {
     lua_pushinteger(L, i);

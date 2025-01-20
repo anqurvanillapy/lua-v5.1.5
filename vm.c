@@ -92,8 +92,8 @@ void luaV_gettable(lua_State *L, const Value *t, Value *key, StackIndex val) {
     const Value *tm;
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = TABLE_VALUE(t);
-      const Value *res = luaH_get(h, key); /* do a primitive get */
-      if (!IS_TYPE_NIL(res) ||             /* result is no nil? */
+      const Value *res = Table_get(h, key); /* do a primitive get */
+      if (!IS_TYPE_NIL(res) ||              /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
         SET_OBJECT_TO_STACK(L, val, res);
         return;
@@ -118,8 +118,8 @@ void luaV_settable(lua_State *L, const Value *t, Value *key, StackIndex val) {
     const Value *tm;
     if (IS_TYPE_TABLE(t)) { /* `t' is a table? */
       Table *h = TABLE_VALUE(t);
-      Value *oldval = luaH_set(L, h, key); /* do a primitive set */
-      if (!IS_TYPE_NIL(oldval) ||          /* result is no nil? */
+      Value *oldval = Table_insert(L, h, key); /* do a primitive set */
+      if (!IS_TYPE_NIL(oldval) ||              /* result is no nil? */
           (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
         SET_OBJECT_TO_TABLE(L, oldval, val);
         h->flags = 0;
@@ -496,7 +496,7 @@ reentry: /* entry point */
     case OP_NEWTABLE: {
       int b = GETARG_B(i);
       int c = GETARG_C(i);
-      SET_TABLE(L, ra, luaH_new(L, luaO_fb2int(b), luaO_fb2int(c)));
+      SET_TABLE(L, ra, Table_new(L, luaO_fb2int(b), luaO_fb2int(c)));
       Protect(luaC_checkGC(L));
       continue;
     }
@@ -549,7 +549,7 @@ reentry: /* entry point */
       const Value *rb = RB(i);
       switch (GET_TYPE(rb)) {
       case LUA_TYPE_TABLE: {
-        SET_NUMBER(ra, (double)luaH_getn(TABLE_VALUE(rb)));
+        SET_NUMBER(ra, (double)Table_getBoundary(TABLE_VALUE(rb)));
         break;
       }
       case LUA_TYPE_STRING: {
@@ -747,12 +747,12 @@ reentry: /* entry point */
       runtime_check(L, IS_TYPE_TABLE(ra));
       h = TABLE_VALUE(ra);
       last = ((c - 1) * LFIELDS_PER_FLUSH) + n;
-      if (last > h->sizearray) {      /* needs more space? */
-        luaH_resizearray(L, h, last); /* pre-alloc it at once */
+      if (last > h->sizearray) {       /* needs more space? */
+        Table_resizeArray(L, h, last); /* pre-alloc it at once */
       }
       for (; n > 0; n--) {
         Value *val = ra + n;
-        SET_OBJECT_TO_TABLE(L, luaH_setnum(L, h, last--), val);
+        SET_OBJECT_TO_TABLE(L, Table_insertInteger(L, h, last--), val);
         luaC_barriert(L, h, val);
       }
       continue;

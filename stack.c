@@ -202,13 +202,14 @@ static StackIndex adjust_varargs(lua_State *L, Prototype *p, int actual) {
     assert(p->varargMode & VARARG_HAS_ARG);
     luaC_checkGC(L);
     luaD_checkstack(L, p->maxStackSize);
-    htab = luaH_new(L, nvar, 1); /* create `arg' table */
+    htab = Table_new(L, nvar, 1); /* create `arg' table */
     for (i = 0; i < nvar; i++) {
       /* put extra arguments into 'arg' table */
-      SET_OBJECT_TO_NEW(L, luaH_setnum(L, htab, i + 1), L->top - nvar + i);
+      SET_OBJECT_TO_NEW(L, Table_insertInteger(L, htab, i + 1),
+                        L->top - nvar + i);
     }
     /* store counter in field `n' */
-    SET_NUMBER(luaH_setstr(L, htab, String_createLiteral(L, "n")),
+    SET_NUMBER(Table_insertString(L, htab, String_createLiteral(L, "n")),
                (double)nvar);
   }
 

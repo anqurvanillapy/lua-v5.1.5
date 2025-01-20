@@ -149,11 +149,11 @@ static void collectvalidlines(lua_State *L, Closure *f) {
   if (f == NULL || f->c.header.isC) {
     SET_NIL(L->top);
   } else {
-    Table *t = luaH_new(L, 0, 0);
+    Table *t = Table_new(L, 0, 0);
     int *lineinfo = f->l.p->lineInfo;
     int i;
     for (i = 0; i < f->l.p->lineInfoSize; i++)
-      SET_BOOL(luaH_setnum(L, t, lineinfo[i]), 1);
+      SET_BOOL(Table_insertInteger(L, t, lineinfo[i]), 1);
     SET_TABLE(L, L->top, t);
   }
   incr_top(L);

@@ -53,9 +53,9 @@ static void freestack(lua_State *L, lua_State *L1) {
 */
 static void f_luaopen(lua_State *L, void *) {
   GlobalState *g = G(L);
-  stack_init(L, L);                             /* init stack */
-  SET_TABLE(L, gt(L), luaH_new(L, 0, 2));       /* table of globals */
-  SET_TABLE(L, registry(L), luaH_new(L, 0, 2)); /* registry */
+  stack_init(L, L);                              /* init stack */
+  SET_TABLE(L, gt(L), Table_new(L, 0, 2));       /* table of globals */
+  SET_TABLE(L, registry(L), Table_new(L, 0, 2)); /* registry */
   StringPool_resize(L, MINSTRTABSIZE); /* initial size of string table */
   luaT_init(L);
   luaX_init(L);

@@ -90,7 +90,7 @@ void Lex_throw(LexState *ls, const char *errmsg) {
 String *luaX_newstring(LexState *ls, const char *str, size_t l) {
   lua_State *L = ls->L;
   String *ts = String_createSized(L, str, l);
-  Value *o = luaH_setstr(L, ls->fs->h, ts); /* entry for `str' */
+  Value *o = Table_insertString(L, ls->fs->h, ts); /* entry for `str' */
   if (IS_TYPE_NIL(o)) {
     SET_BOOL(o, 1); /* make sure `str' will not be collected */
     luaC_checkGC(L);

@@ -348,7 +348,7 @@ static void openFunc(LexState *ls, FuncState *fs) {
   fs->bl = nullptr;
   f->source = ls->source;
   f->maxStackSize = 2; /* registers 0/1 are always valid */
-  fs->h = luaH_new(L, 0, 0);
+  fs->h = Table_new(L, 0, 0);
   /* anchor table of constants and prototype (to avoid being collected) */
   SET_TABLE_TO_STACK(L, L->top, fs->h);
   incr_top(L);

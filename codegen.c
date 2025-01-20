@@ -209,7 +209,7 @@ static void freeexp(FuncState *fs, ExprInfo *e) {
 
 static int addConstant(FuncState *fs, Value *k, Value *v) {
   lua_State *L = fs->L;
-  Value *idx = luaH_set(L, fs->h, k);
+  Value *idx = Table_insert(L, fs->h, k);
   Prototype *f = fs->f;
 
   if (IS_TYPE_NUMBER(idx)) {

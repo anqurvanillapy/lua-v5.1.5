@@ -303,7 +303,7 @@ LUA_API size_t lua_objlen(lua_State *L, int idx) {
   case LUA_TYPE_USERDATA:
     return USERDATA_VALUE(o)->len;
   case LUA_TYPE_TABLE:
-    return luaH_getn(TABLE_VALUE(o));
+    return Table_getBoundary(TABLE_VALUE(o));
   case LUA_TYPE_NUMBER:
     lua_lock(L); /* `luaV_tostring' may create a new string */
     size_t l = (luaV_tostring(L, o) ? STRING_VALUE(o)->len : 0);
@@ -479,7 +479,7 @@ LUA_API void lua_rawget(lua_State *L, int idx) {
   lua_lock(L);
   StackIndex t = indexToAddr(L, idx);
   API_CHECK(L, IS_TYPE_TABLE(t));
-  SET_OBJECT_TO_STACK(L, L->top - 1, luaH_get(TABLE_VALUE(t), L->top - 1));
+  SET_OBJECT_TO_STACK(L, L->top - 1, Table_get(TABLE_VALUE(t), L->top - 1));
   lua_unlock(L);
 }
 
@@ -487,7 +487,7 @@ LUA_API void lua_rawgeti(lua_State *L, int idx, int n) {
   lua_lock(L);
   StackIndex o = indexToAddr(L, idx);
   API_CHECK(L, IS_TYPE_TABLE(o));
-  SET_OBJECT_TO_STACK(L, L->top, luaH_getnum(TABLE_VALUE(o), n));
+  SET_OBJECT_TO_STACK(L, L->top, Table_getInteger(TABLE_VALUE(o), n));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -495,7 +495,7 @@ LUA_API void lua_rawgeti(lua_State *L, int idx, int n) {
 LUA_API void lua_createtable(lua_State *L, int narray, int nrec) {
   lua_lock(L);
   luaC_checkGC(L);
-  SET_TABLE(L, L->top, luaH_new(L, narray, nrec));
+  SET_TABLE(L, L->top, Table_new(L, narray, nrec));
   api_incr_top(L);
   lua_unlock(L);
 }
@@ -580,7 +580,8 @@ LUA_API void lua_rawset(lua_State *L, int idx) {
   api_checknelems(L, 2);
   StackIndex t = indexToAddr(L, idx);
   API_CHECK(L, IS_TYPE_TABLE(t));
-  SET_OBJECT_TO_TABLE(L, luaH_set(L, TABLE_VALUE(t), L->top - 2), L->top - 1);
+  SET_OBJECT_TO_TABLE(L, Table_insert(L, TABLE_VALUE(t), L->top - 2),
+                      L->top - 1);
   luaC_barriert(L, TABLE_VALUE(t), L->top - 1);
   L->top -= 2;
   lua_unlock(L);
@@ -591,7 +592,7 @@ LUA_API void lua_rawseti(lua_State *L, int idx, int n) {
   api_checknelems(L, 1);
   StackIndex o = indexToAddr(L, idx);
   API_CHECK(L, IS_TYPE_TABLE(o));
-  SET_OBJECT_TO_TABLE(L, luaH_setnum(L, TABLE_VALUE(o), n), L->top - 1);
+  SET_OBJECT_TO_TABLE(L, Table_insertInteger(L, TABLE_VALUE(o), n), L->top - 1);
   luaC_barriert(L, TABLE_VALUE(o), L->top - 1);
   L->top--;
   lua_unlock(L);
@@ -837,7 +838,7 @@ LUA_API int lua_next(lua_State *L, int idx) {
   lua_lock(L);
   StackIndex t = indexToAddr(L, idx);
   API_CHECK(L, IS_TYPE_TABLE(t));
-  int more = luaH_next(L, TABLE_VALUE(t), L->top - 1);
+  int more = Table_next(L, TABLE_VALUE(t), L->top - 1);
   if (more) {
     api_incr_top(L);
   } else {       /* no more elements */

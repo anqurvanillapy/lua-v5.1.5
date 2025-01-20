@@ -386,7 +386,7 @@ static void freeobj(lua_State *L, GCObject *o) {
     luaF_freeupval(L, gco2uv(o));
     break;
   case LUA_TYPE_TABLE:
-    luaH_free(L, gco2h(o));
+    Table_free(L, gco2h(o));
     break;
   case LUA_TYPE_THREAD: {
     assert(gco2th(o) != L && gco2th(o) != G(L)->mainthread);

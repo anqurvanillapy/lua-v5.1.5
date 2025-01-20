@@ -32,7 +32,7 @@ void luaT_init(lua_State *L) {
 ** tag methods
 */
 const Value *luaT_gettm(Table *events, TMS event, String *ename) {
-  const Value *tm = luaH_getstr(events, ename);
+  const Value *tm = Table_getString(events, ename);
   assert(event <= TM_EQ);
   if (IS_TYPE_NIL(tm)) {                     /* no tag method? */
     events->flags |= (uint8_t)(1u << event); /* cache this fact */
@@ -53,5 +53,5 @@ const Value *luaT_gettmbyobj(lua_State *L, const Value *o, TMS event) {
   default:
     mt = G(L)->mt[GET_TYPE(o)];
   }
-  return (mt ? luaH_getstr(mt, G(L)->tmname[event]) : &valueNil);
+  return (mt ? Table_getString(mt, G(L)->tmname[event]) : &valueNil);
 }
