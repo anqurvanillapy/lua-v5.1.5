@@ -44,7 +44,7 @@ typedef struct UpvalueInfo {
   int info;
 } UpvalueInfo;
 
-struct BlockCnt; /* defined in lparser.c */
+struct BlockCnt;
 
 /* state needed to generate code for a given function */
 typedef struct FuncState {
