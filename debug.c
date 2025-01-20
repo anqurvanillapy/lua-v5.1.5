@@ -12,7 +12,6 @@
 #include "stack.h"
 #include "state.h"
 #include "table.h"
-#include "tag.h"
 #include "vm.h"
 
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name);
@@ -569,7 +568,7 @@ static int isinstack(CallInfo *ci, const Value *o) {
 
 void luaG_typeerror(lua_State *L, const Value *o, const char *op) {
   const char *name = nullptr;
-  const char *t = luaT_typenames[GET_TYPE(o)];
+  const char *t = Debug_typeNames[GET_TYPE(o)];
   const char *kind = (isinstack(L->ci, o))
                          ? getobjname(L, L->ci, (int)(o - L->base), &name)
                          : nullptr;
@@ -597,8 +596,8 @@ void luaG_aritherror(lua_State *L, const Value *p1, const Value *p2) {
 }
 
 int luaG_ordererror(lua_State *L, const Value *p1, const Value *p2) {
-  const char *t1 = luaT_typenames[GET_TYPE(p1)];
-  const char *t2 = luaT_typenames[GET_TYPE(p2)];
+  const char *t1 = Debug_typeNames[GET_TYPE(p1)];
+  const char *t2 = Debug_typeNames[GET_TYPE(p2)];
   if (t1[2] == t2[2]) {
     luaG_runerror(L, "attempt to compare two %s values", t1);
   } else {
@@ -644,3 +643,8 @@ void luaA_pushobject(lua_State *L, const Value *o) {
   API_CHECK(L, L->top < L->ci->top);
   L->top++;
 }
+
+const char *const Debug_typeNames[] = {
+    "nil",      "boolean",  "userdata", "number", "string", "table",
+    "function", "userdata", "thread",   "proto",  "upval",
+};

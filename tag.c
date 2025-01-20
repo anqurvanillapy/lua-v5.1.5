@@ -1,34 +1,25 @@
 #include <string.h>
 
-#include "lua.h"
-
 #include "intern.h"
 #include "object.h"
 #include "state.h"
 #include "table.h"
 #include "tag.h"
 
-const char *const luaT_typenames[] = {
-    "nil",      "boolean",  "userdata", "number", "string", "table",
-    "function", "userdata", "thread",   "proto",  "upval",
-};
-
 void luaT_init(lua_State *L) {
-  static const char *const luaT_eventname[] = {
-      /* ORDER TM */
+  static const char *const events[] = {
       "__index", "__newindex", "__gc",  "__mode",   "__eq",   "__add",
       "__sub",   "__mul",      "__div", "__mod",    "__pow",  "__unm",
       "__len",   "__lt",       "__le",  "__concat", "__call",
   };
-  int i;
-  for (i = 0; i < TM_N; i++) {
-    G(L)->tmname[i] = String_create(L, luaT_eventname[i]);
-    String_intern(G(L)->tmname[i]); /* never collect these names */
+  for (size_t i = 0; i < TM_N; i++) {
+    G(L)->tmname[i] = String_create(L, events[i]);
+    String_intern(G(L)->tmname[i]);
   }
 }
 
 /*
-** function to be used with macro "fasttm": optimized for absence of
+** function to be used with macro "FAST_TM": optimized for absence of
 ** tag methods
 */
 const Value *luaT_gettm(Table *events, TMS event, String *ename) {
@@ -53,5 +44,5 @@ const Value *luaT_gettmbyobj(lua_State *L, const Value *o, TMS event) {
   default:
     mt = G(L)->mt[GET_TYPE(o)];
   }
-  return (mt ? Table_getString(mt, G(L)->tmname[event]) : &valueNil);
+  return mt ? Table_getString(mt, G(L)->tmname[event]) : &valueNil;
 }

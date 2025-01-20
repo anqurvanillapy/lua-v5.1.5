@@ -131,7 +131,7 @@ static void printobj(GlobalState *g, GCObject *o) {
     i++;
   if (p == nullptr)
     i = -1;
-  printf("%d:%s(%p)-%c(%02X)", i, luaT_typenames[o->gch.tt], (void *)o,
+  printf("%d:%s(%p)-%c(%02X)", i, Debug_typeNames[o->gch.tt], (void *)o,
          IS_DEAD(g, o) ? 'd'
          : isblack(o)  ? 'b'
          : iswhite(o)  ? 'w'
@@ -253,7 +253,7 @@ static void checkobject(GlobalState *g, GCObject *o) {
   /*    assert(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep);*/
   {
     if (!(g->gcstate == GCSsweepstring || g->gcstate == GCSsweep))
-      printf(">>> %d  %s  %02x\n", g->gcstate, luaT_typenames[o->gch.tt],
+      printf(">>> %d  %s  %02x\n", g->gcstate, Debug_typeNames[o->gch.tt],
              o->gch.marked);
   } else {
     if (g->gcstate == GCSfinalize)

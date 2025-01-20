@@ -19,3 +19,5 @@ LUAI_FUNC void luaG_runerror(lua_State *L, const char *fmt, ...);
 LUAI_FUNC int luaG_checkcode(const Prototype *pt);
 LUAI_FUNC int luaG_checkopenop(Instruction i);
 LUAI_FUNC void luaA_pushobject(lua_State *L, const Value *o);
+
+LUAI_DATA const char *const Debug_typeNames[];

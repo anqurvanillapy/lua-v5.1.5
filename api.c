@@ -10,7 +10,6 @@
 #include "stack.h"
 #include "state.h"
 #include "table.h"
-#include "tag.h"
 #include "vm.h"
 
 #define api_checknelems(L, n) API_CHECK(L, (n) <= ((L)->top - (L)->base))
@@ -201,7 +200,7 @@ LUA_API int lua_type(lua_State *L, int idx) {
 }
 
 LUA_API const char *lua_typename(lua_State *, int t) {
-  return t == LUA_TYPE_NONE ? "no value" : luaT_typenames[t];
+  return t == LUA_TYPE_NONE ? "no value" : Debug_typeNames[t];
 }
 
 LUA_API int lua_iscfunction(lua_State *L, int idx) {

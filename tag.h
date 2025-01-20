@@ -25,14 +25,12 @@ typedef enum {
   TM_N /* number of elements in the enum */
 } TMS;
 
-#define gfasttm(g, et, e)                                                      \
-  ((et) == NULL                  ? NULL                                        \
-   : ((et)->flags & (1u << (e))) ? NULL                                        \
+#define GLOBAL_FAST_TM(g, et, e)                                               \
+  ((et) == nullptr               ? nullptr                                     \
+   : ((et)->flags & (1u << (e))) ? nullptr                                     \
                                  : luaT_gettm(et, e, (g)->tmname[e]))
 
-#define fasttm(l, et, e) gfasttm(G(l), et, e)
-
-LUAI_DATA const char *const luaT_typenames[];
+#define FAST_TM(l, et, e) GLOBAL_FAST_TM(G(l), et, e)
 
 LUAI_FUNC const Value *luaT_gettm(Table *events, TMS event, String *ename);
 LUAI_FUNC const Value *luaT_gettmbyobj(lua_State *L, const Value *o, TMS event);

@@ -124,7 +124,7 @@ size_t luaC_separateudata(lua_State *L, int all) {
   while ((curr = *p) != NULL) {
     if (!(iswhite(curr) || all) || isfinalized(gco2u(curr))) {
       p = &curr->gch.next; /* don't bother with them */
-    } else if (fasttm(L, gco2u(curr)->metatable, TM_GC) == NULL) {
+    } else if (FAST_TM(L, gco2u(curr)->metatable, TM_GC) == NULL) {
       markfinalized(gco2u(curr)); /* don't need finalization */
       p = &curr->gch.next;
     } else { /* must call its gc method */
@@ -151,7 +151,7 @@ static int traversetable(GlobalState *g, Table *h) {
   const Value *mode;
   if (h->metatable)
     markobject(g, h->metatable);
-  mode = gfasttm(g, h->metatable, TM_MODE);
+  mode = GLOBAL_FAST_TM(g, h->metatable, TM_MODE);
   if (mode && IS_TYPE_STRING(mode)) { /* is there a weak mode? */
     weakkey = (strchr(VALUE_STRING_CONTENT(mode), 'k') != NULL);
     weakvalue = (strchr(VALUE_STRING_CONTENT(mode), 'v') != NULL);
@@ -463,7 +463,7 @@ static void GCTM(lua_State *L) {
   udata->header.next = g->mainthread->header.next;
   g->mainthread->header.next = o;
   makewhite(g, o);
-  tm = fasttm(L, udata->metatable, TM_GC);
+  tm = FAST_TM(L, udata->metatable, TM_GC);
   if (tm != nullptr) {
     uint8_t oldah = L->allowHook;
     size_t oldt = g->GCthreshold;

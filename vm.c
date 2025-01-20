@@ -94,7 +94,7 @@ void luaV_gettable(lua_State *L, const Value *t, Value *key, StackIndex val) {
       Table *h = TABLE_VALUE(t);
       const Value *res = Table_get(h, key); /* do a primitive get */
       if (!IS_TYPE_NIL(res) ||              /* result is no nil? */
-          (tm = fasttm(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
+          (tm = FAST_TM(L, h->metatable, TM_INDEX)) == NULL) { /* or no TM? */
         SET_OBJECT_TO_STACK(L, val, res);
         return;
       }
@@ -120,7 +120,8 @@ void luaV_settable(lua_State *L, const Value *t, Value *key, StackIndex val) {
       Table *h = TABLE_VALUE(t);
       Value *oldval = Table_insert(L, h, key); /* do a primitive set */
       if (!IS_TYPE_NIL(oldval) ||              /* result is no nil? */
-          (tm = fasttm(L, h->metatable, TM_NEWINDEX)) == NULL) { /* or no TM? */
+          (tm = FAST_TM(L, h->metatable, TM_NEWINDEX)) ==
+              NULL) { /* or no TM? */
         SET_OBJECT_TO_TABLE(L, oldval, val);
         h->flags = 0;
         luaC_barriert(L, h, val);
@@ -156,7 +157,7 @@ static int call_binTM(lua_State *L, const Value *p1, const Value *p2,
 
 static const Value *get_compTM(lua_State *L, Table *mt1, Table *mt2,
                                TMS event) {
-  const Value *tm1 = fasttm(L, mt1, event);
+  const Value *tm1 = FAST_TM(L, mt1, event);
   const Value *tm2;
   if (tm1 == NULL) {
     return NULL; /* no metamethod */
@@ -164,7 +165,7 @@ static const Value *get_compTM(lua_State *L, Table *mt1, Table *mt2,
   if (mt1 == mt2) {
     return tm1; /* same metatables => same metamethods */
   }
-  tm2 = fasttm(L, mt2, event);
+  tm2 = FAST_TM(L, mt2, event);
   if (tm2 == NULL) {
     return NULL; /* no metamethod */
   }
