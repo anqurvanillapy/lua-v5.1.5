@@ -85,4 +85,4 @@ LUAI_FUNC void luaX_next(LexState *ls);
 LUAI_FUNC void luaX_lookahead(LexState *ls);
 LUAI_FUNC void Lex_throwWith(LexState *ls, const char *msg, int token);
 LUAI_FUNC void Lex_throw(LexState *ls, const char *errmsg);
-LUAI_FUNC const char *luaX_token2str(LexState *ls, int token);
+LUAI_FUNC const char *Lex_tokenText(LexState *ls, int token);

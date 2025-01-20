@@ -1,8 +1,4 @@
-/* Lua Parser. */
-
 #include <string.h>
-
-#include "lua.h"
 
 #include "closure.h"
 #include "codegen.h"
@@ -21,7 +17,7 @@
 
 #define GET_LOCAL_VAR(fs, i) ((fs)->f->locVars[(fs)->actvar[i]])
 
-#define luaY_checklimit(fs, v, l, m)                                           \
+#define CHECK_LIMIT(fs, v, l, m)                                               \
   do {                                                                         \
     if ((v) > (l)) {                                                           \
       errorlimit(fs, l, m);                                                    \
@@ -32,11 +28,15 @@
 ** nodes for block list (list of active blocks)
 */
 typedef struct BlockCnt {
-  struct BlockCnt *previous; /* chain */
-  int breaklist;             /* list of jumps out of this loop */
-  uint8_t nactvar;  /* # active locals outside the breakable structure */
-  bool isUpvalue;   /* true if some variable in the block is an upvalue */
-  bool isBreakable; /* true if `block' is a loop */
+  struct BlockCnt *prev;
+  // List of jumps out of this loop.
+  int breaklist;
+  // Number of active locals outside the breakable structure.
+  uint8_t nactvar;
+  // True if some variables in the block are upvalues.
+  bool hasUpvalues;
+  // True if this block is a loop.
+  bool isBreakable;
 } BlockCnt;
 
 /*
@@ -52,14 +52,14 @@ static void anchor_token(LexState *ls) {
   }
 }
 
-static void error_expected(LexState *ls, int token) {
-  Lex_throw(
-      ls, luaO_pushfstring(ls->L, "'%s' expected", luaX_token2str(ls, token)));
+static void throwToken(LexState *ls, int token) {
+  Lex_throw(ls,
+            luaO_pushfstring(ls->L, "'%s' expected", Lex_tokenText(ls, token)));
 }
 
 static void errorlimit(FuncState *fs, int limit, const char *what) {
   const char *msg =
-      (fs->f->lineDefined == 0)
+      fs->f->lineDefined == 0
           ? luaO_pushfstring(fs->L, "main function has more than %d %s", limit,
                              what)
           : luaO_pushfstring(fs->L, "function at line %d has more than %d %s",
@@ -77,7 +77,7 @@ static bool testNext(LexState *ls, int c) {
 
 static void check(LexState *ls, int c) {
   if (ls->t.token != c) {
-    error_expected(ls, c);
+    throwToken(ls, c);
   }
 }
 
@@ -96,12 +96,12 @@ static void checknext(LexState *ls, int c) {
 static void check_match(LexState *ls, int what, int who, int where) {
   if (!testNext(ls, what)) {
     if (where == ls->linenumber) {
-      error_expected(ls, what);
+      throwToken(ls, what);
     } else {
       Lex_throw(ls, luaO_pushfstring(ls->L,
                                      "'%s' expected (to close '%s' at line %d)",
-                                     luaX_token2str(ls, what),
-                                     luaX_token2str(ls, who), where));
+                                     Lex_tokenText(ls, what),
+                                     Lex_tokenText(ls, who), where));
     }
   }
 }
@@ -158,7 +158,7 @@ static int registerlocalvar(LexState *ls, String *varname) {
 
 static void new_localvar(LexState *ls, String *name, int n) {
   FuncState *fs = ls->fs;
-  luaY_checklimit(fs, fs->nactvar + n + 1, LUAI_MAX_VARS, "local variables");
+  CHECK_LIMIT(fs, fs->nactvar + n + 1, LUAI_MAX_VARS, "local variables");
   fs->actvar[fs->nactvar + n] =
       cast(unsigned short, registerlocalvar(ls, name));
 }
@@ -189,7 +189,7 @@ static int createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
 
   // Create a new upvalue.
   int oldSize = f->upvaluesSize;
-  luaY_checklimit(fs, f->upvaluesNum + 1, LUAI_MAX_UPVALUES, "upvalues");
+  CHECK_LIMIT(fs, f->upvaluesNum + 1, LUAI_MAX_UPVALUES, "upvalues");
   luaM_growvector(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize, String *,
                   SAFE_INT_MAX, "");
   while (oldSize < f->upvaluesSize) {
@@ -215,10 +215,10 @@ static int lookupLocalVar(FuncState *fs, String *name) {
 static void markUpvalue(FuncState *fs, int level) {
   BlockCnt *bl = fs->bl;
   while (bl && bl->nactvar > level) {
-    bl = bl->previous;
+    bl = bl->prev;
   }
   if (bl) {
-    bl->isUpvalue = true;
+    bl->hasUpvalues = true;
   }
 }
 
@@ -292,21 +292,21 @@ static void enterBlock(FuncState *fs, BlockCnt *bl, bool isBreakable) {
   bl->breaklist = NO_JUMP;
   bl->isBreakable = isBreakable;
   bl->nactvar = fs->nactvar;
-  bl->isUpvalue = false;
-  bl->previous = fs->bl;
+  bl->hasUpvalues = false;
+  bl->prev = fs->bl;
   fs->bl = bl;
   assert(fs->freereg == fs->nactvar);
 }
 
 static void leaveBlock(FuncState *fs) {
   BlockCnt *bl = fs->bl;
-  fs->bl = bl->previous;
+  fs->bl = bl->prev;
   removevars(fs->ls, bl->nactvar);
-  if (bl->isUpvalue) {
+  if (bl->hasUpvalues) {
     luaK_codeABC(fs, OP_CLOSE, bl->nactvar, 0, 0);
   }
   /* a block either controls scope or breaks (never both) */
-  assert(!bl->isBreakable || !bl->isUpvalue);
+  assert(!bl->isBreakable || !bl->hasUpvalues);
   assert(bl->nactvar == fs->nactvar);
   fs->freereg = fs->nactvar; /* free registers */
   luaK_patchtohere(fs, bl->breaklist);
@@ -438,7 +438,7 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
   ExprInfo key, val;
   int rkkey;
   if (ls->t.token == TK_NAME) {
-    luaY_checklimit(fs, cc->nh, SAFE_INT_MAX, "items in a constructor");
+    CHECK_LIMIT(fs, cc->nh, SAFE_INT_MAX, "items in a constructor");
     checkname(ls, &key);
   } else { /* ls->t.token == '[' */
     indexing(ls, &key);
@@ -481,7 +481,7 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
 
 static void listfield(LexState *ls, struct ConsControl *cc) {
   expr(ls, &cc->v);
-  luaY_checklimit(ls->fs, cc->na, SAFE_INT_MAX, "items in a constructor");
+  CHECK_LIMIT(ls->fs, cc->na, SAFE_INT_MAX, "items in a constructor");
   cc->na++;
   cc->tostore++;
 }
@@ -965,8 +965,8 @@ static void assignment(LexState *ls, LExpr *lh, int nvars) {
     if (nv.v.k == VLOCAL) {
       checkConflict(ls, lh, &nv.v);
     }
-    luaY_checklimit(ls->fs, nvars, LUAI_MAX_C_CALLS - ls->L->nestedCCallsNum,
-                    "variables in assignment");
+    CHECK_LIMIT(ls->fs, nvars, LUAI_MAX_C_CALLS - ls->L->nestedCCallsNum,
+                "variables in assignment");
     assignment(ls, &nv, nvars + 1);
   } else { /* assignment -> `=' exprList1 */
     int nexps;
@@ -1003,8 +1003,8 @@ static void breakStmt(LexState *ls) {
   BlockCnt *bl = fs->bl;
   int upval = 0;
   while (bl && !bl->isBreakable) {
-    upval |= bl->isUpvalue;
-    bl = bl->previous;
+    upval |= bl->hasUpvalues;
+    bl = bl->prev;
   }
   if (!bl) {
     Lex_throw(ls, "no loop to break");
@@ -1044,9 +1044,9 @@ static void repeatStmt(LexState *ls, int line) {
   luaX_next(ls);               /* skip REPEAT */
   chunk(ls);
   check_match(ls, TK_UNTIL, TK_REPEAT, line);
-  condexit = cond(ls);  /* read condition (inside scope block) */
-  if (!bl2.isUpvalue) { /* no upvalues? */
-    leaveBlock(fs);     /* finish scope */
+  condexit = cond(ls);    /* read condition (inside scope block) */
+  if (!bl2.hasUpvalues) { /* no upvalues? */
+    leaveBlock(fs);       /* finish scope */
     luaK_patchlist(ls->fs, condexit, repeat_init); /* close the loop */
   } else {         /* complete semantics when there are upvalues */
     breakStmt(ls); /* if condition then break */

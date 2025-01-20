@@ -51,14 +51,13 @@ void luaX_init(lua_State *L) {
 
 #define MAXSRC 80
 
-const char *luaX_token2str(LexState *ls, int token) {
+const char *Lex_tokenText(LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
-    assert(token == cast(unsigned char, token));
-    return (iscntrl(token)) ? luaO_pushfstring(ls->L, "char(%d)", token)
-                            : luaO_pushfstring(ls->L, "%c", token);
-  } else {
-    return TOKENS[token - FIRST_RESERVED];
+    assert(token == (uint8_t)token);
+    return iscntrl(token) ? luaO_pushfstring(ls->L, "char(%d)", token)
+                          : luaO_pushfstring(ls->L, "%c", token);
   }
+  return TOKENS[token - FIRST_RESERVED];
 }
 
 static const char *txtToken(LexState *ls, int token) {
@@ -69,7 +68,7 @@ static const char *txtToken(LexState *ls, int token) {
     save(ls, '\0');
     return luaZ_buffer(ls->buff);
   default:
-    return luaX_token2str(ls, token);
+    return Lex_tokenText(ls, token);
   }
 }
 
