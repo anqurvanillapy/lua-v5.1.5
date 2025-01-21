@@ -216,7 +216,7 @@ static int numusehash(const Table *t, int *nums, int *pnasize) {
 }
 
 static void resizeArrayVector(lua_State *L, Table *t, int size) {
-  luaM_reallocVector(L, t->array, t->sizearray, size, Value);
+  Mem_reallocVec(L, t->array, t->sizearray, size, Value);
   for (int i = t->sizearray; i < size; i++) {
     SET_NIL(&t->array[i]);
   }
@@ -233,7 +233,7 @@ static void resizeBuckets(lua_State *L, Table *t, int size) {
       luaG_runerror(L, "table overflow");
     }
     size = twoto(lsize);
-    t->node = luaM_newvector(L, size, Node);
+    t->node = Mem_newVec(L, size, Node);
     for (int i = 0; i < size; i++) {
       Node *n = gnode(t, i);
       gnext(n) = nullptr;
@@ -262,7 +262,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
         SET_TABLE_TO_TABLE(L, Table_insertInteger(L, t, i + 1), &t->array[i]);
     }
     /* shrink array */
-    luaM_reallocVector(L, t->array, oldasize, nasize, Value);
+    Mem_reallocVec(L, t->array, oldasize, nasize, Value);
   }
   /* re-insert elements from hash part */
   for (int i = twoto(oldhsize) - 1; i >= 0; i--) {
@@ -271,7 +271,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
       SET_TABLE_TO_TABLE(L, Table_insert(L, t, key2tval(old)), gval(old));
   }
   if (nold != &dummy) {
-    luaM_freeArray(L, nold, twoto(oldhsize), Node); /* free old array */
+    Mem_freeArray(L, nold, twoto(oldhsize), Node); /* free old array */
   }
 }
 
@@ -298,7 +298,7 @@ static void rehash(lua_State *L, Table *t, const Value *ek) {
 }
 
 Table *Table_new(lua_State *L, int narray, int nhash) {
-  Table *t = luaM_new(L, Table);
+  Table *t = Mem_new(L, Table);
   luaC_link(L, LuaObjectToGCObject(t), LUA_TYPE_TABLE);
   t->metatable = nullptr;
   t->flags = (uint8_t)(~0);
@@ -314,10 +314,10 @@ Table *Table_new(lua_State *L, int narray, int nhash) {
 
 void Table_free(lua_State *L, Table *t) {
   if (t->node != &dummy) {
-    luaM_freeArray(L, t->node, sizenode(t), Node);
+    Mem_freeArray(L, t->node, sizenode(t), Node);
   }
-  luaM_freeArray(L, t->array, t->sizearray, Value);
-  luaM_free(L, t);
+  Mem_freeArray(L, t->array, t->sizearray, Value);
+  Mem_freePtr(L, t);
 }
 
 static Node *getFreePos(Table *t) {

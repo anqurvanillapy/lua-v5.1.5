@@ -220,8 +220,8 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
   // Constant not found, create a new entry.
   int oldsize = f->constantsSize;
   SET_NUMBER(idx, (double)fs->nk);
-  luaM_growvector(L, f->constants, fs->nk, f->constantsSize, Value, MAXARG_Bx,
-                  "constant table overflow");
+  Mem_growVec(L, f->constants, fs->nk, f->constantsSize, Value, MAXARG_Bx,
+              "constant table overflow");
   while (oldsize < f->constantsSize) {
     SET_NIL(&f->constants[oldsize++]);
   }
@@ -823,12 +823,12 @@ static int luaK_code(FuncState *fs, Instruction i, int line) {
   Prototype *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
-  luaM_growvector(fs->L, f->code, fs->pc, f->codeSize, Instruction,
-                  SAFE_INT_MAX, "code size overflow");
+  Mem_growVec(fs->L, f->code, fs->pc, f->codeSize, Instruction, SAFE_INT_MAX,
+              "code size overflow");
   f->code[fs->pc] = i;
   /* save corresponding line information */
-  luaM_growvector(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int,
-                  SAFE_INT_MAX, "code size overflow");
+  Mem_growVec(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int, SAFE_INT_MAX,
+              "code size overflow");
   f->lineInfo[fs->pc] = line;
   return fs->pc++;
 }

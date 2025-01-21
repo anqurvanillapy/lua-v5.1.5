@@ -11,7 +11,7 @@
 #include "state.h"
 
 Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
-  Closure *c = cast(Closure *, luaM_malloc(L, sizeCclosure(nelems)));
+  Closure *c = cast(Closure *, Mem_alloc(L, sizeCclosure(nelems)));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->c.header.isC = true;
   c->c.header.env = e;
@@ -20,7 +20,7 @@ Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
 }
 
 Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
-  Closure *c = cast(Closure *, luaM_malloc(L, sizeLclosure(nelems)));
+  Closure *c = cast(Closure *, Mem_alloc(L, sizeLclosure(nelems)));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->l.header.isC = false;
   c->l.header.env = e;
@@ -32,7 +32,7 @@ Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
 }
 
 Upvalue *luaF_newupval(lua_State *L) {
-  Upvalue *uv = luaM_new(L, Upvalue);
+  Upvalue *uv = Mem_new(L, Upvalue);
   luaC_link(L, LuaObjectToGCObject(uv), LUA_TYPE_UPVALUE);
   uv->v = &uv->u.value;
   SET_NIL(uv->v);
@@ -54,7 +54,7 @@ Upvalue *luaF_findupval(lua_State *L, StackIndex level) {
     }
     pp = &p->header.next;
   }
-  uv = luaM_new(L, Upvalue); /* not found: create a new one */
+  uv = Mem_new(L, Upvalue); /* not found: create a new one */
   uv->header.tt = LUA_TYPE_UPVALUE;
   uv->header.marked = luaC_white(g);
   uv->v = level;         /* current value lives in the stack */
@@ -78,7 +78,7 @@ void luaF_freeupval(lua_State *L, Upvalue *uv) {
   if (uv->v != &uv->u.value) { /* is it open? */
     unlinkupval(uv);           /* remove from open list */
   }
-  luaM_free(L, uv); /* free upvalue */
+  Mem_freePtr(L, uv); /* free upvalue */
 }
 
 void luaF_close(lua_State *L, StackIndex level) {
@@ -100,7 +100,7 @@ void luaF_close(lua_State *L, StackIndex level) {
 }
 
 Prototype *luaF_newproto(lua_State *L) {
-  Prototype *f = luaM_new(L, Prototype);
+  Prototype *f = Mem_new(L, Prototype);
   luaC_link(L, LuaObjectToGCObject(f), LUA_TYPE_PROTO);
   f->constants = nullptr;
   f->constantsSize = 0;
@@ -125,19 +125,19 @@ Prototype *luaF_newproto(lua_State *L) {
 }
 
 void luaF_freeproto(lua_State *L, Prototype *f) {
-  luaM_freeArray(L, f->code, f->codeSize, Instruction);
-  luaM_freeArray(L, f->inners, f->innersSize, Prototype *);
-  luaM_freeArray(L, f->constants, f->constantsSize, Value);
-  luaM_freeArray(L, f->lineInfo, f->lineInfoSize, int);
-  luaM_freeArray(L, f->locVars, f->locVarsSize, struct LocVar);
-  luaM_freeArray(L, f->upvalues, f->upvaluesSize, String *);
-  luaM_free(L, f);
+  Mem_freeArray(L, f->code, f->codeSize, Instruction);
+  Mem_freeArray(L, f->inners, f->innersSize, Prototype *);
+  Mem_freeArray(L, f->constants, f->constantsSize, Value);
+  Mem_freeArray(L, f->lineInfo, f->lineInfoSize, int);
+  Mem_freeArray(L, f->locVars, f->locVarsSize, struct LocVar);
+  Mem_freeArray(L, f->upvalues, f->upvaluesSize, String *);
+  Mem_freePtr(L, f);
 }
 
 void luaF_freeclosure(lua_State *L, Closure *c) {
   int size = (c->c.header.isC) ? sizeCclosure(c->c.header.nupvalues)
                                : sizeLclosure(c->l.header.nupvalues);
-  luaM_freemem(L, c, size);
+  Mem_free(L, c, size);
 }
 
 /*

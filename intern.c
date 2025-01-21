@@ -13,7 +13,7 @@ void StringPool_resize(lua_State *L, size_t newSize) {
     return;
   }
 
-  GCObject **newHash = luaM_newvector(L, newSize, GCObject *);
+  GCObject **newHash = Mem_newVec(L, newSize, GCObject *);
   for (size_t i = 0; i < newSize; i++) {
     newHash[i] = nullptr;
   }
@@ -36,7 +36,7 @@ void StringPool_resize(lua_State *L, size_t newSize) {
     }
   }
 
-  luaM_freeArray(L, tb->buckets, tb->bucketsSize, String *);
+  Mem_freeArray(L, tb->buckets, tb->bucketsSize, String *);
   tb->bucketsSize = (int)newSize;
   tb->buckets = newHash;
 }
@@ -44,10 +44,10 @@ void StringPool_resize(lua_State *L, size_t newSize) {
 static String *createStr(lua_State *L, const char *str, size_t len,
                          uint32_t h) {
   if (len > (SIZE_MAX - sizeof(String)) / sizeof(char) - 1) {
-    luaM_tooBig(L);
+    Mem_throwTooBig(L);
   }
 
-  String *ts = luaM_malloc(L, sizeof(String) + len + 1);
+  String *ts = Mem_alloc(L, sizeof(String) + len + 1);
   ts->len = len;
   ts->hash = h;
   ts->header.marked = luaC_white(G(L));
@@ -103,10 +103,10 @@ String *String_createSized(lua_State *L, const char *str, size_t len) {
 
 Userdata *Userdata_new(lua_State *L, size_t size, Table *env) {
   if (size > SIZE_MAX - sizeof(Userdata)) {
-    luaM_tooBig(L);
+    Mem_throwTooBig(L);
   }
 
-  Userdata *u = luaM_malloc(L, size + sizeof(Userdata));
+  Userdata *u = Mem_alloc(L, size + sizeof(Userdata));
   u->header.marked = luaC_white(G(L)); /* is not finalized */
   u->header.tt = LUA_TYPE_USERDATA;
   u->len = size;

@@ -7,7 +7,7 @@
 
 #define ARRAY_MIN_SIZE 4
 
-void *luaM_growaux_(lua_State *L, void *block, int *size, size_t elemSize,
+void *Mem_doGrowVec(lua_State *L, void *block, int *size, size_t elemSize,
                     int limit, const char *errMsg) {
   // Grow to the limit when memory almost runs out.
   int newSize = limit;
@@ -21,18 +21,18 @@ void *luaM_growaux_(lua_State *L, void *block, int *size, size_t elemSize,
       newSize = ARRAY_MIN_SIZE;
     }
   }
-  void *newBlock = luaM_reallocv(L, block, *size, newSize, elemSize);
+  void *newBlock = Mem_reallocCnt(L, block, *size, newSize, elemSize);
   // Update only when everything else is OK.
   *size = newSize;
   return newBlock;
 }
 
-void *luaM_tooBig(lua_State *L) {
+void *Mem_throwTooBig(lua_State *L) {
   luaG_runerror(L, "memory allocation error: block too big");
   return nullptr;
 }
 
-void *luaM_realloc_(lua_State *L, void *block, size_t oldSize, size_t newSize) {
+void *Mem_doRealloc(lua_State *L, void *block, size_t oldSize, size_t newSize) {
   GlobalState *g = G(L);
   assert((oldSize == 0) == (block == nullptr));
   block = g->alloc(g->allocData, block, oldSize, newSize);

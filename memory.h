@@ -8,32 +8,31 @@
 
 #define MEMERRMSG "not enough memory"
 
-LUAI_FUNC void *luaM_realloc_(lua_State *L, void *block, size_t oldSize,
+LUAI_FUNC void *Mem_doRealloc(lua_State *L, void *block, size_t oldSize,
                               size_t newSize);
-LUAI_FUNC void *luaM_tooBig(lua_State *L);
-LUAI_FUNC void *luaM_growaux_(lua_State *L, void *block, int *size,
+LUAI_FUNC void *Mem_throwTooBig(lua_State *L);
+LUAI_FUNC void *Mem_doGrowVec(lua_State *L, void *block, int *size,
                               size_t elemSize, int limit, const char *errMsg);
 
-#define luaM_reallocv(L, block, oldSize, newSize, elemSize)                    \
-  ((((size_t)newSize) <= SIZE_MAX / (elemSize))                                \
-       ? luaM_realloc_(L, (block), (oldSize) * (elemSize),                     \
-                       (newSize) * (elemSize))                                 \
-       : luaM_tooBig(L))
+#define Mem_reallocCnt(L, p, oldCnt, newCnt, elemSize)                         \
+  ((((size_t)newCnt) <= SIZE_MAX / (elemSize))                                 \
+       ? Mem_doRealloc(L, p, (oldCnt) * (elemSize), (newCnt) * (elemSize))     \
+       : Mem_throwTooBig(L))
 
-#define luaM_freemem(L, b, s) luaM_realloc_(L, (b), (s), 0)
-#define luaM_free(L, b) luaM_realloc_(L, (b), sizeof(*(b)), 0)
-#define luaM_freeArray(L, b, n, t) luaM_reallocv(L, (b), n, 0, sizeof(t))
+#define Mem_free(L, p, size) Mem_doRealloc(L, p, size, 0)
+#define Mem_freePtr(L, p) Mem_doRealloc(L, p, sizeof(*(p)), 0)
+#define Mem_freeArray(L, p, n, ty) Mem_reallocCnt(L, p, n, 0, sizeof(ty))
 
-#define luaM_malloc(L, t) luaM_realloc_(L, nullptr, 0, (t))
-#define luaM_new(L, t) luaM_malloc(L, sizeof(t))
-#define luaM_newvector(L, n, t) luaM_reallocv(L, nullptr, 0, n, sizeof(t))
+#define Mem_alloc(L, size) Mem_doRealloc(L, nullptr, 0, (size))
+#define Mem_new(L, t) Mem_alloc(L, sizeof(t))
+#define Mem_newVec(L, n, t) Mem_reallocCnt(L, nullptr, 0, n, sizeof(t))
 
-#define luaM_growvector(L, v, nelems, size, t, limit, e)                       \
+#define Mem_growVec(L, v, nelems, size, ty, limit, errMsg)                     \
   do {                                                                         \
     if ((nelems) + 1 > (size)) {                                               \
-      ((v) = luaM_growaux_(L, v, &(size), sizeof(t), limit, e));               \
+      ((v) = Mem_doGrowVec(L, v, &(size), sizeof(ty), limit, errMsg));         \
     }                                                                          \
   } while (false)
 
-#define luaM_reallocVector(L, v, oldSize, newSize, ty)                         \
-  ((v) = luaM_reallocv(L, v, oldSize, newSize, sizeof(ty)))
+#define Mem_reallocVec(L, v, oldSize, newSize, ty)                             \
+  ((v) = Mem_reallocCnt(L, v, oldSize, newSize, sizeof(ty)))

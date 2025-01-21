@@ -68,7 +68,7 @@ static String *LoadString(LoadState *S) {
 
 static void LoadCode(LoadState *S, Prototype *f) {
   int n = LoadInt(S);
-  f->code = luaM_newvector(S->L, n, Instruction);
+  f->code = Mem_newVec(S->L, n, Instruction);
   f->codeSize = n;
   LoadVector(S, f->code, n, sizeof(Instruction));
 }
@@ -78,7 +78,7 @@ static Prototype *LoadFunction(LoadState *S, String *p);
 static void LoadConstants(LoadState *S, Prototype *f) {
   int i, n;
   n = LoadInt(S);
-  f->constants = luaM_newvector(S->L, n, Value);
+  f->constants = Mem_newVec(S->L, n, Value);
   f->constantsSize = n;
   for (i = 0; i < n; i++) {
     SET_NIL(&f->constants[i]);
@@ -105,7 +105,7 @@ static void LoadConstants(LoadState *S, Prototype *f) {
     }
   }
   n = LoadInt(S);
-  f->inners = luaM_newvector(S->L, n, Prototype *);
+  f->inners = Mem_newVec(S->L, n, Prototype *);
   f->innersSize = n;
   for (i = 0; i < n; i++) {
     f->inners[i] = nullptr;
@@ -118,11 +118,11 @@ static void LoadConstants(LoadState *S, Prototype *f) {
 static void LoadDebug(LoadState *S, Prototype *f) {
   int i, n;
   n = LoadInt(S);
-  f->lineInfo = luaM_newvector(S->L, n, int);
+  f->lineInfo = Mem_newVec(S->L, n, int);
   f->lineInfoSize = n;
   LoadVector(S, f->lineInfo, n, sizeof(int));
   n = LoadInt(S);
-  f->locVars = luaM_newvector(S->L, n, LocVar);
+  f->locVars = Mem_newVec(S->L, n, LocVar);
   f->locVarsSize = n;
   for (i = 0; i < n; i++) {
     f->locVars[i].name = nullptr;
@@ -133,7 +133,7 @@ static void LoadDebug(LoadState *S, Prototype *f) {
     f->locVars[i].endPC = LoadInt(S);
   }
   n = LoadInt(S);
-  f->upvalues = luaM_newvector(S->L, n, String *);
+  f->upvalues = Mem_newVec(S->L, n, String *);
   f->upvaluesSize = n;
   for (i = 0; i < n; i++) {
     f->upvalues[i] = nullptr;

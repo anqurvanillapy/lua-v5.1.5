@@ -133,8 +133,8 @@ static int registerLocalVar(LexState *ls, String *varname) {
   FuncState *fs = ls->fs;
   Prototype *f = fs->f;
   int oldSize = f->locVarsSize;
-  luaM_growvector(ls->L, f->locVars, fs->nlocvars, f->locVarsSize, LocVar,
-                  SHRT_MAX, "too many local variables");
+  Mem_growVec(ls->L, f->locVars, fs->nlocvars, f->locVarsSize, LocVar, SHRT_MAX,
+              "too many local variables");
   while (oldSize < f->locVarsSize) {
     f->locVars[oldSize++].name = nullptr;
   }
@@ -179,8 +179,8 @@ static int createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   // Create a new upvalue.
   int oldSize = f->upvaluesSize;
   CHECK_LIMIT(fs, f->upvaluesNum + 1, LUAI_MAX_UPVALUES, "upvalues");
-  luaM_growvector(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize, String *,
-                  SAFE_INT_MAX, "");
+  Mem_growVec(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize, String *,
+              SAFE_INT_MAX, "");
   while (oldSize < f->upvaluesSize) {
     f->upvalues[oldSize++] = nullptr;
   }
@@ -306,8 +306,8 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   Prototype *f = fs->f;
   int oldsize = f->innersSize;
   int i;
-  luaM_growvector(ls->L, f->inners, fs->np, f->innersSize, Prototype *,
-                  MAXARG_Bx, "constant table overflow");
+  Mem_growVec(ls->L, f->inners, fs->np, f->innersSize, Prototype *, MAXARG_Bx,
+              "constant table overflow");
   while (oldsize < f->innersSize) {
     f->inners[oldsize++] = nullptr;
   }
@@ -353,17 +353,17 @@ static void closeFunc(LexState *ls) {
   Prototype *f = fs->f;
   removevars(ls, 0);
   luaK_ret(fs, 0, 0); /* final return */
-  luaM_reallocVector(L, f->code, f->codeSize, fs->pc, Instruction);
+  Mem_reallocVec(L, f->code, f->codeSize, fs->pc, Instruction);
   f->codeSize = fs->pc;
-  luaM_reallocVector(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
+  Mem_reallocVec(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
   f->lineInfoSize = fs->pc;
-  luaM_reallocVector(L, f->constants, f->constantsSize, fs->nk, Value);
+  Mem_reallocVec(L, f->constants, f->constantsSize, fs->nk, Value);
   f->constantsSize = fs->nk;
-  luaM_reallocVector(L, f->inners, f->innersSize, fs->np, Prototype *);
+  Mem_reallocVec(L, f->inners, f->innersSize, fs->np, Prototype *);
   f->innersSize = fs->np;
-  luaM_reallocVector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
+  Mem_reallocVec(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
-  luaM_reallocVector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);
+  Mem_reallocVec(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);
   f->upvaluesSize = f->upvaluesNum;
   assert(luaG_checkcode(f));
   assert(fs->bl == nullptr);

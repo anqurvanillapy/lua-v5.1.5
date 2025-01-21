@@ -395,11 +395,11 @@ static void freeobj(lua_State *L, GCObject *o) {
   }
   case LUA_TYPE_STRING: {
     G(L)->pool.itemsNum--;
-    luaM_freemem(L, o, STRING_SIZE(gco2ts(o)));
+    Mem_free(L, o, STRING_SIZE(gco2ts(o)));
     break;
   }
   case LUA_TYPE_USERDATA: {
-    luaM_freemem(L, o, USERDATA_SIZE(gco2u(o)));
+    Mem_free(L, o, USERDATA_SIZE(gco2u(o)));
     break;
   }
   default:

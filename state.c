@@ -22,13 +22,13 @@ typedef struct MainThread {
 
 static void initStack(lua_State *L1, lua_State *L) {
   // Initialize CallInfo array.
-  L1->baseCI = luaM_newvector(L, BASIC_CI_SIZE, CallInfo);
+  L1->baseCI = Mem_newVec(L, BASIC_CI_SIZE, CallInfo);
   L1->ci = L1->baseCI;
   L1->ciSize = BASIC_CI_SIZE;
   L1->endCI = L1->baseCI + L1->ciSize - 1;
 
   // Initialize stack array.
-  L1->stack = luaM_newvector(L, BASIC_STACK_SIZE + EXTRA_STACK, Value);
+  L1->stack = Mem_newVec(L, BASIC_STACK_SIZE + EXTRA_STACK, Value);
   L1->stackSize = BASIC_STACK_SIZE + EXTRA_STACK;
   L1->top = L1->stack;
   L1->stackLast = L1->stack + (L1->stackSize - EXTRA_STACK) - 1;
@@ -42,8 +42,8 @@ static void initStack(lua_State *L1, lua_State *L) {
 }
 
 static void freeStack(lua_State *L, lua_State *L1) {
-  luaM_freeArray(L, L1->baseCI, L1->ciSize, CallInfo);
-  luaM_freeArray(L, L1->stack, L1->stackSize, Value);
+  Mem_freeArray(L, L1->baseCI, L1->ciSize, CallInfo);
+  Mem_freeArray(L, L1->stack, L1->stackSize, Value);
 }
 
 // Initialize the components with heap usage that might fail upon OoM.
@@ -89,7 +89,7 @@ static void closeState(lua_State *L) {
   luaC_freeall(L);
   assert(g->rootgc == LuaObjectToGCObject(L));
   assert(g->pool.itemsNum == 0);
-  luaM_freeArray(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
+  Mem_freeArray(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
   luaZ_freebuffer(L, &g->buff);
   freeStack(L, L);
   assert(g->totalbytes == sizeof(MainThread));
@@ -97,7 +97,7 @@ static void closeState(lua_State *L) {
 }
 
 lua_State *State_newThread(lua_State *L) {
-  lua_State *L1 = TO_STATE(luaM_malloc(L, STATE_SIZE(lua_State)));
+  lua_State *L1 = TO_STATE(Mem_alloc(L, STATE_SIZE(lua_State)));
   luaC_link(L, LuaObjectToGCObject(L1), LUA_TYPE_THREAD);
   initPartialState(L1, G(L));
   initStack(L1, L);
@@ -117,7 +117,7 @@ void State_freeThread(lua_State *L, lua_State *L1) {
   assert(L1->openUpval == nullptr);
   luai_userstatefree(L1);
   freeStack(L, L1);
-  luaM_freemem(L, FROM_STATE(L1), STATE_SIZE(lua_State));
+  Mem_free(L, FROM_STATE(L1), STATE_SIZE(lua_State));
 }
 
 LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {

@@ -121,9 +121,9 @@ static const Prototype *combine(lua_State *L, int n) {
   f->source = String_createLiteral(L, "=(" PROGNAME ")");
   f->maxStackSize = 1;
   int pc = 2 * n + 1;
-  f->code = luaM_newvector(L, pc, Instruction);
+  f->code = Mem_newVec(L, pc, Instruction);
   f->codeSize = pc;
-  f->inners = luaM_newvector(L, n, Prototype *);
+  f->inners = Mem_newVec(L, n, Prototype *);
   f->innersSize = n;
   pc = 0;
   for (int i = 0; i < n; i++) {
