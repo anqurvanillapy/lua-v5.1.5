@@ -79,7 +79,7 @@ typedef LUA_INTEGER lua_Integer;
 /*
 ** state manipulation
 */
-LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud);
+LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData);
 LUA_API void lua_close(lua_State *L);
 LUA_API lua_State *lua_newthread(lua_State *L);
 
@@ -205,7 +205,7 @@ LUA_API int lua_next(lua_State *L, int idx);
 LUA_API void lua_concat(lua_State *L, int n);
 
 LUA_API lua_Alloc lua_getallocf(lua_State *L, void **ud);
-LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud);
+LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *allocData);
 
 /*
 ** ===============================================================

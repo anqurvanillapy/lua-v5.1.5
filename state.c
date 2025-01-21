@@ -93,7 +93,7 @@ static void close_state(lua_State *L) {
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   assert(g->totalbytes == sizeof(LG));
-  (*g->alloc)(g->ud, fromstate(L), state_size(LG), 0);
+  (*g->alloc)(g->allocData, fromstate(L), state_size(LG), 0);
 }
 
 lua_State *luaE_newthread(lua_State *L) {
@@ -118,12 +118,12 @@ void luaE_freethread(lua_State *L, lua_State *L1) {
   luaM_freemem(L, fromstate(L1), state_size(lua_State));
 }
 
-LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
+LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
   int i;
   lua_State *L;
   GlobalState *g;
-  void *l = (*f)(ud, NULL, 0, state_size(LG));
-  if (l == NULL) {
+  void *l = (*f)(allocData, nullptr, 0, state_size(LG));
+  if (l == nullptr) {
     return nullptr;
   }
   L = tostate(l);
@@ -135,7 +135,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   set2bits(L->header.marked, FIXEDBIT, SFIXEDBIT);
   preinit_state(L, g);
   g->alloc = f;
-  g->ud = ud;
+  g->allocData = allocData;
   g->mainthread = L;
   g->uvhead.u.l.prev = &g->uvhead;
   g->uvhead.u.l.next = &g->uvhead;

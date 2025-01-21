@@ -865,16 +865,16 @@ LUA_API void lua_concat(lua_State *L, int n) {
 LUA_API lua_Alloc lua_getallocf(lua_State *L, void **ud) {
   lua_lock(L);
   if (ud) {
-    *ud = G(L)->ud;
+    *ud = G(L)->allocData;
   }
   lua_Alloc f = G(L)->alloc;
   lua_unlock(L);
   return f;
 }
 
-LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud) {
+LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *allocData) {
   lua_lock(L);
-  G(L)->ud = ud;
+  G(L)->allocData = allocData;
   G(L)->alloc = f;
   lua_unlock(L);
 }

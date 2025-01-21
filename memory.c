@@ -35,7 +35,7 @@ void *luaM_tooBig(lua_State *L) {
 void *luaM_realloc_(lua_State *L, void *block, size_t oldSize, size_t newSize) {
   GlobalState *g = G(L);
   assert((oldSize == 0) == (block == nullptr));
-  block = (*g->alloc)(g->ud, block, oldSize, newSize);
+  block = (*g->alloc)(g->allocData, block, oldSize, newSize);
   if (block == nullptr && newSize > 0) {
     luaD_throw(L, LUA_ERRMEM);
   }

@@ -46,8 +46,10 @@ typedef struct CallInfo {
 // The global states shared by all threads.
 typedef struct GlobalState {
   StringPool pool;
-  lua_Alloc alloc; /* function to reallocate memory */
-  void *ud;        /* auxiliary data to `alloc' */
+
+  lua_Alloc alloc;
+  void *allocData;
+
   uint8_t currentwhite;
   uint8_t gcstate;     /* state of garbage collector */
   size_t sweepstrgc;   /* position of sweep in `pool' */
