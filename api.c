@@ -40,14 +40,14 @@ static Value *indexToAddr(lua_State *L, int idx) {
   // Pseudo-indices.
   switch (idx) {
   case LUA_REGISTRYINDEX:
-    return registry(L);
+    return REGISTRY(L);
   case LUA_ENVIRONINDEX: {
     Closure *func = CUR_FUNC(L);
     SET_TABLE(L, &L->env, func->c.header.env);
     return &L->env;
   }
   case LUA_GLOBALSINDEX:
-    return gt(L);
+    return GLOBALS(L);
   default: {
     Closure *func = CUR_FUNC(L);
     idx = LUA_GLOBALSINDEX - idx;
@@ -58,8 +58,8 @@ static Value *indexToAddr(lua_State *L, int idx) {
 }
 
 static Table *getcurrenv(lua_State *L) {
-  if (L->ci == L->baseCI) {    /* no enclosing function? */
-    return TABLE_VALUE(gt(L)); /* use global table as environment */
+  if (L->ci == L->baseCI) {         /* no enclosing function? */
+    return TABLE_VALUE(GLOBALS(L)); /* use global table as environment */
   }
   return CUR_FUNC(L)->c.header.env;
 }
@@ -538,7 +538,7 @@ LUA_API void lua_getfenv(lua_State *L, int idx) {
     SET_TABLE(L, L->top, USERDATA_VALUE(o)->env);
     break;
   case LUA_TYPE_THREAD:
-    SET_OBJECT_TO_STACK(L, L->top, gt(THREAD_VALUE(o)));
+    SET_OBJECT_TO_STACK(L, L->top, GLOBALS(THREAD_VALUE(o)));
     break;
   default:
     SET_NIL(L->top);
@@ -644,7 +644,7 @@ LUA_API int lua_setfenv(lua_State *L, int idx) {
     USERDATA_VALUE(o)->env = TABLE_VALUE(L->top - 1);
     break;
   case LUA_TYPE_THREAD:
-    SET_TABLE(L, gt(THREAD_VALUE(o)), TABLE_VALUE(L->top - 1));
+    SET_TABLE(L, GLOBALS(THREAD_VALUE(o)), TABLE_VALUE(L->top - 1));
     break;
   default:
     res = 0;

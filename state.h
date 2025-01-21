@@ -8,13 +8,10 @@
 #include "object.h"
 #include "tag.h"
 
-struct lua_longjmp; /* defined in ldo.c */
+struct lua_longjmp;
 
-/* table of globals */
-#define gt(L) (&L->l_gt)
-
-/* registry */
-#define registry(L) (&G(L)->l_registry)
+#define GLOBALS(L) (&L->l_gt)
+#define REGISTRY(L) (&G(L)->l_registry)
 
 /* extra stack space to handle TM calls and some other extras */
 #define EXTRA_STACK 5

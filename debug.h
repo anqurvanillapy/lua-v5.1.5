@@ -8,7 +8,7 @@
 
 #define getline(f, pc) (((f)->lineInfo) ? (f)->lineInfo[pc] : 0)
 
-#define resethookcount(L) (L->hookCount = L->baseHookCount)
+#define RESET_HOOK_COUNT(L) (L->hookCount = L->baseHookCount)
 
 LUAI_FUNC void luaG_typeerror(lua_State *L, const Value *o, const char *opname);
 LUAI_FUNC void luaG_concaterror(lua_State *L, StackIndex p1, StackIndex p2);

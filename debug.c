@@ -45,7 +45,7 @@ LUA_API int lua_sethook(lua_State *L, lua_Hook func, int mask, int count) {
   }
   L->hook = func;
   L->baseHookCount = count;
-  resethookcount(L);
+  RESET_HOOK_COUNT(L);
   L->hookMask = (uint8_t)mask;
   return 1;
 }

@@ -46,7 +46,7 @@ static void traceexec(lua_State *L, const Instruction *pc) {
   const Instruction *oldpc = L->savedPC;
   L->savedPC = pc;
   if ((mask & LUA_MASKCOUNT) && L->hookCount == 0) {
-    resethookcount(L);
+    RESET_HOOK_COUNT(L);
     luaD_callhook(L, LUA_HOOKCOUNT, -1);
   }
   if (mask & LUA_MASKLINE) {

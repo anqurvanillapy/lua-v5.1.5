@@ -45,10 +45,9 @@ typedef const char *(*lua_Reader)(lua_State *L, void *ud, size_t *sz);
 
 typedef int (*lua_Writer)(lua_State *L, const void *p, size_t sz, void *ud);
 
-/*
-** prototype for memory-allocation functions
-*/
-typedef void *(*lua_Alloc)(void *ud, void *ptr, size_t osize, size_t nsize);
+// Allocator function.
+typedef void *(*lua_Alloc)(void *allocData, void *p, size_t oldSize,
+                           size_t newSize);
 
 /*
 ** basic types

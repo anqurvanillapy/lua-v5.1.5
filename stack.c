@@ -486,7 +486,7 @@ static void f_parser(lua_State *L, void *ud) {
   luaC_checkGC(L);
   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
                                                              p->name);
-  cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(gt(L)));
+  cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
   cl->l.p = tf;
   for (i = 0; i < tf->upvaluesNum; i++) { /* initialize eventual upvalues */
     cl->l.upvalues[i] = luaF_newupval(L);

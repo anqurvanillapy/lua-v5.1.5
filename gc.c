@@ -251,7 +251,7 @@ static void checkstacksizes(lua_State *L, StackIndex max) {
 static void traversestack(GlobalState *g, lua_State *l) {
   StackIndex o, lim;
   CallInfo *ci;
-  markvalue(g, gt(l));
+  markvalue(g, GLOBALS(l));
   lim = l->top;
   for (ci = l->baseCI; ci <= l->ci; ci++) {
     assert(ci->top <= l->stackLast);
@@ -515,8 +515,8 @@ static void markroot(lua_State *L) {
   g->weak = nullptr;
   markobject(g, g->mainthread);
   /* make global table be traversed before main stack */
-  markvalue(g, gt(g->mainthread));
-  markvalue(g, registry(L));
+  markvalue(g, GLOBALS(g->mainthread));
+  markvalue(g, REGISTRY(L));
   markmt(g);
   g->gcstate = GCSpropagate;
 }

@@ -233,7 +233,7 @@ static void checkstack(GlobalState *g, lua_State *L1) {
     assert(uv->v != &uv->u.value); /* must be open */
     assert(!isblack(uvo));         /* open upvalues cannot be black */
   }
-  DEBUG_CHECK_LIVENESS(g, gt(L1));
+  DEBUG_CHECK_LIVENESS(g, GLOBALS(L1));
   if (L1->baseCI) {
     for (ci = L1->baseCI; ci <= L1->ci; ci++) {
       assert(ci->top <= L1->stackLast);
