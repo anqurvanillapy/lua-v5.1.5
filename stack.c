@@ -126,7 +126,7 @@ void luaD_reallocstack(lua_State *L, int newsize) {
   Value *oldstack = L->stack;
   int realsize = newsize + 1 + EXTRA_STACK;
   assert(L->stackLast - L->stack == L->stackSize - EXTRA_STACK - 1);
-  luaM_reallocvector(L, L->stack, L->stackSize, realsize, Value);
+  luaM_reallocVector(L, L->stack, L->stackSize, realsize, Value);
   L->stackSize = realsize;
   L->stackLast = L->stack + newsize;
   correctstack(L, oldstack);
@@ -134,7 +134,7 @@ void luaD_reallocstack(lua_State *L, int newsize) {
 
 void luaD_reallocCI(lua_State *L, int newsize) {
   CallInfo *oldci = L->baseCI;
-  luaM_reallocvector(L, L->baseCI, L->ciSize, newsize, CallInfo);
+  luaM_reallocVector(L, L->baseCI, L->ciSize, newsize, CallInfo);
   L->ciSize = newsize;
   L->ci = (L->ci - oldci) + L->baseCI;
   L->endCI = L->baseCI + L->ciSize - 1;

@@ -353,17 +353,17 @@ static void closeFunc(LexState *ls) {
   Prototype *f = fs->f;
   removevars(ls, 0);
   luaK_ret(fs, 0, 0); /* final return */
-  luaM_reallocvector(L, f->code, f->codeSize, fs->pc, Instruction);
+  luaM_reallocVector(L, f->code, f->codeSize, fs->pc, Instruction);
   f->codeSize = fs->pc;
-  luaM_reallocvector(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
+  luaM_reallocVector(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
   f->lineInfoSize = fs->pc;
-  luaM_reallocvector(L, f->k, f->kSize, fs->nk, Value);
+  luaM_reallocVector(L, f->k, f->kSize, fs->nk, Value);
   f->kSize = fs->nk;
-  luaM_reallocvector(L, f->inners, f->pSize, fs->np, Prototype *);
+  luaM_reallocVector(L, f->inners, f->pSize, fs->np, Prototype *);
   f->pSize = fs->np;
-  luaM_reallocvector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
+  luaM_reallocVector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
-  luaM_reallocvector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);
+  luaM_reallocVector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);
   f->upvaluesSize = f->upvaluesNum;
   assert(luaG_checkcode(f));
   assert(fs->bl == nullptr);

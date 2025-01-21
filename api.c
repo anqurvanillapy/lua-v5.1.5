@@ -867,7 +867,7 @@ LUA_API lua_Alloc lua_getallocf(lua_State *L, void **ud) {
   if (ud) {
     *ud = G(L)->ud;
   }
-  lua_Alloc f = G(L)->frealloc;
+  lua_Alloc f = G(L)->alloc;
   lua_unlock(L);
   return f;
 }
@@ -875,7 +875,7 @@ LUA_API lua_Alloc lua_getallocf(lua_State *L, void **ud) {
 LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud) {
   lua_lock(L);
   G(L)->ud = ud;
-  G(L)->frealloc = f;
+  G(L)->alloc = f;
   lua_unlock(L);
 }
 

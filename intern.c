@@ -44,7 +44,7 @@ void StringPool_resize(lua_State *L, size_t newSize) {
 static String *createStr(lua_State *L, const char *str, size_t len,
                          uint32_t h) {
   if (len > (SIZE_MAX - sizeof(String)) / sizeof(char) - 1) {
-    luaM_toobig(L);
+    luaM_tooBig(L);
   }
 
   String *ts = luaM_malloc(L, sizeof(String) + len + 1);
@@ -103,7 +103,7 @@ String *String_createSized(lua_State *L, const char *str, size_t len) {
 
 Userdata *Userdata_new(lua_State *L, size_t size, Table *env) {
   if (size > SIZE_MAX - sizeof(Userdata)) {
-    luaM_toobig(L);
+    luaM_tooBig(L);
   }
 
   Userdata *u = luaM_malloc(L, size + sizeof(Userdata));

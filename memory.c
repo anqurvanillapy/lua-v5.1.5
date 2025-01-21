@@ -1,68 +1,47 @@
-/* Interface to Memory Manager. */
-
 #include <stddef.h>
-
-#include "lua.h"
 
 #include "debug.h"
 #include "memory.h"
-#include "object.h"
 #include "stack.h"
 #include "state.h"
 
-/*
-** About the realloc function:
-** void * frealloc (void *ud, void *ptr, size_t osize, size_t nsize);
-** (`osize' is the old size, `nsize' is the new size)
-**
-** Lua ensures that (ptr == NULL) iff (osize == 0).
-**
-** * frealloc(ud, NULL, 0, x) creates a new block of size `x'
-**
-** * frealloc(ud, p, x, 0) frees the block `p'
-** (in this specific case, frealloc must return NULL).
-** particularly, frealloc(ud, NULL, 0, 0) does nothing
-** (which is equivalent to free(NULL) in ANSI C)
-**
-** frealloc returns NULL if it cannot create or reallocate the area
-** (any reallocation to an equal or smaller size cannot fail!)
-*/
+#define ARRAY_MIN_SIZE 4
 
-#define MINSIZEARRAY 4
-
-void *luaM_growaux_(lua_State *L, void *block, int *size, size_t size_elems,
-                    int limit, const char *errormsg) {
-  void *newblock;
-  int newsize;
-  if (*size >= limit / 2) { /* cannot double it? */
-    if (*size >= limit) {   /* cannot grow even a little? */
-      luaG_runerror(L, errormsg);
+void *luaM_growaux_(lua_State *L, void *block, int *size, size_t elemSize,
+                    int limit, const char *errMsg) {
+  int newSize;
+  if (*size >= limit / 2) {
+    // Cannot double it.
+    if (*size >= limit) {
+      // Cannot grow even a little.
+      luaG_runerror(L, errMsg);
     }
-    newsize = limit; /* still have at least one free place */
+    newSize = limit; /* still have at least one free place */
   } else {
-    newsize = (*size) * 2;
-    if (newsize < MINSIZEARRAY) {
-      newsize = MINSIZEARRAY; /* minimum size */
+    newSize = (*size) * 2;
+    if (newSize < ARRAY_MIN_SIZE) {
+      newSize = ARRAY_MIN_SIZE;
     }
   }
-  newblock = luaM_reallocv(L, block, *size, newsize, size_elems);
-  *size = newsize; /* update only when everything else is OK */
-  return newblock;
+  void *newBlock = luaM_reallocv(L, block, *size, newSize, elemSize);
+  // Update only when everything else is OK.
+  *size = newSize;
+  return newBlock;
 }
 
-void *luaM_toobig(lua_State *L) {
+void *luaM_tooBig(lua_State *L) {
   luaG_runerror(L, "memory allocation error: block too big");
   return nullptr;
 }
 
-void *luaM_realloc_(lua_State *L, void *block, size_t osize, size_t nsize) {
+void *luaM_realloc_(lua_State *L, void *block, size_t oldSize, size_t newSize) {
   GlobalState *g = G(L);
-  assert((osize == 0) == (block == nullptr));
-  block = (*g->frealloc)(g->ud, block, osize, nsize);
-  if (block == nullptr && nsize > 0) {
+  assert((oldSize == 0) == (block == nullptr));
+  block = (*g->alloc)(g->ud, block, oldSize, newSize);
+  if (block == nullptr && newSize > 0) {
     luaD_throw(L, LUA_ERRMEM);
   }
-  assert((nsize == 0) == (block == nullptr));
-  g->totalbytes = (g->totalbytes - osize) + nsize;
+  assert((newSize == 0) == (block == nullptr));
+  g->totalbytes += newSize - oldSize;
   return block;
 }

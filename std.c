@@ -289,12 +289,6 @@ LUALIB_API const char *luaL_findtable(lua_State *L, int idx, const char *fname,
   return nullptr;
 }
 
-/*
-** {======================================================
-** Generic Buffer manipulation
-** =======================================================
-*/
-
 #define bufflen(B) ((B)->p - (B)->buffer)
 #define bufffree(B) ((size_t)(LUAL_BUFFER_SIZE - bufflen(B)))
 
@@ -377,8 +371,6 @@ LUALIB_API void luaL_buffinit(lua_State *L, luaL_Buffer *B) {
   B->lvl = 0;
 }
 
-/* }====================================================== */
-
 LUALIB_API int luaL_ref(lua_State *L, int t) {
   int ref;
   t = abs_index(L, t);
@@ -409,12 +401,6 @@ LUALIB_API void luaL_unref(lua_State *L, int t, int ref) {
     lua_rawseti(L, t, FREELIST_REF); /* t[FREELIST_REF] = ref */
   }
 }
-
-/*
-** {======================================================
-** Load functions
-** =======================================================
-*/
 
 typedef struct FileStream {
   int extraline;
@@ -519,39 +505,33 @@ LUALIB_API int luaL_loadbuffer(lua_State *L, const char *buff, size_t size,
   return lua_load(L, getS, &ls, name);
 }
 
-LUALIB_API int(luaL_loadstring)(lua_State *L, const char *s) {
+LUALIB_API int luaL_loadstring(lua_State *L, const char *s) {
   return luaL_loadbuffer(L, s, strlen(s), s);
 }
 
-/* }====================================================== */
-
-static void *l_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
-  (void)ud;
-  (void)osize;
-  if (nsize == 0) {
+static void *alloc(void *, void *ptr, size_t, size_t newSize) {
+  if (newSize == 0) {
     free(ptr);
     return nullptr;
-  } else {
-    return realloc(ptr, nsize);
   }
+  return realloc(ptr, newSize);
 }
 
 static int panic(lua_State *L) {
-  (void)L;
   fprintf(stderr, "PANIC: unprotected error in call to Lua API (%s)\n",
           lua_tostring(L, -1));
   return 0;
 }
 
 LUALIB_API lua_State *luaL_newstate(void) {
-  lua_State *L = lua_newstate(l_alloc, nullptr);
+  lua_State *L = lua_newstate(alloc, nullptr);
   if (L) {
     lua_atpanic(L, &panic);
   }
   return L;
 }
 
-static const luaL_Reg lualibs[] = {
+static const luaL_Reg LIBS[] = {
     {"", luaopen_base},       {"package", luaopen_package},
     {"table", luaopen_table}, {"io", luaopen_io},
     {"os", luaopen_os},       {"string", luaopen_string},
@@ -560,7 +540,7 @@ static const luaL_Reg lualibs[] = {
 };
 
 LUALIB_API void luaL_openlibs(lua_State *L) {
-  for (const luaL_Reg *lib = lualibs; lib->func; lib++) {
+  for (const luaL_Reg *lib = LIBS; lib->func; lib++) {
     lua_pushcfunction(L, lib->func);
     lua_pushstring(L, lib->name);
     lua_call(L, 1, 0);

@@ -30,11 +30,11 @@
 
 /*
 @@ LUA_PATH_DEFAULT is the default path that Lua uses to look for
-@* Lua libraries.
+@* Lua LIBS.
 @@ LUA_CPATH_DEFAULT is the default path that Lua uses to look for
-@* C libraries.
+@* C LIBS.
 ** CHANGE them if your machine has a non-conventional directory
-** hierarchy or if you want to install your libraries in
+** hierarchy or if you want to install your LIBS in
 ** non-conventional directories.
 */
 #define LUA_ROOT "/usr/local/"

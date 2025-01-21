@@ -93,7 +93,7 @@ static void close_state(lua_State *L) {
   luaZ_freebuffer(L, &g->buff);
   freestack(L, L);
   assert(g->totalbytes == sizeof(LG));
-  (*g->frealloc)(g->ud, fromstate(L), state_size(LG), 0);
+  (*g->alloc)(g->ud, fromstate(L), state_size(LG), 0);
 }
 
 lua_State *luaE_newthread(lua_State *L) {
@@ -134,7 +134,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud) {
   L->header.marked = luaC_white(g);
   set2bits(L->header.marked, FIXEDBIT, SFIXEDBIT);
   preinit_state(L, g);
-  g->frealloc = f;
+  g->alloc = f;
   g->ud = ud;
   g->mainthread = L;
   g->uvhead.u.l.prev = &g->uvhead;

@@ -216,7 +216,7 @@ static int numusehash(const Table *t, int *nums, int *pnasize) {
 }
 
 static void resizeArrayVector(lua_State *L, Table *t, int size) {
-  luaM_reallocvector(L, t->array, t->sizearray, size, Value);
+  luaM_reallocVector(L, t->array, t->sizearray, size, Value);
   for (int i = t->sizearray; i < size; i++) {
     SET_NIL(&t->array[i]);
   }
@@ -262,7 +262,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
         SET_TABLE_TO_TABLE(L, Table_insertInteger(L, t, i + 1), &t->array[i]);
     }
     /* shrink array */
-    luaM_reallocvector(L, t->array, oldasize, nasize, Value);
+    luaM_reallocVector(L, t->array, oldasize, nasize, Value);
   }
   /* re-insert elements from hash part */
   for (int i = twoto(oldhsize) - 1; i >= 0; i--) {

@@ -1,4 +1,4 @@
-// Lua standard libraries.
+// Lua standard LIBS.
 
 #pragma once
 

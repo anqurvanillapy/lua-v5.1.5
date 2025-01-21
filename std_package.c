@@ -4,10 +4,10 @@
 
 #include "std.h"
 
-/* prefix for open functions in C libraries */
+/* prefix for open functions in C LIBS */
 #define LUA_POF "luaopen_"
 
-/* separator for open functions in C libraries */
+/* separator for open functions in C LIBS */
 #define LUA_OFSEP "_"
 
 #define LIBPREFIX "LOADLIB: "

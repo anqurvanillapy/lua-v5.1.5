@@ -5,37 +5,35 @@
 #include <stddef.h>
 
 #include "limits.h"
-#include "lua.h"
 
 #define MEMERRMSG "not enough memory"
 
-#define luaM_reallocv(L, b, on, n, e)                                          \
-  ((cast(size_t, (n) + 1) <= SIZE_MAX / (e)) ? /* +1 to avoid warnings */      \
-       luaM_realloc_(L, (b), (on) * (e), (n) * (e))                            \
-                                             : luaM_toobig(L))
+LUAI_FUNC void *luaM_realloc_(lua_State *L, void *block, size_t oldSize,
+                              size_t newSize);
+LUAI_FUNC void *luaM_tooBig(lua_State *L);
+LUAI_FUNC void *luaM_growaux_(lua_State *L, void *block, int *size,
+                              size_t elemSize, int limit, const char *errMsg);
+
+#define luaM_reallocv(L, block, oldSize, newSize, elemSize)                    \
+  ((((size_t)newSize) <= SIZE_MAX / (elemSize))                                \
+       ? luaM_realloc_(L, (block), (oldSize) * (elemSize),                     \
+                       (newSize) * (elemSize))                                 \
+       : luaM_tooBig(L))
 
 #define luaM_freemem(L, b, s) luaM_realloc_(L, (b), (s), 0)
 #define luaM_free(L, b) luaM_realloc_(L, (b), sizeof(*(b)), 0)
 #define luaM_freeArray(L, b, n, t) luaM_reallocv(L, (b), n, 0, sizeof(t))
 
 #define luaM_malloc(L, t) luaM_realloc_(L, nullptr, 0, (t))
-#define luaM_new(L, t) cast(t *, luaM_malloc(L, sizeof(t)))
-#define luaM_newvector(L, n, t)                                                \
-  cast(t *, luaM_reallocv(L, nullptr, 0, n, sizeof(t)))
+#define luaM_new(L, t) luaM_malloc(L, sizeof(t))
+#define luaM_newvector(L, n, t) luaM_reallocv(L, nullptr, 0, n, sizeof(t))
 
 #define luaM_growvector(L, v, nelems, size, t, limit, e)                       \
   do {                                                                         \
     if ((nelems) + 1 > (size)) {                                               \
-      ((v) = cast(t *, luaM_growaux_(L, v, &(size), sizeof(t), limit, e)));    \
+      ((v) = luaM_growaux_(L, v, &(size), sizeof(t), limit, e));               \
     }                                                                          \
   } while (false)
 
-#define luaM_reallocvector(L, v, oldn, n, t)                                   \
-  ((v) = cast(t *, luaM_reallocv(L, v, oldn, n, sizeof(t))))
-
-LUAI_FUNC void *luaM_realloc_(lua_State *L, void *block, size_t oldsize,
-                              size_t size);
-LUAI_FUNC void *luaM_toobig(lua_State *L);
-LUAI_FUNC void *luaM_growaux_(lua_State *L, void *block, int *size,
-                              size_t size_elem, int limit,
-                              const char *errormsg);
+#define luaM_reallocVector(L, v, oldSize, newSize, ty)                         \
+  ((v) = luaM_reallocv(L, v, oldSize, newSize, sizeof(ty)))
