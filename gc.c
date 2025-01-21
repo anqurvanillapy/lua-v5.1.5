@@ -390,7 +390,7 @@ static void freeobj(lua_State *L, GCObject *o) {
     break;
   case LUA_TYPE_THREAD: {
     assert(gco2th(o) != L && gco2th(o) != G(L)->mainthread);
-    luaE_freethread(L, gco2th(o));
+    State_freeThread(L, gco2th(o));
     break;
   }
   case LUA_TYPE_STRING: {

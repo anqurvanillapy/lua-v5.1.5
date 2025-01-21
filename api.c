@@ -109,7 +109,7 @@ LUA_API lua_CFunction lua_atpanic(lua_State *L, lua_CFunction f) {
 LUA_API lua_State *lua_newthread(lua_State *L) {
   lua_lock(L);
   luaC_checkGC(L);
-  lua_State *L1 = luaE_newthread(L);
+  lua_State *L1 = State_newThread(L);
   SET_THREAD(L, L->top, L1);
   api_incr_top(L);
   lua_unlock(L);

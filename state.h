@@ -156,5 +156,5 @@ union GCObject {
 /* macro to convert any Lua object into a GCObject */
 #define LuaObjectToGCObject(v) (cast(GCObject *, (v)))
 
-LUAI_FUNC lua_State *luaE_newthread(lua_State *L);
-LUAI_FUNC void luaE_freethread(lua_State *L, lua_State *L1);
+LUAI_FUNC lua_State *State_newThread(lua_State *L);
+LUAI_FUNC void State_freeThread(lua_State *L, lua_State *L1);

@@ -59,7 +59,7 @@ static void initWithHeap(lua_State *L, void *) {
   g->GCthreshold = 4 * g->totalbytes;
 }
 
-static void preInitState(lua_State *L, GlobalState *g) {
+static void initPartialState(lua_State *L, GlobalState *g) {
   G(L) = g;
   L->stack = nullptr;
   L->stackSize = 0;
@@ -96,12 +96,13 @@ static void closeState(lua_State *L) {
   g->alloc(g->allocData, FROM_STATE(L), STATE_SIZE(MainThread), 0);
 }
 
-lua_State *luaE_newthread(lua_State *L) {
+lua_State *State_newThread(lua_State *L) {
   lua_State *L1 = TO_STATE(luaM_malloc(L, STATE_SIZE(lua_State)));
   luaC_link(L, LuaObjectToGCObject(L1), LUA_TYPE_THREAD);
-  preInitState(L1, G(L));
-  initStack(L1, L);                              /* init stack */
-  SET_OBJECT_TO_NEW(L, GLOBALS(L1), GLOBALS(L)); /* share table of globals */
+  initPartialState(L1, G(L));
+  initStack(L1, L);
+  // Share the table of global variables.
+  SET_OBJECT_TO_NEW(L, GLOBALS(L1), GLOBALS(L));
   L1->hookMask = L->hookMask;
   L1->baseHookCount = L->baseHookCount;
   L1->hook = L->hook;
@@ -110,36 +111,35 @@ lua_State *luaE_newthread(lua_State *L) {
   return L1;
 }
 
-void luaE_freethread(lua_State *L, lua_State *L1) {
-  luaF_close(L1, L1->stack); /* close all upvalues for this thread */
-  assert(L1->openUpval == NULL);
+void State_freeThread(lua_State *L, lua_State *L1) {
+  // Close all upvalues for this thread.
+  luaF_close(L1, L1->stack);
+  assert(L1->openUpval == nullptr);
   luai_userstatefree(L1);
   freeStack(L, L1);
   luaM_freemem(L, FROM_STATE(L1), STATE_SIZE(lua_State));
 }
 
 LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
-  int i;
-  lua_State *L;
-  GlobalState *g;
   void *l = f(allocData, nullptr, 0, STATE_SIZE(MainThread));
   if (l == nullptr) {
     return nullptr;
   }
-  L = TO_STATE(l);
-  g = &((MainThread *)L)->g;
+  lua_State *L = TO_STATE(l);
+  GlobalState *g = &((MainThread *)L)->g;
   L->header.next = nullptr;
   L->header.tt = LUA_TYPE_THREAD;
   g->currentwhite = bit2mask(WHITE0BIT, FIXEDBIT);
   L->header.marked = luaC_white(g);
   set2bits(L->header.marked, FIXEDBIT, SFIXEDBIT);
-  preInitState(L, g);
+  initPartialState(L, g);
   g->alloc = f;
   g->allocData = allocData;
   g->mainthread = L;
   g->uvhead.u.l.prev = &g->uvhead;
   g->uvhead.u.l.next = &g->uvhead;
-  g->GCthreshold = 0; /* mark it as unfinished state */
+  // Mark it as unfinished state.
+  g->GCthreshold = 0;
   g->pool.bucketsSize = 0;
   g->pool.itemsNum = 0;
   g->pool.buckets = nullptr;
@@ -158,10 +158,10 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
   g->gcpause = LUAI_GCPAUSE;
   g->gcstepmul = LUAI_GCMUL;
   g->gcdept = 0;
-  for (i = 0; i < NUM_TYPES; i++) {
+  for (size_t i = 0; i < NUM_TYPES; i++) {
     g->mt[i] = nullptr;
   }
-  if (luaD_rawrunprotected(L, initWithHeap, NULL) != 0) {
+  if (luaD_rawrunprotected(L, initWithHeap, nullptr) != 0) {
     /* memory allocation error: free partial state */
     closeState(L);
     L = nullptr;
@@ -171,7 +171,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
   return L;
 }
 
-static void callallgcTM(lua_State *L, void *) {
+static void callGcTm(lua_State *L, void *) {
   luaC_callGCTM(L); /* call GC metamethods for all udata */
 }
 
@@ -185,8 +185,8 @@ LUA_API void lua_close(lua_State *L) {
     L->ci = L->baseCI;
     L->base = L->top = L->ci->base;
     L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
-  } while (luaD_rawrunprotected(L, callallgcTM, NULL) != 0);
-  assert(G(L)->tmudata == NULL);
+  } while (luaD_rawrunprotected(L, callGcTm, nullptr) != 0);
+  assert(G(L)->tmudata == nullptr);
   luai_userstateclose(L);
   closeState(L);
 }
