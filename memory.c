@@ -9,15 +9,13 @@
 
 void *luaM_growaux_(lua_State *L, void *block, int *size, size_t elemSize,
                     int limit, const char *errMsg) {
-  int newSize;
-  if (*size >= limit / 2) {
-    // Cannot double it.
-    if (*size >= limit) {
-      // Cannot grow even a little.
-      luaG_runerror(L, errMsg);
-    }
-    newSize = limit; /* still have at least one free place */
+  // Grow to the limit when memory almost runs out.
+  int newSize = limit;
+  if (*size >= limit / 2 && *size >= limit) {
+    // Cannot double it and even grow a little.
+    luaG_runerror(L, errMsg);
   } else {
+    // Most of the time, we double the capacity.
     newSize = (*size) * 2;
     if (newSize < ARRAY_MIN_SIZE) {
       newSize = ARRAY_MIN_SIZE;
