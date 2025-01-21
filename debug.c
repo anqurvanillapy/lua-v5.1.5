@@ -284,7 +284,7 @@ static int checkArgMode(const Prototype *pt, int r, enum OpArgMask mode) {
     checkreg(pt, r);
     break;
   case OpArgK:
-    check(ISK(r) ? INDEXK(r) < pt->kSize : r < pt->maxStackSize);
+    check(ISK(r) ? INDEXK(r) < pt->constantsSize : r < pt->maxStackSize);
     break;
   }
   return 1;
@@ -315,7 +315,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     case iABx: {
       b = GETARG_Bx(i);
       if (getBMode(op) == OpArgK) {
-        check(b < pt->kSize);
+        check(b < pt->constantsSize);
       }
       break;
     }
@@ -375,7 +375,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     }
     case OP_GETGLOBAL:
     case OP_SETGLOBAL: {
-      check(IS_TYPE_STRING(&pt->k[b]));
+      check(IS_TYPE_STRING(&pt->constants[b]));
       break;
     }
     case OP_SELF: {
@@ -444,7 +444,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     }
     case OP_CLOSURE: {
       int nup, j;
-      check(b < pt->pSize);
+      check(b < pt->innersSize);
       nup = pt->inners[b]->upvaluesNum;
       check(pc + nup < pt->codeSize);
       for (j = 1; j <= nup; j++) {
@@ -484,8 +484,8 @@ int luaG_checkcode(const Prototype *pt) {
 }
 
 static const char *kname(Prototype *p, int c) {
-  if (ISK(c) && IS_TYPE_STRING(&p->k[INDEXK(c)])) {
-    return VALUE_STRING_CONTENT(&p->k[INDEXK(c)]);
+  if (ISK(c) && IS_TYPE_STRING(&p->constants[INDEXK(c)])) {
+    return VALUE_STRING_CONTENT(&p->constants[INDEXK(c)]);
   } else {
     return "?";
   }
@@ -506,8 +506,8 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     switch (GET_OPCODE(i)) {
     case OP_GETGLOBAL: {
       int g = GETARG_Bx(i); /* global index */
-      assert(IS_TYPE_STRING(&p->k[g]));
-      *name = VALUE_STRING_CONTENT(&p->k[g]);
+      assert(IS_TYPE_STRING(&p->constants[g]));
+      *name = VALUE_STRING_CONTENT(&p->constants[g]);
       return "global";
     }
     case OP_MOVE: {

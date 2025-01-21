@@ -213,19 +213,19 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
   Prototype *f = fs->f;
 
   if (IS_TYPE_NUMBER(idx)) {
-    assert(luaO_rawequalObj(&f->k[(int)NUMBER_VALUE(idx)], v));
+    assert(luaO_rawequalObj(&f->constants[(int)NUMBER_VALUE(idx)], v));
     return (int)NUMBER_VALUE(idx);
   }
 
   // Constant not found, create a new entry.
-  int oldsize = f->kSize;
+  int oldsize = f->constantsSize;
   SET_NUMBER(idx, (double)fs->nk);
-  luaM_growvector(L, f->k, fs->nk, f->kSize, Value, MAXARG_Bx,
+  luaM_growvector(L, f->constants, fs->nk, f->constantsSize, Value, MAXARG_Bx,
                   "constant table overflow");
-  while (oldsize < f->kSize) {
-    SET_NIL(&f->k[oldsize++]);
+  while (oldsize < f->constantsSize) {
+    SET_NIL(&f->constants[oldsize++]);
   }
-  SET_OBJECT(L, &f->k[fs->nk], v);
+  SET_OBJECT(L, &f->constants[fs->nk], v);
   luaC_barrier(L, f, v);
   return fs->nk++;
 }

@@ -78,13 +78,13 @@ static Prototype *LoadFunction(LoadState *S, String *p);
 static void LoadConstants(LoadState *S, Prototype *f) {
   int i, n;
   n = LoadInt(S);
-  f->k = luaM_newvector(S->L, n, Value);
-  f->kSize = n;
+  f->constants = luaM_newvector(S->L, n, Value);
+  f->constantsSize = n;
   for (i = 0; i < n; i++) {
-    SET_NIL(&f->k[i]);
+    SET_NIL(&f->constants[i]);
   }
   for (i = 0; i < n; i++) {
-    Value *o = &f->k[i];
+    Value *o = &f->constants[i];
     int t = LoadChar(S);
     switch (t) {
     case LUA_TYPE_NIL:
@@ -106,9 +106,9 @@ static void LoadConstants(LoadState *S, Prototype *f) {
   }
   n = LoadInt(S);
   f->inners = luaM_newvector(S->L, n, Prototype *);
-  f->pSize = n;
+  f->innersSize = n;
   for (i = 0; i < n; i++) {
-    f->inners[i] = NULL;
+    f->inners[i] = nullptr;
   }
   for (i = 0; i < n; i++) {
     f->inners[i] = LoadFunction(S, f->source);
@@ -125,7 +125,7 @@ static void LoadDebug(LoadState *S, Prototype *f) {
   f->locVars = luaM_newvector(S->L, n, LocVar);
   f->locVarsSize = n;
   for (i = 0; i < n; i++) {
-    f->locVars[i].name = NULL;
+    f->locVars[i].name = nullptr;
   }
   for (i = 0; i < n; i++) {
     f->locVars[i].name = LoadString(S);
@@ -136,7 +136,7 @@ static void LoadDebug(LoadState *S, Prototype *f) {
   f->upvalues = luaM_newvector(S->L, n, String *);
   f->upvaluesSize = n;
   for (i = 0; i < n; i++) {
-    f->upvalues[i] = NULL;
+    f->upvalues[i] = nullptr;
   }
   for (i = 0; i < n; i++) {
     f->upvalues[i] = LoadString(S);
@@ -152,7 +152,7 @@ static Prototype *LoadFunction(LoadState *S, String *p) {
   SET_PROTO_TO_STACK(S->L, S->L->top, f);
   incr_top(S->L);
   f->source = LoadString(S);
-  if (f->source == NULL) {
+  if (f->source == nullptr) {
     f->source = p;
   }
   f->lineDefined = LoadInt(S);

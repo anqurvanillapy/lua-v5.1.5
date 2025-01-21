@@ -304,11 +304,11 @@ static void leaveBlock(FuncState *fs) {
 static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   FuncState *fs = ls->fs;
   Prototype *f = fs->f;
-  int oldsize = f->pSize;
+  int oldsize = f->innersSize;
   int i;
-  luaM_growvector(ls->L, f->inners, fs->np, f->pSize, Prototype *, MAXARG_Bx,
-                  "constant table overflow");
-  while (oldsize < f->pSize) {
+  luaM_growvector(ls->L, f->inners, fs->np, f->innersSize, Prototype *,
+                  MAXARG_Bx, "constant table overflow");
+  while (oldsize < f->innersSize) {
     f->inners[oldsize++] = nullptr;
   }
   f->inners[fs->np++] = func->f;
@@ -357,10 +357,10 @@ static void closeFunc(LexState *ls) {
   f->codeSize = fs->pc;
   luaM_reallocVector(L, f->lineInfo, f->lineInfoSize, fs->pc, int);
   f->lineInfoSize = fs->pc;
-  luaM_reallocVector(L, f->k, f->kSize, fs->nk, Value);
-  f->kSize = fs->nk;
-  luaM_reallocVector(L, f->inners, f->pSize, fs->np, Prototype *);
-  f->pSize = fs->np;
+  luaM_reallocVector(L, f->constants, f->constantsSize, fs->nk, Value);
+  f->constantsSize = fs->nk;
+  luaM_reallocVector(L, f->inners, f->innersSize, fs->np, Prototype *);
+  f->innersSize = fs->np;
   luaM_reallocVector(L, f->locVars, f->locVarsSize, fs->nlocvars, LocVar);
   f->locVarsSize = fs->nlocvars;
   luaM_reallocVector(L, f->upvalues, f->upvaluesSize, f->upvaluesNum, String *);

@@ -418,7 +418,7 @@ reentry: /* entry point */
   pc = L->savedPC;
   cl = &CLOSURE_VALUE(L->ci->func)->l;
   base = L->base;
-  k = cl->p->k;
+  k = cl->p->constants;
   /* main loop of interpreter */
   for (;;) {
     const Instruction i = *pc++;

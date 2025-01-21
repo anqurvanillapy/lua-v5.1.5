@@ -185,15 +185,15 @@ static void checkproto(GlobalState *g, Prototype *f) {
   GCObject *fgc = LuaObjectToGCObject(f);
   if (f->source)
     checkobjref(g, fgc, f->source);
-  for (i = 0; i < f->kSize; i++) {
-    if (IS_TYPE_STRING(f->k + i))
-      checkobjref(g, fgc, STRING_VALUE(f->k + i));
+  for (i = 0; i < f->constantsSize; i++) {
+    if (IS_TYPE_STRING(f->constants + i))
+      checkobjref(g, fgc, STRING_VALUE(f->constants + i));
   }
   for (i = 0; i < f->upvaluesSize; i++) {
     if (f->upvalues[i])
       checkobjref(g, fgc, f->upvalues[i]);
   }
-  for (i = 0; i < f->pSize; i++) {
+  for (i = 0; i < f->innersSize; i++) {
     if (f->inners[i])
       checkobjref(g, fgc, f->inners[i]);
   }
@@ -389,9 +389,9 @@ static int listk(lua_State *L) {
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
   p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
-  lua_createtable(L, p->kSize, 0);
-  for (i = 0; i < p->kSize; i++) {
-    luaA_pushobject(L, p->k + i);
+  lua_createtable(L, p->constantsSize, 0);
+  for (i = 0; i < p->constantsSize; i++) {
+    luaA_pushobject(L, p->constants + i);
     lua_rawseti(L, -2, i + 1);
   }
   return 1;

@@ -102,10 +102,10 @@ void luaF_close(lua_State *L, StackIndex level) {
 Prototype *luaF_newproto(lua_State *L) {
   Prototype *f = luaM_new(L, Prototype);
   luaC_link(L, LuaObjectToGCObject(f), LUA_TYPE_PROTO);
-  f->k = nullptr;
-  f->kSize = 0;
+  f->constants = nullptr;
+  f->constantsSize = 0;
   f->inners = nullptr;
-  f->pSize = 0;
+  f->innersSize = 0;
   f->code = nullptr;
   f->codeSize = 0;
   f->lineInfoSize = 0;
@@ -126,8 +126,8 @@ Prototype *luaF_newproto(lua_State *L) {
 
 void luaF_freeproto(lua_State *L, Prototype *f) {
   luaM_freeArray(L, f->code, f->codeSize, Instruction);
-  luaM_freeArray(L, f->inners, f->pSize, Prototype *);
-  luaM_freeArray(L, f->k, f->kSize, Value);
+  luaM_freeArray(L, f->inners, f->innersSize, Prototype *);
+  luaM_freeArray(L, f->constants, f->constantsSize, Value);
   luaM_freeArray(L, f->lineInfo, f->lineInfoSize, int);
   luaM_freeArray(L, f->locVars, f->locVarsSize, struct LocVar);
   luaM_freeArray(L, f->upvalues, f->upvaluesSize, String *);

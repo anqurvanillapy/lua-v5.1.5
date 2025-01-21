@@ -57,10 +57,10 @@ static void DumpString(const String *s, DumpState *D) {
 static void DumpFunction(const Prototype *f, const String *p, DumpState *D);
 
 static void DumpConstants(const Prototype *f, DumpState *D) {
-  int i, n = f->kSize;
+  int i, n = f->constantsSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
-    const Value *o = &f->k[i];
+    const Value *o = &f->constants[i];
     DumpChar(GET_TYPE(o), D);
     switch (GET_TYPE(o)) {
     case LUA_TYPE_NIL:
@@ -75,11 +75,10 @@ static void DumpConstants(const Prototype *f, DumpState *D) {
       DumpString(STRING_VALUE(o), D);
       break;
     default:
-      assert(0); /* cannot happen */
-      break;
+      assert(false);
     }
   }
-  n = f->pSize;
+  n = f->innersSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
     DumpFunction(f->inners[i], f->source, D);

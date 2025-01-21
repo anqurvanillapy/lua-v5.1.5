@@ -124,7 +124,7 @@ static const Prototype *combine(lua_State *L, int n) {
   f->code = luaM_newvector(L, pc, Instruction);
   f->codeSize = pc;
   f->inners = luaM_newvector(L, n, Prototype *);
-  f->pSize = n;
+  f->innersSize = n;
   pc = 0;
   for (int i = 0; i < n; i++) {
     f->inners[i] = toproto(L, i - n - 1);

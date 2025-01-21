@@ -198,14 +198,14 @@ static void traverseproto(GlobalState *g, Prototype *f) {
   if (f->source) {
     stringmark(f->source);
   }
-  for (i = 0; i < f->kSize; i++) /* mark literals */
-    markvalue(g, &f->k[i]);
+  for (i = 0; i < f->constantsSize; i++) /* mark literals */
+    markvalue(g, &f->constants[i]);
   for (i = 0; i < f->upvaluesSize; i++) { /* mark upvalue names */
     if (f->upvalues[i]) {
       stringmark(f->upvalues[i]);
     }
   }
-  for (i = 0; i < f->pSize; i++) { /* mark nested protos */
+  for (i = 0; i < f->innersSize; i++) { /* mark nested protos */
     if (f->inners[i])
       markobject(g, f->inners[i]);
   }
@@ -307,9 +307,9 @@ static ptrdiff_t propagatemark(GlobalState *g) {
     g->gray = p->gcList;
     traverseproto(g, p);
     return sizeof(Prototype) + sizeof(Instruction) * p->codeSize +
-           sizeof(Prototype *) * p->pSize + sizeof(Value) * p->kSize +
-           sizeof(int) * p->lineInfoSize + sizeof(LocVar) * p->locVarsSize +
-           sizeof(String *) * p->upvaluesSize;
+           sizeof(Prototype *) * p->innersSize +
+           sizeof(Value) * p->constantsSize + sizeof(int) * p->lineInfoSize +
+           sizeof(LocVar) * p->locVarsSize + sizeof(String *) * p->upvaluesSize;
   }
   default:
     assert(0);

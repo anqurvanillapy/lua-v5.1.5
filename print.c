@@ -50,7 +50,7 @@ static void printQuotedString(const String *ts) {
 }
 
 static void printLiteral(const Prototype *f, int i) {
-  const Value *o = &f->k[i];
+  const Value *o = &f->constants[i];
   switch (GET_TYPE(o)) {
   case LUA_TYPE_NIL:
     printf("nil");
@@ -71,8 +71,8 @@ static void printLiteral(const Prototype *f, int i) {
 }
 
 static void printLiterals(const Prototype *f) {
-  printf("constants (%d) for %p:\n", f->kSize, (const void *)f);
-  for (int i = 0; i < f->kSize; i++) {
+  printf("constants (%d) for %p:\n", f->constantsSize, (const void *)f);
+  for (int i = 0; i < f->constantsSize; i++) {
     printf("\t%d\t", i + 1);
     printLiteral(f, i);
     printf("\n");
@@ -134,7 +134,7 @@ static void printCode(const Prototype *f) {
       break;
     case OP_GETGLOBAL:
     case OP_SETGLOBAL:
-      printf("\t; %s", VALUE_STRING_CONTENT(&f->k[bx]));
+      printf("\t; %s", VALUE_STRING_CONTENT(&f->constants[bx]));
       break;
     case OP_GETTABLE:
     case OP_SELF:
@@ -209,7 +209,7 @@ static void printHeader(const Prototype *f) {
          f->varargMode ? "+" : "", SS(f->paramsNum), S(f->maxStackSize),
          S(f->upvaluesNum));
   printf("%d local%s, %d constant%s, %d function%s\n", S(f->locVarsSize),
-         S(f->kSize), S(f->pSize));
+         S(f->constantsSize), S(f->innersSize));
 }
 
 static void PrintLocals(const Prototype *f) {
@@ -238,7 +238,7 @@ void luaU_print(const Prototype *f, int full) {
     PrintLocals(f);
     PrintUpvalues(f);
   }
-  for (int i = 0; i < f->pSize; i++) {
+  for (int i = 0; i < f->innersSize; i++) {
     luaU_print(f->inners[i], full);
   }
 }

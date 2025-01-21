@@ -190,16 +190,15 @@ static_assert(alignof(Userdata) == alignof(MaxAlign));
 typedef struct Prototype {
   GCHeader header;
 
-  // Constant table.
-  Value *k;
-  int kSize;
+  Value *constants;
+  int constantsSize;
 
   Instruction *code;
   int codeSize;
 
   // Functions defined inside this function.
   struct Prototype **inners;
-  int pSize;
+  int innersSize; // FIXME(anqur): quite hard to use `size_t` here
 
   String *source;
   // An int-to-int map from opcodes to source lines.
