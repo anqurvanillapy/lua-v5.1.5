@@ -215,7 +215,7 @@ static void printHeader(const Prototype *f) {
 static void PrintLocals(const Prototype *f) {
   printf("locals (%d) for %p:\n", f->locVarsSize, (const void *)f);
   for (int i = 0; i < f->locVarsSize; i++) {
-    printf("\t%d\t%s\t%d\t%d\n", i, STRING_CONTENT(f->locVars[i].varname),
+    printf("\t%d\t%s\t%d\t%d\n", i, STRING_CONTENT(f->locVars[i].name),
            f->locVars[i].startPC + 1, f->locVars[i].endPC + 1);
   }
 }

@@ -229,7 +229,7 @@ typedef struct Prototype {
 #define VARARG_NEEDS_ARG 0b100
 
 typedef struct LocVar {
-  String *varname;
+  String *name;
   // First point where variable is active.
   int startPC;
   // First point where variable is dead.

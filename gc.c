@@ -210,8 +210,8 @@ static void traverseproto(GlobalState *g, Prototype *f) {
       markobject(g, f->inners[i]);
   }
   for (i = 0; i < f->locVarsSize; i++) { /* mark local-variable names */
-    if (f->locVars[i].varname) {
-      stringmark(f->locVars[i].varname);
+    if (f->locVars[i].name) {
+      stringmark(f->locVars[i].name);
     }
   }
 }

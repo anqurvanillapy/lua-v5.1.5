@@ -93,7 +93,7 @@ static void DumpDebug(const Prototype *f, DumpState *D) {
   n = (D->strip) ? 0 : f->locVarsSize;
   DumpInt(n, D);
   for (i = 0; i < n; i++) {
-    DumpString(f->locVars[i].varname, D);
+    DumpString(f->locVars[i].name, D);
     DumpInt(f->locVars[i].startPC, D);
     DumpInt(f->locVars[i].endPC, D);
   }

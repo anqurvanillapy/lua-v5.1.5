@@ -150,7 +150,7 @@ const char *luaF_getlocalname(const Prototype *f, int local_number, int pc) {
     if (pc < f->locVars[i].endPC) { /* is variable active? */
       local_number--;
       if (local_number == 0) {
-        return STRING_CONTENT(f->locVars[i].varname);
+        return STRING_CONTENT(f->locVars[i].name);
       }
     }
   }

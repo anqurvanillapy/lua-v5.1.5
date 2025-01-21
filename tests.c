@@ -198,8 +198,8 @@ static void checkproto(GlobalState *g, Prototype *f) {
       checkobjref(g, fgc, f->inners[i]);
   }
   for (i = 0; i < f->locVarsSize; i++) {
-    if (f->locVars[i].varname)
-      checkobjref(g, fgc, f->locVars[i].varname);
+    if (f->locVars[i].name)
+      checkobjref(g, fgc, f->locVars[i].name);
   }
 }
 

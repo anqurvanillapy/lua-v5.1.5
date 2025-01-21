@@ -129,16 +129,16 @@ static void checkname(LexState *ls, ExprInfo *e) {
   stringLiteral(ls, e, checkName(ls));
 }
 
-static int registerlocalvar(LexState *ls, String *varname) {
+static int registerLocalVar(LexState *ls, String *varname) {
   FuncState *fs = ls->fs;
   Prototype *f = fs->f;
-  int oldsize = f->locVarsSize;
+  int oldSize = f->locVarsSize;
   luaM_growvector(ls->L, f->locVars, fs->nlocvars, f->locVarsSize, LocVar,
                   SHRT_MAX, "too many local variables");
-  while (oldsize < f->locVarsSize) {
-    f->locVars[oldsize++].varname = nullptr;
+  while (oldSize < f->locVarsSize) {
+    f->locVars[oldSize++].name = nullptr;
   }
-  f->locVars[fs->nlocvars].varname = varname;
+  f->locVars[fs->nlocvars].name = varname;
   luaC_objbarrier(ls->L, f, varname);
   return fs->nlocvars++;
 }
@@ -149,8 +149,7 @@ static int registerlocalvar(LexState *ls, String *varname) {
 static void new_localvar(LexState *ls, String *name, int n) {
   FuncState *fs = ls->fs;
   CHECK_LIMIT(fs, fs->nactvar + n + 1, LUAI_MAX_VARS, "local variables");
-  fs->actvar[fs->nactvar + n] =
-      cast(unsigned short, registerlocalvar(ls, name));
+  fs->actvar[fs->nactvar + n] = registerLocalVar(ls, name);
 }
 
 static void adjustlocalvars(LexState *ls, int nvars) {
@@ -195,7 +194,7 @@ static int createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
 
 static int lookupLocalVar(FuncState *fs, String *name) {
   for (int i = fs->nactvar - 1; i >= 0; i--) {
-    if (name == GET_LOCAL_VAR(fs, i).varname) {
+    if (name == GET_LOCAL_VAR(fs, i).name) {
       return i;
     }
   }

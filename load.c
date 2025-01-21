@@ -125,10 +125,10 @@ static void LoadDebug(LoadState *S, Prototype *f) {
   f->locVars = luaM_newvector(S->L, n, LocVar);
   f->locVarsSize = n;
   for (i = 0; i < n; i++) {
-    f->locVars[i].varname = NULL;
+    f->locVars[i].name = NULL;
   }
   for (i = 0; i < n; i++) {
-    f->locVars[i].varname = LoadString(S);
+    f->locVars[i].name = LoadString(S);
     f->locVars[i].startPC = LoadInt(S);
     f->locVars[i].endPC = LoadInt(S);
   }
