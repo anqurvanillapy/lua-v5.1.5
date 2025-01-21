@@ -25,12 +25,14 @@
 #define LUA_GLOBALSINDEX (-10002)
 #define lua_upvalueindex(i) (LUA_GLOBALSINDEX - (i))
 
-/* thread status; 0 is OK */
-#define LUA_YIELD 1
-#define LUA_ERRRUN 2
-#define LUA_ERRSYNTAX 3
-#define LUA_ERRMEM 4
-#define LUA_ERRERR 5
+typedef enum lua_Status {
+  LUA_RUNNING,
+  LUA_YIELD,
+  LUA_ERRRUN,
+  LUA_ERRSYNTAX,
+  LUA_ERRMEM,
+  LUA_ERRERR,
+} lua_Status;
 
 typedef struct lua_State lua_State;
 

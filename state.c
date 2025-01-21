@@ -76,7 +76,7 @@ static void preinit_state(lua_State *L, GlobalState *g) {
   L->openUpval = nullptr;
   L->ciSize = 0;
   L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
-  L->status = 0;
+  L->status = LUA_RUNNING;
   L->baseCI = L->ci = nullptr;
   L->savedPC = nullptr;
   L->errFunc = 0;

@@ -376,14 +376,14 @@ void luaD_call(lua_State *L, StackIndex func, int nResults) {
 static void resume(lua_State *L, void *ud) {
   StackIndex firstArg = cast(StackIndex, ud);
   CallInfo *ci = L->ci;
-  if (L->status == 0) { /* start coroutine? */
+  if (L->status == LUA_RUNNING) {
     assert(ci == L->baseCI && firstArg > L->base);
     if (luaD_precall(L, firstArg - 1, LUA_MULTRET) != PCRLUA) {
       return;
     }
   } else { /* resuming from previous yield */
     assert(L->status == LUA_YIELD);
-    L->status = 0;
+    L->status = LUA_RUNNING;
     if (!f_isLua(ci)) { /* `common' yield? */
       /* finish interrupted execution of `OP_CALL' */
       assert(GET_OPCODE(*((ci - 1)->savedpc - 1)) == OP_CALL ||

@@ -78,7 +78,7 @@ typedef struct GlobalState {
 struct lua_State {
   GCHeader header;
 
-  uint8_t status;
+  lua_Status status;
 
   // First free slot in the stack.
   StackIndex top;
