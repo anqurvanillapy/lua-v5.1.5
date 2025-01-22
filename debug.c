@@ -284,21 +284,18 @@ static int checkArgMode(const Prototype *pt, int r, enum OpArgMask mode) {
     checkreg(pt, r);
     break;
   case OpArgK:
-    // FIXME(anqur): sus conversion.
-    check(ISK(r) ? (size_t)INDEXK(r) < pt->constantsSize
-                 : r < pt->maxStackSize);
+    check(ISK(r) ? INDEXK(r) < pt->constantsSize : r < pt->maxStackSize);
     break;
   }
   return 1;
 }
 
-static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
-  int pc;
+static Instruction symbexec(const Prototype *pt, size_t lastpc, int reg) {
   // Stores position of last instruction that changed register. Point to final
   // return (a neutral instruction).
-  int last = (int)pt->codeSize - 1; // FIXME(anqur): sus
+  size_t last = pt->codeSize - 1;
   check(precheck(pt));
-  for (pc = 0; pc < lastpc; pc++) {
+  for (size_t pc = 0; pc < lastpc; pc++) {
     Instruction i = pt->code[pc];
     OpCode op = GET_OPCODE(i);
     int a = GETARG_A(i);
@@ -317,22 +314,22 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     case iABx: {
       b = GETARG_Bx(i);
       if (getBMode(op) == OpArgK) {
-        check(b < (int)pt->constantsSize); // FIXME(anqur): sus
+        check((size_t)b < pt->constantsSize);
       }
       break;
     }
     case iAsBx: {
       b = GETARG_sBx(i);
       if (getBMode(op) == OpArgR) {
-        int dest = pc + 1 + b;
-        check(0 <= dest && dest < (int)pt->codeSize); // FIXME(anqur): sus
+        size_t dest = pc + 1 + b;
+        check(0 <= dest && dest < pt->codeSize);
         if (dest > 0) {
-          int j;
           /* check that it does not jump to a setlist count; this
              is tricky, because the count from a previous setlist may
              have the same value of an invalid setlist; so, we must
              go all the way back to the first of them (if any) */
-          for (j = 0; j < dest; j++) {
+          size_t j = 0;
+          for (; j < dest; j++) {
             Instruction d = pt->code[dest - 1 - j];
             if (!(GET_OPCODE(d) == OP_SETLIST && GETARG_C(d) == 0)) {
               break;
@@ -352,16 +349,14 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
       }
     }
     if (testTMode(op)) {
-      // FIXME(anqur): sus
-      check(pc + 2 < (int)pt->codeSize); /* check skip */
+      check(pc + 2 < pt->codeSize); /* check skip */
       check(GET_OPCODE(pt->code[pc + 1]) == OP_JMP);
     }
     switch (op) {
     case OP_LOADBOOL: {
       /* does it jump? */
       if (c == 1) {
-        // FIXME(anqur): sus
-        check(pc + 2 < (int)pt->codeSize); /* check its jump */
+        check(pc + 2 < pt->codeSize); /* check its jump */
         check(GET_OPCODE(pt->code[pc + 1]) != OP_SETLIST ||
               GETARG_C(pt->code[pc + 1]) != 0);
       }
@@ -375,8 +370,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     }
     case OP_GETUPVAL:
     case OP_SETUPVAL: {
-      // FIXME(anqur): sus
-      check(b < (int)pt->upvaluesNum);
+      check((size_t)b < pt->upvaluesNum);
       break;
     }
     case OP_GETGLOBAL:
@@ -408,7 +402,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
       checkreg(pt, a + 3);
       /* go through */
     case OP_JMP: {
-      int dest = pc + 1 + b;
+      size_t dest = pc + 1 + b;
       /* not full check and jump is forward and do not skip `lastpc'? */
       if (reg != NO_REG && pc < dest && dest <= lastpc) {
         pc += b; /* do the jump */
@@ -444,14 +438,12 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
       }
       if (c == 0) {
         pc++;
-        // FIXME(anqur): sus
-        check(pc < (int)pt->codeSize - 1);
+        check(pc < pt->codeSize - 1);
       }
       break;
     }
     case OP_CLOSURE: {
-      // FIXME(anqur): sus
-      check(b < (int)pt->innersSize);
+      check((size_t)b < pt->innersSize);
       size_t nup = pt->inners[b]->upvaluesNum;
       check(pc + nup < pt->codeSize);
       for (size_t j = 1; j <= nup; j++) {

@@ -108,7 +108,7 @@ enum OpMode { iABC, iABx, iAsBx }; /* basic instruction format */
 #define ISK(x) ((x) & BITRK)
 
 /* gets the index of the constant */
-#define INDEXK(r) ((int)(r) & ~BITRK)
+#define INDEXK(r) ((size_t)(r) & ~BITRK)
 
 #define MAXINDEXRK (BITRK - 1)
 

@@ -101,10 +101,10 @@ static void printCode(const Prototype *f) {
     case iABC:
       printf("%d", a);
       if (getBMode(o) != OpArgN) {
-        printf(" %d", ISK(b) ? (-1 - INDEXK(b)) : b);
+        printf(" %zu", ISK(b) ? (-1 - INDEXK(b)) : b);
       }
       if (getCMode(o) != OpArgN) {
-        printf(" %d", ISK(c) ? (-1 - INDEXK(c)) : c);
+        printf(" %zu", ISK(c) ? (-1 - INDEXK(c)) : c);
       }
       break;
     case iABx:
