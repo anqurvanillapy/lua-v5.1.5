@@ -11,8 +11,9 @@
 LUAI_FUNC void *Mem_doRealloc(lua_State *L, void *block, size_t oldSize,
                               size_t newSize);
 LUAI_FUNC void *Mem_throwTooBig(lua_State *L);
-LUAI_FUNC void *Mem_doGrowVec(lua_State *L, void *block, int *size,
-                              size_t elemSize, int limit, const char *errMsg);
+LUAI_FUNC void *Mem_doGrowVec(lua_State *L, void *block, size_t *size,
+                              size_t elemSize, size_t limit,
+                              const char *errMsg);
 
 #define Mem_reallocCnt(L, p, oldCnt, newCnt, elemSize)                         \
   ((((size_t)newCnt) <= SIZE_MAX / (elemSize))                                 \

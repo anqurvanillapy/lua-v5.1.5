@@ -150,9 +150,9 @@ static void collectvalidlines(lua_State *L, Closure *f) {
   } else {
     Table *t = Table_new(L, 0, 0);
     int *lineinfo = f->l.p->lineInfo;
-    int i;
-    for (i = 0; i < f->l.p->lineInfoSize; i++)
+    for (size_t i = 0; i < f->l.p->lineInfoSize; i++) {
       SET_BOOL(Table_insertInteger(L, t, lineinfo[i]), 1);
+    }
     SET_TABLE(L, L->top, t);
   }
   incr_top(L);
@@ -284,7 +284,9 @@ static int checkArgMode(const Prototype *pt, int r, enum OpArgMask mode) {
     checkreg(pt, r);
     break;
   case OpArgK:
-    check(ISK(r) ? INDEXK(r) < pt->constantsSize : r < pt->maxStackSize);
+    // FIXME(anqur): sus conversion.
+    check(ISK(r) ? (size_t)INDEXK(r) < pt->constantsSize
+                 : r < pt->maxStackSize);
     break;
   }
   return 1;
@@ -292,9 +294,9 @@ static int checkArgMode(const Prototype *pt, int r, enum OpArgMask mode) {
 
 static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
   int pc;
-  int last; /* stores position of last instruction that changed `reg' */
-  last =
-      pt->codeSize - 1; /* points to final return (a `neutral' instruction) */
+  // Stores position of last instruction that changed register. Point to final
+  // return (a neutral instruction).
+  int last = (int)pt->codeSize - 1; // FIXME(anqur): sus
   check(precheck(pt));
   for (pc = 0; pc < lastpc; pc++) {
     Instruction i = pt->code[pc];
@@ -315,7 +317,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     case iABx: {
       b = GETARG_Bx(i);
       if (getBMode(op) == OpArgK) {
-        check(b < pt->constantsSize);
+        check(b < (int)pt->constantsSize); // FIXME(anqur): sus
       }
       break;
     }
@@ -323,7 +325,7 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
       b = GETARG_sBx(i);
       if (getBMode(op) == OpArgR) {
         int dest = pc + 1 + b;
-        check(0 <= dest && dest < pt->codeSize);
+        check(0 <= dest && dest < (int)pt->codeSize); // FIXME(anqur): sus
         if (dest > 0) {
           int j;
           /* check that it does not jump to a setlist count; this
@@ -350,13 +352,16 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
       }
     }
     if (testTMode(op)) {
-      check(pc + 2 < pt->codeSize); /* check skip */
+      // FIXME(anqur): sus
+      check(pc + 2 < (int)pt->codeSize); /* check skip */
       check(GET_OPCODE(pt->code[pc + 1]) == OP_JMP);
     }
     switch (op) {
     case OP_LOADBOOL: {
-      if (c == 1) {                   /* does it jump? */
-        check(pc + 2 < pt->codeSize); /* check its jump */
+      /* does it jump? */
+      if (c == 1) {
+        // FIXME(anqur): sus
+        check(pc + 2 < (int)pt->codeSize); /* check its jump */
         check(GET_OPCODE(pt->code[pc + 1]) != OP_SETLIST ||
               GETARG_C(pt->code[pc + 1]) != 0);
       }
@@ -370,7 +375,8 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
     }
     case OP_GETUPVAL:
     case OP_SETUPVAL: {
-      check(b < pt->upvaluesNum);
+      // FIXME(anqur): sus
+      check(b < (int)pt->upvaluesNum);
       break;
     }
     case OP_GETGLOBAL:
@@ -438,16 +444,17 @@ static Instruction symbexec(const Prototype *pt, int lastpc, int reg) {
       }
       if (c == 0) {
         pc++;
-        check(pc < pt->codeSize - 1);
+        // FIXME(anqur): sus
+        check(pc < (int)pt->codeSize - 1);
       }
       break;
     }
     case OP_CLOSURE: {
-      int nup, j;
-      check(b < pt->innersSize);
-      nup = pt->inners[b]->upvaluesNum;
+      // FIXME(anqur): sus
+      check(b < (int)pt->innersSize);
+      size_t nup = pt->inners[b]->upvaluesNum;
       check(pc + nup < pt->codeSize);
-      for (j = 1; j <= nup; j++) {
+      for (size_t j = 1; j <= nup; j++) {
         OpCode op1 = GET_OPCODE(pt->code[pc + j]);
         check(op1 == OP_GETUPVAL || op1 == OP_MOVE);
       }

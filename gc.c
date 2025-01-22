@@ -194,22 +194,21 @@ static int traversetable(GlobalState *g, Table *h) {
 ** prototype is still being created
 */
 static void traverseproto(GlobalState *g, Prototype *f) {
-  int i;
   if (f->source) {
     stringmark(f->source);
   }
-  for (i = 0; i < f->constantsSize; i++) /* mark literals */
+  for (size_t i = 0; i < f->constantsSize; i++) /* mark literals */
     markvalue(g, &f->constants[i]);
-  for (i = 0; i < f->upvaluesSize; i++) { /* mark upvalue names */
+  for (size_t i = 0; i < f->upvaluesSize; i++) { /* mark upvalue names */
     if (f->upvalues[i]) {
       stringmark(f->upvalues[i]);
     }
   }
-  for (i = 0; i < f->innersSize; i++) { /* mark nested protos */
+  for (size_t i = 0; i < f->innersSize; i++) { /* mark nested protos */
     if (f->inners[i])
       markobject(g, f->inners[i]);
   }
-  for (i = 0; i < f->locVarsSize; i++) { /* mark local-variable names */
+  for (size_t i = 0; i < f->locVarsSize; i++) { /* mark local-variable names */
     if (f->locVars[i].name) {
       stringmark(f->locVars[i].name);
     }

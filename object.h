@@ -191,29 +191,29 @@ typedef struct Prototype {
   GCHeader header;
 
   Value *constants;
-  int constantsSize;
+  size_t constantsSize;
 
   Instruction *code;
-  int codeSize;
+  size_t codeSize;
 
   // Functions defined inside this function.
   struct Prototype **inners;
-  int innersSize; // FIXME(anqur): quite hard to use `size_t` here
+  size_t innersSize; // FIXME(anqur): quite hard to use `size_t` here
 
   String *source;
   // An int-to-int map from opcodes to source lines.
   int *lineInfo;
-  int lineInfoSize;
+  size_t lineInfoSize;
   int lineDefined;
   int lineDefinedLast;
 
   struct LocVar *locVars;
-  int locVarsSize;
+  size_t locVarsSize;
 
   // Upvalue names.
   String **upvalues;
-  int upvaluesSize;
-  uint8_t upvaluesNum;
+  size_t upvaluesSize;
+  size_t upvaluesNum;
 
   GCObject *gcList;
 

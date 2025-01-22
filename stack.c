@@ -478,7 +478,6 @@ struct SParser {
 };
 
 static void f_parser(lua_State *L, void *ud) {
-  int i;
   Prototype *tf; // "the function"
   Closure *cl;
   struct SParser *p = ud;
@@ -488,7 +487,8 @@ static void f_parser(lua_State *L, void *ud) {
                                                              p->name);
   cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
   cl->l.p = tf;
-  for (i = 0; i < tf->upvaluesNum; i++) { /* initialize eventual upvalues */
+  for (size_t i = 0; i < tf->upvaluesNum; i++) {
+    // Initialize eventual upvalues.
     cl->l.upvalues[i] = luaF_newupval(L);
   }
   SET_CLOSURE(L, L->top, cl);

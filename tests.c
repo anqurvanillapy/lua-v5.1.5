@@ -181,25 +181,29 @@ static void checktable(GlobalState *g, Table *h) {
 ** prototype is still being created
 */
 static void checkproto(GlobalState *g, Prototype *f) {
-  int i;
   GCObject *fgc = LuaObjectToGCObject(f);
-  if (f->source)
+  if (f->source) {
     checkobjref(g, fgc, f->source);
-  for (i = 0; i < f->constantsSize; i++) {
-    if (IS_TYPE_STRING(f->constants + i))
+  }
+  for (size_t i = 0; i < f->constantsSize; i++) {
+    if (IS_TYPE_STRING(f->constants + i)) {
       checkobjref(g, fgc, STRING_VALUE(f->constants + i));
+    }
   }
-  for (i = 0; i < f->upvaluesSize; i++) {
-    if (f->upvalues[i])
+  for (size_t i = 0; i < f->upvaluesSize; i++) {
+    if (f->upvalues[i]) {
       checkobjref(g, fgc, f->upvalues[i]);
+    }
   }
-  for (i = 0; i < f->innersSize; i++) {
-    if (f->inners[i])
+  for (size_t i = 0; i < f->innersSize; i++) {
+    if (f->inners[i]) {
       checkobjref(g, fgc, f->inners[i]);
+    }
   }
-  for (i = 0; i < f->locVarsSize; i++) {
-    if (f->locVars[i].name)
+  for (size_t i = 0; i < f->locVarsSize; i++) {
+    if (f->locVars[i].name) {
       checkobjref(g, fgc, f->locVars[i].name);
+    }
   }
 }
 
@@ -207,14 +211,13 @@ static void checkclosure(GlobalState *g, Closure *cl) {
   GCObject *clgc = LuaObjectToGCObject(cl);
   checkobjref(g, clgc, cl->l.header.env);
   if (cl->c.header.isC) {
-    int i;
-    for (i = 0; i < cl->c.header.nupvalues; i++)
+    for (int i = 0; i < cl->c.header.nupvalues; i++) {
       checkvalref(g, clgc, &cl->c.upvalue[i]);
+    }
   } else {
-    int i;
     assert(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
     checkobjref(g, clgc, cl->l.p);
-    for (i = 0; i < cl->l.header.nupvalues; i++) {
+    for (int i = 0; i < cl->l.header.nupvalues; i++) {
       if (cl->l.upvalues[i]) {
         assert(cl->l.upvalues[i]->header.tt == LUA_TYPE_UPVALUE);
         checkobjref(g, clgc, cl->l.upvalues[i]);
@@ -335,13 +338,13 @@ int lua_checkmemory(lua_State *L) {
 ** =======================================================
 */
 
-static char *buildop(Prototype *p, int pc, char *buff, size_t size) {
+static char *buildop(Prototype *p, size_t pc, char *buff, size_t size) {
   Instruction i = p->code[pc];
   OpCode o = GET_OPCODE(i);
   const char *name = luaP_opnames[o];
   int line = getline(p, pc);
 
-  snprintf(buff, size, "(%4d) %4d - ", line, pc);
+  snprintf(buff, size, "(%4d) %4zu - ", line, pc);
   switch (getOpMode(o)) {
   case iABC: {
     size_t written = strlen(buff);
@@ -366,17 +369,16 @@ static char *buildop(Prototype *p, int pc, char *buff, size_t size) {
 }
 
 static int listcode(lua_State *L) {
-  int pc;
-  Prototype *p;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
-  p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
+  Prototype *p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
   lua_newtable(L);
   setnameval(L, "maxstack", p->maxStackSize);
   setnameval(L, "numparams", p->paramsNum);
-  for (pc = 0; pc < p->codeSize; pc++) {
+  for (size_t pc = 0; pc < p->codeSize; pc++) {
     char buff[100];
-    lua_pushinteger(L, pc + 1);
+    // FIXME: Conversion?
+    lua_pushinteger(L, (lua_Integer)pc + 1);
     lua_pushstring(L, buildop(p, pc, buff, sizeof(buff)));
     lua_settable(L, -3);
   }
@@ -384,13 +386,11 @@ static int listcode(lua_State *L) {
 }
 
 static int listk(lua_State *L) {
-  Prototype *p;
-  int i;
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
-  p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
+  Prototype *p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
   lua_createtable(L, p->constantsSize, 0);
-  for (i = 0; i < p->constantsSize; i++) {
+  for (size_t i = 0; i < p->constantsSize; i++) {
     luaA_pushobject(L, p->constants + i);
     lua_rawseti(L, -2, i + 1);
   }

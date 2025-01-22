@@ -145,8 +145,7 @@ void luaF_freeclosure(lua_State *L, Closure *c) {
 ** Returns nullptr if not found.
 */
 const char *luaF_getlocalname(const Prototype *f, int local_number, int pc) {
-  int i;
-  for (i = 0; i < f->locVarsSize && f->locVars[i].startPC <= pc; i++) {
+  for (size_t i = 0; i < f->locVarsSize && f->locVars[i].startPC <= pc; i++) {
     if (pc < f->locVars[i].endPC) { /* is variable active? */
       local_number--;
       if (local_number == 0) {

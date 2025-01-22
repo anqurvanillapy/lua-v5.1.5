@@ -889,7 +889,7 @@ LUA_API void *lua_newuserdata(lua_State *L, size_t size) {
   return u + 1;
 }
 
-static const char *aux_upvalue(StackIndex fi, int n, Value **val) {
+static const char *aux_upvalue(StackIndex fi, size_t n, Value **val) {
   if (!IS_TYPE_FUNCTION(fi)) {
     return nullptr;
   }

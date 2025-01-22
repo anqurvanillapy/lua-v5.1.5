@@ -218,12 +218,12 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
   }
 
   // Constant not found, create a new entry.
-  int oldsize = f->constantsSize;
+  size_t oldSize = f->constantsSize;
   SET_NUMBER(idx, (double)fs->nk);
   Mem_growVec(L, f->constants, fs->nk, f->constantsSize, Value, MAXARG_Bx,
               "constant table overflow");
-  while (oldsize < f->constantsSize) {
-    SET_NIL(&f->constants[oldsize++]);
+  while (oldSize < f->constantsSize) {
+    SET_NIL(&f->constants[oldSize++]);
   }
   SET_OBJECT(L, &f->constants[fs->nk], v);
   luaC_barrier(L, f, v);
@@ -823,12 +823,14 @@ static int luaK_code(FuncState *fs, Instruction i, int line) {
   Prototype *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
-  Mem_growVec(fs->L, f->code, fs->pc, f->codeSize, Instruction, SAFE_INT_MAX,
-              "code size overflow");
+  // FIXME(anqur): PC should be size_t.
+  Mem_growVec(fs->L, f->code, (size_t)fs->pc, f->codeSize, Instruction,
+              SAFE_INT_MAX, "code size overflow");
   f->code[fs->pc] = i;
   /* save corresponding line information */
-  Mem_growVec(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int, SAFE_INT_MAX,
-              "code size overflow");
+  // FIXME(anqur): PC should be size_t.
+  Mem_growVec(fs->L, f->lineInfo, (size_t)fs->pc, f->lineInfoSize, int,
+              SAFE_INT_MAX, "code size overflow");
   f->lineInfo[fs->pc] = line;
   return fs->pc++;
 }

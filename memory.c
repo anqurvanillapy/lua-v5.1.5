@@ -7,10 +7,10 @@
 
 #define ARRAY_MIN_SIZE 4
 
-void *Mem_doGrowVec(lua_State *L, void *block, int *size, size_t elemSize,
-                    int limit, const char *errMsg) {
+void *Mem_doGrowVec(lua_State *L, void *block, size_t *size, size_t elemSize,
+                    size_t limit, const char *errMsg) {
   // Grow to the limit when memory almost runs out.
-  int newSize = limit;
+  size_t newSize = limit;
   if (*size >= limit / 2 && *size >= limit) {
     // Cannot double it and even grow a little.
     luaG_runerror(L, errMsg);

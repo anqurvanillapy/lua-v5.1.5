@@ -129,10 +129,10 @@ static void checkname(LexState *ls, ExprInfo *e) {
   stringLiteral(ls, e, checkName(ls));
 }
 
-static int registerLocalVar(LexState *ls, String *varname) {
+static size_t registerLocalVar(LexState *ls, String *varname) {
   FuncState *fs = ls->fs;
   Prototype *f = fs->f;
-  int oldSize = f->locVarsSize;
+  size_t oldSize = f->locVarsSize;
   Mem_growVec(ls->L, f->locVars, fs->nlocvars, f->locVarsSize, LocVar, SHRT_MAX,
               "too many local variables");
   while (oldSize < f->locVarsSize) {
@@ -149,7 +149,8 @@ static int registerLocalVar(LexState *ls, String *varname) {
 static void new_localvar(LexState *ls, String *name, int n) {
   FuncState *fs = ls->fs;
   CHECK_LIMIT(fs, fs->nactvar + n + 1, LUAI_MAX_VARS, "local variables");
-  fs->actvar[fs->nactvar + n] = registerLocalVar(ls, name);
+  // FIXME(anqur): Conversion? Really?
+  fs->actvar[fs->nactvar + n] = (int)registerLocalVar(ls, name);
 }
 
 static void adjustlocalvars(LexState *ls, int nvars) {
@@ -167,9 +168,9 @@ static void removevars(LexState *ls, int tolevel) {
   }
 }
 
-static int createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
+static size_t createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   Prototype *f = fs->f;
-  for (int i = 0; i < f->upvaluesNum; i++) {
+  for (size_t i = 0; i < f->upvaluesNum; i++) {
     if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
       assert(f->upvalues[i] == name);
       return i;
@@ -177,7 +178,7 @@ static int createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   }
 
   // Create a new upvalue.
-  int oldSize = f->upvaluesSize;
+  size_t oldSize = f->upvaluesSize;
   CHECK_LIMIT(fs, f->upvaluesNum + 1, LUAI_MAX_UPVALUES, "upvalues");
   Mem_growVec(fs->L, f->upvalues, f->upvaluesNum, f->upvaluesSize, String *,
               SAFE_INT_MAX, "");
@@ -304,17 +305,16 @@ static void leaveBlock(FuncState *fs) {
 static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   FuncState *fs = ls->fs;
   Prototype *f = fs->f;
-  int oldsize = f->innersSize;
-  int i;
+  size_t oldSize = f->innersSize;
   Mem_growVec(ls->L, f->inners, fs->np, f->innersSize, Prototype *, MAXARG_Bx,
               "constant table overflow");
-  while (oldsize < f->innersSize) {
-    f->inners[oldsize++] = nullptr;
+  while (oldSize < f->innersSize) {
+    f->inners[oldSize++] = nullptr;
   }
   f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
   exprSetInfo(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
-  for (i = 0; i < func->f->upvaluesNum; i++) {
+  for (size_t i = 0; i < func->f->upvaluesNum; i++) {
     OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
     luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
   }

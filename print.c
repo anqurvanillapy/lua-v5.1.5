@@ -49,7 +49,7 @@ static void printQuotedString(const String *ts) {
   putchar('"');
 }
 
-static void printLiteral(const Prototype *f, int i) {
+static void printLiteral(const Prototype *f, size_t i) {
   const Value *o = &f->constants[i];
   switch (GET_TYPE(o)) {
   case LUA_TYPE_NIL:
@@ -71,9 +71,9 @@ static void printLiteral(const Prototype *f, int i) {
 }
 
 static void printLiterals(const Prototype *f) {
-  printf("constants (%d) for %p:\n", f->constantsSize, (const void *)f);
-  for (int i = 0; i < f->constantsSize; i++) {
-    printf("\t%d\t", i + 1);
+  printf("constants (%zu) for %p:\n", f->constantsSize, (const void *)f);
+  for (size_t i = 0; i < f->constantsSize; i++) {
+    printf("\t%zu\t", i + 1);
     printLiteral(f, i);
     printf("\n");
   }
@@ -81,7 +81,7 @@ static void printLiterals(const Prototype *f) {
 
 static void printCode(const Prototype *f) {
   const Instruction *code = f->code;
-  for (int pc = 0; pc < f->codeSize; pc++) {
+  for (size_t pc = 0; pc < f->codeSize; pc++) {
     Instruction i = code[pc];
     OpCode o = GET_OPCODE(i);
     int a = GETARG_A(i);
@@ -90,7 +90,7 @@ static void printCode(const Prototype *f) {
     int bx = GETARG_Bx(i);
     int sbx = GETARG_sBx(i);
     int line = getline(f, pc);
-    printf("\t%d\t", pc + 1);
+    printf("\t%zu\t", pc + 1);
     if (line > 0) {
       printf("[%d]\t", line);
     } else {
@@ -170,7 +170,7 @@ static void printCode(const Prototype *f) {
     case OP_JMP:
     case OP_FORLOOP:
     case OP_FORPREP:
-      printf("\t; to %d", sbx + pc + 2);
+      printf("\t; to %zu", sbx + pc + 2);
       break;
     case OP_CLOSURE:
       printf("\t; %p", (const void *)f->inners[bx]);
@@ -201,32 +201,32 @@ static void printHeader(const Prototype *f) {
   } else {
     s = "(string)";
   }
-  printf("\n%s <%s:%d,%d> (%d instruction%s, %d bytes at %p)\n",
+  printf("\n%s <%s:%d,%d> (%zu instruction%s, %zu bytes at %p)\n",
          (f->lineDefined == 0) ? "main" : "function", s, f->lineDefined,
-         f->lineDefinedLast, S(f->codeSize),
-         f->codeSize * (int)sizeof(Instruction), (const void *)f);
-  printf("%d%s param%s, %d slot%s, %d upvalue%s, ", f->paramsNum,
+         f->lineDefinedLast, S(f->codeSize), f->codeSize * sizeof(Instruction),
+         (const void *)f);
+  printf("%d%s param%s, %d slot%s, %zu upvalue%s, ", f->paramsNum,
          f->varargMode ? "+" : "", SS(f->paramsNum), S(f->maxStackSize),
          S(f->upvaluesNum));
-  printf("%d local%s, %d constant%s, %d function%s\n", S(f->locVarsSize),
+  printf("%zu local%s, %zu constant%s, %zu function%s\n", S(f->locVarsSize),
          S(f->constantsSize), S(f->innersSize));
 }
 
 static void PrintLocals(const Prototype *f) {
-  printf("locals (%d) for %p:\n", f->locVarsSize, (const void *)f);
-  for (int i = 0; i < f->locVarsSize; i++) {
-    printf("\t%d\t%s\t%d\t%d\n", i, STRING_CONTENT(f->locVars[i].name),
+  printf("locals (%zu) for %p:\n", f->locVarsSize, (const void *)f);
+  for (size_t i = 0; i < f->locVarsSize; i++) {
+    printf("\t%zu\t%s\t%d\t%d\n", i, STRING_CONTENT(f->locVars[i].name),
            f->locVars[i].startPC + 1, f->locVars[i].endPC + 1);
   }
 }
 
 static void PrintUpvalues(const Prototype *f) {
-  printf("upvalues (%d) for %p:\n", f->upvaluesSize, (const void *)f);
+  printf("upvalues (%zu) for %p:\n", f->upvaluesSize, (const void *)f);
   if (f->upvalues == nullptr) {
     return;
   }
-  for (int i = 0; i < f->upvaluesSize; i++) {
-    printf("\t%d\t%s\n", i, STRING_CONTENT(f->upvalues[i]));
+  for (size_t i = 0; i < f->upvaluesSize; i++) {
+    printf("\t%zu\t%s\n", i, STRING_CONTENT(f->upvalues[i]));
   }
 }
 
@@ -238,7 +238,7 @@ void luaU_print(const Prototype *f, int full) {
     PrintLocals(f);
     PrintUpvalues(f);
   }
-  for (int i = 0; i < f->innersSize; i++) {
+  for (size_t i = 0; i < f->innersSize; i++) {
     luaU_print(f->inners[i], full);
   }
 }

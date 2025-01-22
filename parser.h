@@ -58,9 +58,9 @@ typedef struct FuncState {
   int lasttarget;         /* `pc' of last `jump target' */
   int jpc;                /* list of pending jumps to `pc' */
   int freereg;            /* first free register */
-  int nk;                 /* number of elements in `k' */
-  int np;                 /* number of elements in `p' */
-  int nlocvars;           /* number of elements in `locVars' */
+  size_t nk;              /* number of elements in `k' */
+  size_t np;              /* number of elements in `p' */
+  size_t nlocvars;        /* number of elements in `locVars' */
   uint8_t nactvar;        /* number of active local variables */
   UpvalueInfo upvalues[LUAI_MAX_UPVALUES]; /* upvalues */
   int actvar[LUAI_MAX_VARS];               /* declared-variable stack */
