@@ -54,8 +54,8 @@ typedef struct FuncState {
   struct LexState *ls;    /* lexical state */
   struct lua_State *L;    /* copy of the Lua state */
   struct Block *bl;       /* chain of current blocks */
-  int pc;                 /* next position to code (equivalent to `ncode') */
-  int lasttarget;         /* `pc' of last `jump target' */
+  size_t pc;              /* next position to code (equivalent to `ncode') */
+  ptrdiff_t lasttarget;   /* `pc' of last `jump target' */
   int jpc;                /* list of pending jumps to `pc' */
   int freereg;            /* first free register */
   size_t nk;              /* number of elements in `k' */

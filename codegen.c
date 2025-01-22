@@ -20,8 +20,8 @@ static int isNumeric(ExprInfo *e) {
 
 void luaK_nil(FuncState *fs, int from, int n) {
   Instruction *previous;
-  if (fs->pc > fs->lasttarget) { /* no jumps to current position? */
-    if (fs->pc == 0) {           /* function start? */
+  if ((ptrdiff_t)fs->pc > fs->lasttarget) { /* no jumps to current position? */
+    if (fs->pc == 0) {                      /* function start? */
       if (from >= fs->nactvar) {
         return; /* positions are already clean */
       }
@@ -61,11 +61,11 @@ static int condjump(FuncState *fs, OpCode op, int A, int B, int C) {
   return luaK_jump(fs);
 }
 
-static void fixjump(FuncState *fs, int pc, int dest) {
+static void fixjump(FuncState *fs, size_t pc, ptrdiff_t dest) {
   Instruction *jmp = &fs->f->code[pc];
-  int offset = dest - (pc + 1);
+  ptrdiff_t offset = dest - ((ptrdiff_t)pc + 1);
   assert(dest != NO_JUMP);
-  if (abs(offset) > MAXARG_sBx) {
+  if (labs(offset) > MAXARG_sBx) {
     Lex_throw(fs->ls, "control structure too long");
   }
   SETARG_sBx(*jmp, offset);
@@ -75,8 +75,8 @@ static void fixjump(FuncState *fs, int pc, int dest) {
 ** returns current `pc' and marks it as a jump target (to avoid wrong
 ** optimizations with consecutive instructions not in the same basic block).
 */
-int luaK_getlabel(FuncState *fs) {
-  fs->lasttarget = fs->pc;
+size_t luaK_getlabel(FuncState *fs) {
+  fs->lasttarget = (ptrdiff_t)fs->pc;
   return fs->pc;
 }
 
@@ -132,8 +132,8 @@ static void removevalues(FuncState *fs, int list) {
   }
 }
 
-static void patchlistaux(FuncState *fs, int list, int vtarget, int reg,
-                         int dtarget) {
+static void patchlistaux(FuncState *fs, int list, ptrdiff_t vtarget, int reg,
+                         ptrdiff_t dtarget) {
   while (list != NO_JUMP) {
     int next = getjump(fs, list);
     if (patchtestreg(fs, list, reg)) {
@@ -146,15 +146,15 @@ static void patchlistaux(FuncState *fs, int list, int vtarget, int reg,
 }
 
 static void dischargejpc(FuncState *fs) {
-  patchlistaux(fs, fs->jpc, fs->pc, NO_REG, fs->pc);
+  patchlistaux(fs, fs->jpc, (ptrdiff_t)fs->pc, NO_REG, (ptrdiff_t)fs->pc);
   fs->jpc = NO_JUMP;
 }
 
-void luaK_patchlist(FuncState *fs, int list, int target) {
-  if (target == fs->pc) {
+void luaK_patchlist(FuncState *fs, int list, ptrdiff_t target) {
+  if (target == (ptrdiff_t)fs->pc) {
     luaK_patchtohere(fs, list);
   } else {
-    assert(target < fs->pc);
+    assert(target < (ptrdiff_t)fs->pc);
     patchlistaux(fs, list, target, NO_REG, target);
   }
 }
@@ -207,7 +207,7 @@ static void freeexp(FuncState *fs, ExprInfo *e) {
   }
 }
 
-static int addConstant(FuncState *fs, Value *k, Value *v) {
+static size_t addConstant(FuncState *fs, Value *k, Value *v) {
   lua_State *L = fs->L;
   Value *idx = Table_insert(L, fs->h, k);
   Prototype *f = fs->f;
@@ -230,25 +230,25 @@ static int addConstant(FuncState *fs, Value *k, Value *v) {
   return fs->nk++;
 }
 
-int Codegen_addString(FuncState *fs, String *s) {
+size_t Codegen_addString(FuncState *fs, String *s) {
   Value o;
   SET_STRING(fs->L, &o, s);
   return addConstant(fs, &o, &o);
 }
 
-int luaK_numberK(FuncState *fs, double r) {
+size_t luaK_numberK(FuncState *fs, double r) {
   Value o;
   SET_NUMBER(&o, r);
   return addConstant(fs, &o, &o);
 }
 
-static int boolK(FuncState *fs, int b) {
+static size_t boolK(FuncState *fs, int b) {
   Value o;
   SET_BOOL(&o, b);
   return addConstant(fs, &o, &o);
 }
 
-static int nilK(FuncState *fs) {
+static size_t nilK(FuncState *fs) {
   Value k, v;
   SET_NIL(&v);
   /* cannot use nil as key; instead use table itself to represent nil */
@@ -372,7 +372,6 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
     luaK_concat(fs, &e->t, e->u.s.info); /* put this jump in `t' list */
   }
   if (hasjumps(e)) {
-    int final;         /* position after whole expression */
     int p_f = NO_JUMP; /* position of an eventual LOAD false */
     int p_t = NO_JUMP; /* position of an eventual LOAD true */
     if (need_value(fs, e->t) || need_value(fs, e->f)) {
@@ -381,7 +380,8 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
       p_t = emitLabel(fs, reg, 1, 0);
       luaK_patchtohere(fs, fj);
     }
-    final = luaK_getlabel(fs);
+    // Position after whole expression.
+    ptrdiff_t final = (ptrdiff_t)luaK_getlabel(fs);
     patchlistaux(fs, e->f, final, reg, p_f);
     patchlistaux(fs, e->t, final, reg, p_t);
   }
@@ -427,10 +427,12 @@ int luaK_exp2RK(FuncState *fs, ExprInfo *e) {
   case VTRUE:
   case VFALSE:
   case VNIL: {
-    if (fs->nk <= MAXINDEXRK) { /* constant fit in RK operand? */
-      e->u.s.info = (e->k == VNIL)    ? nilK(fs)
-                    : (e->k == VKNUM) ? luaK_numberK(fs, e->u.value)
-                                      : boolK(fs, (e->k == VTRUE));
+    // Constant fits in RK operand?
+    if (fs->nk <= MAXINDEXRK) {
+      // FIXME(anqur): Suspicious int conversion.
+      e->u.s.info = e->k == VNIL    ? (int)nilK(fs)
+                    : e->k == VKNUM ? (int)luaK_numberK(fs, e->u.value)
+                                    : (int)boolK(fs, (e->k == VTRUE));
       e->k = VK;
       return RKASK(e->u.s.info);
     } else {
@@ -819,7 +821,7 @@ void luaK_fixline(FuncState *fs, int line) {
   fs->f->lineInfo[fs->pc - 1] = line;
 }
 
-static int luaK_code(FuncState *fs, Instruction i, int line) {
+static size_t luaK_code(FuncState *fs, Instruction i, int line) {
   Prototype *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
@@ -835,14 +837,14 @@ static int luaK_code(FuncState *fs, Instruction i, int line) {
   return fs->pc++;
 }
 
-int luaK_codeABC(FuncState *fs, OpCode o, int a, int b, int c) {
+size_t luaK_codeABC(FuncState *fs, OpCode o, int a, int b, int c) {
   assert(getOpMode(o) == iABC);
   assert(getBMode(o) != OpArgN || b == 0);
   assert(getCMode(o) != OpArgN || c == 0);
   return luaK_code(fs, CREATE_ABC(o, a, b, c), fs->ls->lastline);
 }
 
-int luaK_codeABx(FuncState *fs, OpCode o, int a, unsigned int bc) {
+size_t luaK_codeABx(FuncState *fs, OpCode o, int a, unsigned int bc) {
   assert(getOpMode(o) == iABx || getOpMode(o) == iAsBx);
   assert(getCMode(o) == OpArgN);
   return luaK_code(fs, CREATE_ABx(o, a, bc), fs->ls->lastline);

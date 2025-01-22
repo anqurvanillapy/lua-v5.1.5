@@ -43,14 +43,14 @@ typedef enum OpKind {
 
 #define luaK_codeAsBx(fs, o, A, sBx) luaK_codeABx(fs, o, A, (sBx) + MAXARG_sBx)
 
-LUAI_FUNC int luaK_codeABx(FuncState *fs, OpCode o, int A, unsigned int Bx);
-LUAI_FUNC int luaK_codeABC(FuncState *fs, OpCode o, int A, int B, int C);
+LUAI_FUNC size_t luaK_codeABx(FuncState *fs, OpCode o, int A, unsigned int Bx);
+LUAI_FUNC size_t luaK_codeABC(FuncState *fs, OpCode o, int A, int B, int C);
 LUAI_FUNC void luaK_fixline(FuncState *fs, int line);
 LUAI_FUNC void luaK_nil(FuncState *fs, int from, int n);
 LUAI_FUNC void luaK_reserveregs(FuncState *fs, int n);
 LUAI_FUNC void luaK_checkstack(FuncState *fs, int n);
-LUAI_FUNC int Codegen_addString(FuncState *fs, String *s);
-LUAI_FUNC int luaK_numberK(FuncState *fs, double r);
+LUAI_FUNC size_t Codegen_addString(FuncState *fs, String *s);
+LUAI_FUNC size_t luaK_numberK(FuncState *fs, double r);
 LUAI_FUNC void Codegen_releaseVars(FuncState *fs, ExprInfo *e);
 LUAI_FUNC int luaK_exp2anyreg(FuncState *fs, ExprInfo *e);
 LUAI_FUNC void luaK_exp2nextreg(FuncState *fs, ExprInfo *e);
@@ -65,10 +65,10 @@ LUAI_FUNC void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e,
 LUAI_FUNC void Codegen_setReturn(FuncState *fs, ExprInfo *e);
 LUAI_FUNC int luaK_jump(FuncState *fs);
 LUAI_FUNC void luaK_ret(FuncState *fs, int first, int nret);
-LUAI_FUNC void luaK_patchlist(FuncState *fs, int list, int target);
+LUAI_FUNC void luaK_patchlist(FuncState *fs, int list, ptrdiff_t target);
 LUAI_FUNC void luaK_patchtohere(FuncState *fs, int list);
 LUAI_FUNC void luaK_concat(FuncState *fs, int *l1, int l2);
-LUAI_FUNC int luaK_getlabel(FuncState *fs);
+LUAI_FUNC size_t luaK_getlabel(FuncState *fs);
 LUAI_FUNC void Codegen_prefix(FuncState *fs, OpKind op, ExprInfo *a);
 LUAI_FUNC void luaK_infix(FuncState *fs, OpKind op, ExprInfo *v);
 LUAI_FUNC void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *v1,
