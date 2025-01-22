@@ -25,16 +25,18 @@ typedef enum ExprKind {
   VVARARG     /* info = instruction pc */
 } ExprKind;
 
+typedef union ExprVariant {
+  size_t constID;
+  struct {
+    int info;
+    int aux;
+  } s;
+  double value;
+} ExprVariant;
+
 typedef struct ExprInfo {
   ExprKind k;
-  union {
-    size_t constID;
-    struct {
-      int info;
-      int aux;
-    } s;
-    double value;
-  } u;
+  ExprVariant u;
   int t; /* patch list of `exit when true' */
   int f; /* patch list of `exit when false' */
 } ExprInfo;

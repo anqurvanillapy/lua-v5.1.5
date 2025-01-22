@@ -45,9 +45,8 @@ void luaK_nil(FuncState *fs, int from, int n) {
 
 int luaK_jump(FuncState *fs) {
   int jpc = fs->jpc; /* save list of jumps to here */
-  int j;
   fs->jpc = NO_JUMP;
-  j = luaK_codeAsBx(fs, OP_JMP, 0, NO_JUMP);
+  int j = luaK_codeAsBx(fs, OP_JMP, 0, NO_JUMP);
   luaK_concat(fs, &j, jpc); /* keep them on hold */
   return j;
 }
@@ -167,7 +166,8 @@ void luaK_patchtohere(FuncState *fs, int list) {
 void luaK_concat(FuncState *fs, int *l1, int l2) {
   if (l2 == NO_JUMP) {
     return;
-  } else if (*l1 == NO_JUMP) {
+  }
+  if (*l1 == NO_JUMP) {
     *l1 = l2;
   } else {
     int list = *l1;
@@ -313,10 +313,10 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
   }
 }
 
-static int emitLabel(FuncState *fs, int A, int b, int jump) {
+static ptrdiff_t emitLabel(FuncState *fs, int A, int b, int jump) {
   // Those instructions may be jump targets.
   luaK_getlabel(fs);
-  return luaK_codeABC(fs, OP_LOADBOOL, A, b, jump);
+  return (ptrdiff_t)luaK_codeABC(fs, OP_LOADBOOL, A, b, jump);
 }
 
 static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
@@ -367,8 +367,8 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
     luaK_concat(fs, &e->t, e->u.s.info); /* put this jump in `t' list */
   }
   if (hasjumps(e)) {
-    int p_f = NO_JUMP; /* position of an eventual LOAD false */
-    int p_t = NO_JUMP; /* position of an eventual LOAD true */
+    ptrdiff_t p_f = NO_JUMP; /* position of an eventual LOAD false */
+    ptrdiff_t p_t = NO_JUMP; /* position of an eventual LOAD true */
     if (need_value(fs, e->t) || need_value(fs, e->f)) {
       int fj = (e->k == VJMP) ? NO_JUMP : luaK_jump(fs);
       p_f = emitLabel(fs, reg, 0, 1);
@@ -515,15 +515,13 @@ void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
   case VTRUE:
     pc = NO_JUMP; /* always true; do nothing */
     break;
-  case VJMP: {
+  case VJMP:
     invertjump(fs, e);
     pc = e->u.s.info;
     break;
-  }
-  default: {
+  default:
     pc = jumponcond(fs, e, 0);
     break;
-  }
   }
   luaK_concat(fs, &e->f, pc); /* insert last jump in `f' list */
   luaK_patchtohere(fs, e->t);
@@ -814,14 +812,12 @@ static size_t luaK_code(FuncState *fs, Instruction i, int line) {
   Prototype *f = fs->f;
   dischargejpc(fs); /* `pc' will change */
   /* put new instruction in code array */
-  // FIXME(anqur): PC should be size_t.
-  Mem_growVec(fs->L, f->code, (size_t)fs->pc, f->codeSize, Instruction,
-              SAFE_INT_MAX, "code size overflow");
+  Mem_growVec(fs->L, f->code, fs->pc, f->codeSize, Instruction, SAFE_INT_MAX,
+              "code size overflow");
   f->code[fs->pc] = i;
   /* save corresponding line information */
-  // FIXME(anqur): PC should be size_t.
-  Mem_growVec(fs->L, f->lineInfo, (size_t)fs->pc, f->lineInfoSize, int,
-              SAFE_INT_MAX, "code size overflow");
+  Mem_growVec(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int, SAFE_INT_MAX,
+              "code size overflow");
   f->lineInfo[fs->pc] = line;
   return fs->pc++;
 }
