@@ -36,7 +36,7 @@ void StringPool_resize(lua_State *L, size_t newSize) {
     }
   }
 
-  Mem_freeArray(L, tb->buckets, tb->bucketsSize, String *);
+  Mem_freeVec(L, tb->buckets, tb->bucketsSize, String *);
   tb->bucketsSize = (int)newSize;
   tb->buckets = newHash;
 }

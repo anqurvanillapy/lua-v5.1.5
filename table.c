@@ -271,7 +271,7 @@ static void resize(lua_State *L, Table *t, int nasize, int nhsize) {
       SET_TABLE_TO_TABLE(L, Table_insert(L, t, key2tval(old)), gval(old));
   }
   if (nold != &dummy) {
-    Mem_freeArray(L, nold, twoto(oldhsize), Node); /* free old array */
+    Mem_freeVec(L, nold, twoto(oldhsize), Node); /* free old array */
   }
 }
 
@@ -314,9 +314,9 @@ Table *Table_new(lua_State *L, int narray, int nhash) {
 
 void Table_free(lua_State *L, Table *t) {
   if (t->node != &dummy) {
-    Mem_freeArray(L, t->node, sizenode(t), Node);
+    Mem_freeVec(L, t->node, sizenode(t), Node);
   }
-  Mem_freeArray(L, t->array, t->sizearray, Value);
+  Mem_freeVec(L, t->array, t->sizearray, Value);
   Mem_freePtr(L, t);
 }
 

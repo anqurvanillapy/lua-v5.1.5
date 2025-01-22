@@ -125,12 +125,12 @@ Prototype *luaF_newproto(lua_State *L) {
 }
 
 void luaF_freeproto(lua_State *L, Prototype *f) {
-  Mem_freeArray(L, f->code, f->codeSize, Instruction);
-  Mem_freeArray(L, f->inners, f->innersSize, Prototype *);
-  Mem_freeArray(L, f->constants, f->constantsSize, Value);
-  Mem_freeArray(L, f->lineInfo, f->lineInfoSize, int);
-  Mem_freeArray(L, f->locVars, f->locVarsSize, struct LocVar);
-  Mem_freeArray(L, f->upvalues, f->upvaluesSize, String *);
+  Mem_freeVec(L, f->code, f->codeSize, Instruction);
+  Mem_freeVec(L, f->inners, f->innersSize, Prototype *);
+  Mem_freeVec(L, f->constants, f->constantsSize, Value);
+  Mem_freeVec(L, f->lineInfo, f->lineInfoSize, int);
+  Mem_freeVec(L, f->locVars, f->locVarsSize, struct LocVar);
+  Mem_freeVec(L, f->upvalues, f->upvaluesSize, String *);
   Mem_freePtr(L, f);
 }
 

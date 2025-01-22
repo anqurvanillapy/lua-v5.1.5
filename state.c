@@ -42,8 +42,8 @@ static void initStack(lua_State *L1, lua_State *L) {
 }
 
 static void freeStack(lua_State *L, lua_State *L1) {
-  Mem_freeArray(L, L1->baseCI, L1->ciSize, CallInfo);
-  Mem_freeArray(L, L1->stack, L1->stackSize, Value);
+  Mem_freeVec(L, L1->baseCI, L1->ciSize, CallInfo);
+  Mem_freeVec(L, L1->stack, L1->stackSize, Value);
 }
 
 // Initialize the components with heap usage that might fail upon OoM.
@@ -89,7 +89,7 @@ static void closeState(lua_State *L) {
   luaC_freeall(L);
   assert(g->rootgc == LuaObjectToGCObject(L));
   assert(g->pool.itemsNum == 0);
-  Mem_freeArray(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
+  Mem_freeVec(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
   luaZ_freebuffer(L, &g->buff);
   freeStack(L, L);
   assert(g->totalbytes == sizeof(MainThread));

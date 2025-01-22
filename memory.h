@@ -22,15 +22,17 @@ LUAI_FUNC void *Mem_doGrowVec(lua_State *L, void *block, size_t *size,
 
 #define Mem_free(L, p, size) Mem_doRealloc(L, p, size, 0)
 #define Mem_freePtr(L, p) Mem_doRealloc(L, p, sizeof(*(p)), 0)
-#define Mem_freeArray(L, p, n, ty) Mem_reallocCnt(L, p, n, 0, sizeof(ty))
+#define Mem_freeVec(L, p, elemsNum, ty)                                        \
+  Mem_reallocCnt(L, p, elemsNum, 0, sizeof(ty))
 
 #define Mem_alloc(L, size) Mem_doRealloc(L, nullptr, 0, (size))
-#define Mem_new(L, t) Mem_alloc(L, sizeof(t))
-#define Mem_newVec(L, n, t) Mem_reallocCnt(L, nullptr, 0, n, sizeof(t))
+#define Mem_new(L, ty) Mem_alloc(L, sizeof(ty))
+#define Mem_newVec(L, elemsNum, ty)                                            \
+  Mem_reallocCnt(L, nullptr, 0, elemsNum, sizeof(ty))
 
-#define Mem_growVec(L, v, nelems, size, ty, limit, errMsg)                     \
+#define Mem_growVec(L, v, elemsNum, size, ty, limit, errMsg)                   \
   do {                                                                         \
-    if ((nelems) + 1 > (size)) {                                               \
+    if ((elemsNum) + 1 > (size)) {                                             \
       ((v) = Mem_doGrowVec(L, v, &(size), sizeof(ty), limit, errMsg));         \
     }                                                                          \
   } while (false)
