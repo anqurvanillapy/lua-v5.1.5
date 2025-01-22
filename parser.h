@@ -25,13 +25,23 @@ typedef enum ExprKind {
   VVARARG     /* info = instruction pc */
 } ExprKind;
 
+typedef struct ExprIndexer {
+  // Register of the target table.
+  int tableReg;
+  // Register of the index argument.
+  int idxReg;
+} ExprIndexer;
+
 typedef union ExprVariant {
   size_t constID;
+  ExprIndexer indexer;
+
+  double value;
+
   struct {
     int info;
     int aux;
   } s;
-  double value;
 } ExprVariant;
 
 typedef struct ExprInfo {

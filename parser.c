@@ -929,13 +929,15 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
   bool conflict = false;
   for (; lhs; lhs = lhs->prev) {
     if (lhs->v.k == VINDEXED) {
-      if (lhs->v.u.s.info == v->u.s.info) { /* conflict? */
+      if (lhs->v.u.indexer.tableReg == v->u.s.info) { /* conflict? */
         conflict = true;
-        lhs->v.u.s.info = extra; /* previous assignment will use safe copy */
+        /* previous assignment will use safe copy */
+        lhs->v.u.indexer.tableReg = extra;
       }
-      if (lhs->v.u.s.aux == v->u.s.info) { /* conflict? */
+      if (lhs->v.u.indexer.idxReg == v->u.s.info) { /* conflict? */
         conflict = true;
-        lhs->v.u.s.aux = extra; /* previous assignment will use safe copy */
+        /* previous assignment will use safe copy */
+        lhs->v.u.indexer.idxReg = extra;
       }
     }
   }

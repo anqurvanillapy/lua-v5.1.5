@@ -298,9 +298,10 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     e->k = VRELOCABLE;
     break;
   case VINDEXED:
-    freereg(fs, e->u.s.aux);
-    freereg(fs, e->u.s.info);
-    e->u.s.info = luaK_codeABC(fs, OP_GETTABLE, 0, e->u.s.info, e->u.s.aux);
+    freereg(fs, e->u.indexer.idxReg);
+    freereg(fs, e->u.indexer.tableReg);
+    e->u.s.info = luaK_codeABC(fs, OP_GETTABLE, 0, e->u.indexer.tableReg,
+                               e->u.indexer.idxReg);
     e->k = VRELOCABLE;
     break;
   case VVARARG:
@@ -463,7 +464,8 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
   }
   case VINDEXED: {
     int e = luaK_exp2RK(fs, ex);
-    luaK_codeABC(fs, OP_SETTABLE, var->u.s.info, var->u.s.aux, e);
+    luaK_codeABC(fs, OP_SETTABLE, var->u.indexer.tableReg,
+                 var->u.indexer.idxReg, e);
     break;
   }
   default: {
@@ -592,7 +594,7 @@ static void emitNot(FuncState *fs, ExprInfo *e) {
 }
 
 void luaK_indexed(FuncState *fs, ExprInfo *t, ExprInfo *k) {
-  t->u.s.aux = luaK_exp2RK(fs, k);
+  t->u.indexer.idxReg = luaK_exp2RK(fs, k);
   t->k = VINDEXED;
 }
 
