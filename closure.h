@@ -11,8 +11,8 @@
   (cast(int, sizeof(LClosure)) + cast(int, sizeof(Value *) * ((n) - 1)))
 
 LUAI_FUNC Prototype *luaF_newproto(lua_State *L);
-LUAI_FUNC Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e);
-LUAI_FUNC Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e);
+LUAI_FUNC Closure *luaF_newCclosure(lua_State *L, size_t nelems, Table *e);
+LUAI_FUNC Closure *luaF_newLclosure(lua_State *L, size_t nelems, Table *e);
 LUAI_FUNC Upvalue *luaF_newupval(lua_State *L);
 LUAI_FUNC Upvalue *luaF_findupval(lua_State *L, StackIndex level);
 LUAI_FUNC void luaF_close(lua_State *L, StackIndex level);

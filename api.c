@@ -51,8 +51,9 @@ static Value *indexToAddr(lua_State *L, int idx) {
   default: {
     Closure *func = CUR_FUNC(L);
     idx = LUA_GLOBALSINDEX - idx;
-    return idx <= func->c.header.nupvalues ? &func->c.upvalue[idx - 1]
-                                           : (Value *)&valueNil;
+    // FIXME(anqur): sus
+    return idx <= (int)func->c.header.nupvalues ? &func->c.upvalue[idx - 1]
+                                                : (Value *)&valueNil;
   }
   }
 }

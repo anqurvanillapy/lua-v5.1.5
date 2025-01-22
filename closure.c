@@ -10,21 +10,21 @@
 #include "object.h"
 #include "state.h"
 
-Closure *luaF_newCclosure(lua_State *L, int nelems, Table *e) {
-  Closure *c = cast(Closure *, Mem_alloc(L, sizeCclosure(nelems)));
+Closure *luaF_newCclosure(lua_State *L, size_t nelems, Table *e) {
+  Closure *c = Mem_alloc(L, sizeCclosure(nelems));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->c.header.isC = true;
   c->c.header.env = e;
-  c->c.header.nupvalues = (uint8_t)nelems;
+  c->c.header.nupvalues = nelems;
   return c;
 }
 
-Closure *luaF_newLclosure(lua_State *L, int nelems, Table *e) {
-  Closure *c = cast(Closure *, Mem_alloc(L, sizeLclosure(nelems)));
+Closure *luaF_newLclosure(lua_State *L, size_t nelems, Table *e) {
+  Closure *c = Mem_alloc(L, sizeLclosure(nelems));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->l.header.isC = false;
   c->l.header.env = e;
-  c->l.header.nupvalues = (uint8_t)nelems;
+  c->l.header.nupvalues = nelems;
   while (nelems--) {
     c->l.upvalues[nelems] = nullptr;
   }

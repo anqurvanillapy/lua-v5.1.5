@@ -253,7 +253,7 @@ typedef struct Upvalue {
 typedef struct ClosureHeader {
   GCHeader header;
   bool isC;
-  uint8_t nupvalues;
+  size_t nupvalues;
   GCObject *gclist;
   struct Table *env;
 } ClosureHeader;

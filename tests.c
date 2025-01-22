@@ -211,13 +211,13 @@ static void checkclosure(GlobalState *g, Closure *cl) {
   GCObject *clgc = LuaObjectToGCObject(cl);
   checkobjref(g, clgc, cl->l.header.env);
   if (cl->c.header.isC) {
-    for (int i = 0; i < cl->c.header.nupvalues; i++) {
+    for (size_t i = 0; i < cl->c.header.nupvalues; i++) {
       checkvalref(g, clgc, &cl->c.upvalue[i]);
     }
   } else {
     assert(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
     checkobjref(g, clgc, cl->l.p);
-    for (int i = 0; i < cl->l.header.nupvalues; i++) {
+    for (size_t i = 0; i < cl->l.header.nupvalues; i++) {
       if (cl->l.upvalues[i]) {
         assert(cl->l.upvalues[i]->header.tt == LUA_TYPE_UPVALUE);
         checkobjref(g, clgc, cl->l.upvalues[i]);

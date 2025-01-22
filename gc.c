@@ -218,15 +218,17 @@ static void traverseproto(GlobalState *g, Prototype *f) {
 static void traverseclosure(GlobalState *g, Closure *cl) {
   markobject(g, cl->c.header.env);
   if (cl->c.header.isC) {
-    int i;
-    for (i = 0; i < cl->c.header.nupvalues; i++) /* mark its upvalues */
+    for (size_t i = 0; i < cl->c.header.nupvalues; i++) {
+      // Mark its upvalues.
       markvalue(g, &cl->c.upvalue[i]);
+    }
   } else {
-    int i;
     assert(cl->l.header.nupvalues == cl->l.p->upvaluesNum);
     markobject(g, cl->l.p);
-    for (i = 0; i < cl->l.header.nupvalues; i++) /* mark its upvalues */
+    for (size_t i = 0; i < cl->l.header.nupvalues; i++) {
+      // Mark its upvalues.
       markobject(g, cl->l.upvalues[i]);
+    }
   }
 }
 
