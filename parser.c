@@ -216,7 +216,7 @@ static void markUpvalue(FuncState *fs, int level) {
 static int lookupVar(FuncState *fs, String *n, ExprInfo *var, bool isBaseLvl) {
   if (fs == nullptr) {
     // No more levels found, it's a new global variable.
-    exprSetInfo(var, VGLOBAL, NO_REG);
+    exprSetKind(var, VGLOBAL);
     return VGLOBAL;
   }
   int v = lookupLocalVar(fs, n);
@@ -241,7 +241,7 @@ static int lookupVar(FuncState *fs, String *n, ExprInfo *var, bool isBaseLvl) {
 static void singleVar(LexState *ls, ExprInfo *var) {
   String *name = checkName(ls);
   if (lookupVar(ls->fs, name, var, true) == VGLOBAL) {
-    var->u.s.info = Codegen_addString(ls->fs, name);
+    var->u.constID = Codegen_addString(ls->fs, name);
   }
 }
 

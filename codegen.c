@@ -294,7 +294,7 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     e->k = VRELOCABLE;
     break;
   case VGLOBAL:
-    e->u.s.info = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.s.info);
+    e->u.constID = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.constID);
     e->k = VRELOCABLE;
     break;
   case VINDEXED:
@@ -458,7 +458,7 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
   }
   case VGLOBAL: {
     int e = luaK_exp2anyreg(fs, ex);
-    luaK_codeABx(fs, OP_SETGLOBAL, e, var->u.s.info);
+    luaK_codeABx(fs, OP_SETGLOBAL, e, var->u.constID);
     break;
   }
   case VINDEXED: {

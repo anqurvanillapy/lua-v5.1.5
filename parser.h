@@ -14,9 +14,9 @@ typedef enum ExprKind {
   VFALSE,
   VK,
   VKNUM,
-  VLOCAL,     /* info = local register */
-  VUPVAL,     /* info = index of upvalue in `upvalues' */
-  VGLOBAL,    /* info = index of table; aux = index of global name in `k' */
+  VLOCAL, /* info = local register */
+  VUPVAL, /* info = index of upvalue in `upvalues' */
+  VGLOBAL,
   VINDEXED,   /* info = table register; aux = index register (or `k') */
   VJMP,       /* info = instruction pc */
   VRELOCABLE, /* info = instruction pc */
