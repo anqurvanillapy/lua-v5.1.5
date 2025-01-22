@@ -322,38 +322,33 @@ static int emitLabel(FuncState *fs, int A, int b, int jump) {
 static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
   Codegen_releaseVars(fs, e);
   switch (e->k) {
-  case VNIL: {
+  case VNIL:
     luaK_nil(fs, reg, 1);
     break;
-  }
   case VFALSE:
-  case VTRUE: {
+  case VTRUE:
     luaK_codeABC(fs, OP_LOADBOOL, reg, e->k == VTRUE, 0);
     break;
-  }
-  case VK: {
-    luaK_codeABx(fs, OP_LOADK, reg, e->u.s.info);
+  case VK:
+    luaK_codeABx(fs, OP_LOADK, reg, e->u.constID);
     break;
-  }
-  case VKNUM: {
+  case VKNUM:
     luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.value));
     break;
-  }
   case VRELOCABLE: {
     Instruction *pc = &getcode(fs, e);
     SETARG_A(*pc, reg);
     break;
   }
-  case VNONRELOC: {
+  case VNONRELOC:
     if (reg != e->u.s.info) {
       luaK_codeABC(fs, OP_MOVE, reg, e->u.s.info, 0);
     }
     break;
-  }
-  default: {
+  default:
+    // Nothing to do here.
     assert(e->k == VVOID || e->k == VJMP);
-    return; /* nothing to do... */
-  }
+    return;
   }
   e->u.s.info = reg;
   e->k = VNONRELOC;
@@ -426,26 +421,22 @@ int luaK_exp2RK(FuncState *fs, ExprInfo *e) {
   case VKNUM:
   case VTRUE:
   case VFALSE:
-  case VNIL: {
+  case VNIL:
     // Constant fits in RK operand?
     if (fs->nk <= MAXINDEXRK) {
-      // FIXME(anqur): Suspicious int conversion.
-      e->u.s.info = e->k == VNIL    ? (int)nilK(fs)
-                    : e->k == VKNUM ? (int)luaK_numberK(fs, e->u.value)
-                                    : (int)boolK(fs, (e->k == VTRUE));
+      e->u.constID = e->k == VNIL    ? nilK(fs)
+                     : e->k == VKNUM ? luaK_numberK(fs, e->u.value)
+                                     : boolK(fs, (e->k == VTRUE));
       e->k = VK;
-      return RKASK(e->u.s.info);
-    } else {
-      break;
+      return RKASK(e->u.constID);
     }
-  }
-  case VK: {
-    if (e->u.s.info <= MAXINDEXRK) { /* constant fit in argC? */
-      return RKASK(e->u.s.info);
-    } else {
-      break;
+    break;
+  case VK:
+    if (e->u.constID <= MAXINDEXRK) {
+      // Constant could fit in argC.
+      return RKASK(e->u.constID);
     }
-  }
+    break;
   default:
     break;
   }
@@ -521,10 +512,9 @@ void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
   switch (e->k) {
   case VK:
   case VKNUM:
-  case VTRUE: {
+  case VTRUE:
     pc = NO_JUMP; /* always true; do nothing */
     break;
-  }
   case VJMP: {
     invertjump(fs, e);
     pc = e->u.s.info;
@@ -590,9 +580,8 @@ static void emitNot(FuncState *fs, ExprInfo *e) {
     e->k = VRELOCABLE;
     break;
   }
-  default: {
+  default:
     assert(false);
-  }
   }
 
   {

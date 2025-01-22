@@ -12,7 +12,6 @@ typedef enum ExprKind {
   VNIL,
   VTRUE,
   VFALSE,
-  // info = index of constant in constant table.
   VK,
   VKNUM,
   VLOCAL,     /* info = local register */
@@ -29,6 +28,7 @@ typedef enum ExprKind {
 typedef struct ExprInfo {
   ExprKind k;
   union {
+    size_t constID;
     struct {
       int info;
       int aux;

@@ -122,7 +122,8 @@ static void numberLiteral(ExprInfo *e, double value) {
 }
 
 static void stringLiteral(LexState *ls, ExprInfo *e, String *s) {
-  exprSetInfo(e, VK, Codegen_addString(ls->fs, s));
+  exprSetKind(e, VK);
+  e->u.constID = Codegen_addString(ls->fs, s);
 }
 
 static void checkname(LexState *ls, ExprInfo *e) {
