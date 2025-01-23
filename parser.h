@@ -19,7 +19,7 @@ typedef enum ExprKind {
   VKNUM,
   // Use localReg.
   VLOCAL,
-  /* info = index of upvalue in `upvalues' */
+  // Use upvalueID.
   VUPVAL,
   // Use constID.
   VGLOBAL,
@@ -43,6 +43,7 @@ typedef union ExprVariant {
   double numValue;
   ExprIndexer indexer;
   int localReg;
+  size_t upvalueID;
 
   struct {
     int info;

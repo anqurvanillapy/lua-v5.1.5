@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "closure.h"
@@ -190,7 +191,9 @@ static size_t createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   luaC_objbarrier(fs->L, f, name);
   assert(v->k == VLOCAL || v->k == VUPVAL);
   fs->upvalues[f->upvaluesNum].k = v->k;
-  fs->upvalues[f->upvaluesNum].info = v->u.localReg;
+  // FIXME(anqur): Suspicious conversion.
+  fs->upvalues[f->upvaluesNum].info =
+      v->k == VLOCAL ? v->u.localReg : (int)v->u.upvalueID;
   return f->upvaluesNum++;
 }
 
@@ -234,7 +237,7 @@ static int lookupVar(FuncState *fs, String *n, ExprInfo *var, bool isBaseLvl) {
   if (lookupVar(fs->prev, n, var, false) == VGLOBAL) {
     return VGLOBAL;
   }
-  var->u.s.info = createUpvalue(fs, n, var);
+  var->u.upvalueID = createUpvalue(fs, n, var);
   var->k = VUPVAL;
   return VUPVAL;
 }

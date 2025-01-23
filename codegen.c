@@ -290,7 +290,8 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     e->k = VNONRELOC;
     break;
   case VUPVAL:
-    e->u.s.info = luaK_codeABC(fs, OP_GETUPVAL, 0, e->u.s.info, 0);
+    // FIXME(anqur): Suspicious conversion.
+    e->u.upvalueID = luaK_codeABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
     e->k = VRELOCABLE;
     break;
   case VGLOBAL:
@@ -454,7 +455,8 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
   }
   case VUPVAL: {
     int e = luaK_exp2anyreg(fs, ex);
-    luaK_codeABC(fs, OP_SETUPVAL, e, var->u.s.info, 0);
+    // FIXME(anqur): Suspicious conversion,
+    luaK_codeABC(fs, OP_SETUPVAL, e, (int)var->u.upvalueID, 0);
     break;
   }
   case VGLOBAL: {
