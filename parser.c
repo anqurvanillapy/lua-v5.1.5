@@ -245,7 +245,7 @@ static int lookupVar(FuncState *fs, String *n, ExprInfo *var, bool isBaseLvl) {
 static void singleVar(LexState *ls, ExprInfo *var) {
   String *name = checkName(ls);
   if (lookupVar(ls->fs, name, var, true) == VGLOBAL) {
-    var->u.constID = Codegen_addString(ls->fs, name);
+    var->u.globalID = Codegen_addString(ls->fs, name);
   }
 }
 

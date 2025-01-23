@@ -92,9 +92,8 @@ static Instruction *getjumpcontrol(FuncState *fs, int pc) {
   Instruction *pi = &fs->f->code[pc];
   if (pc >= 1 && testTMode(GET_OPCODE(*(pi - 1)))) {
     return pi - 1;
-  } else {
-    return pi;
   }
+  return pi;
 }
 
 /*
@@ -295,7 +294,7 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     e->k = VRELOCABLE;
     break;
   case VGLOBAL:
-    e->u.constID = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.constID);
+    e->u.globalID = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
     e->k = VRELOCABLE;
     break;
   case VINDEXED:
@@ -366,7 +365,8 @@ static void discharge2anyreg(FuncState *fs, ExprInfo *e) {
 static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
   discharge2reg(fs, e, reg);
   if (e->k == VJMP) {
-    luaK_concat(fs, &e->t, e->u.s.info); /* put this jump in `t' list */
+    // FIXME(anqur): Suspicious conversion.
+    luaK_concat(fs, &e->t, (int)e->u.jmpPC); /* put this jump in `t' list */
   }
   if (hasjumps(e)) {
     ptrdiff_t p_f = NO_JUMP; /* position of an eventual LOAD false */
@@ -461,7 +461,7 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
   }
   case VGLOBAL: {
     int e = luaK_exp2anyreg(fs, ex);
-    luaK_codeABx(fs, OP_SETGLOBAL, e, var->u.constID);
+    luaK_codeABx(fs, OP_SETGLOBAL, e, var->u.globalID);
     break;
   }
   case VINDEXED: {
@@ -490,7 +490,8 @@ void luaK_self(FuncState *fs, ExprInfo *e, ExprInfo *key) {
 }
 
 static void invertjump(FuncState *fs, ExprInfo *e) {
-  Instruction *pc = getjumpcontrol(fs, e->u.s.info);
+  // FIXME(anqur): Suspicious conversion.
+  Instruction *pc = getjumpcontrol(fs, (int)e->u.jmpPC);
   assert(testTMode(GET_OPCODE(*pc)) && GET_OPCODE(*pc) != OP_TESTSET &&
          GET_OPCODE(*pc) != OP_TEST);
   SETARG_A(*pc, !(GETARG_A(*pc)));
@@ -521,7 +522,8 @@ void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
     break;
   case VJMP:
     invertjump(fs, e);
-    pc = e->u.s.info;
+    // FIXME(anqur): Suspicious conversion.
+    pc = (int)e->u.jmpPC;
     break;
   default:
     pc = jumponcond(fs, e, 0);
@@ -542,7 +544,8 @@ static void luaK_goiffalse(FuncState *fs, ExprInfo *e) {
     break;
   }
   case VJMP: {
-    pc = e->u.s.info;
+    // FIXME(anqur): Suspicious conversion.
+    pc = (int)e->u.jmpPC;
     break;
   }
   default: {
@@ -674,13 +677,15 @@ static void codecomp(FuncState *fs, OpCode op, int cond, ExprInfo *e1,
   freeexp(fs, e2);
   freeexp(fs, e1);
   if (cond == 0 && op != OP_EQ) {
-    int temp; /* exchange args to replace by `<' or `<=' */
-    temp = o1;
-    o1 = o2;
-    o2 = temp; /* o1 <==> o2 */
+    /* exchange args to replace by `<' or `<=' */
+    {
+      int temp = o1;
+      o1 = o2;
+      o2 = temp;
+    }
     cond = 1;
   }
-  e1->u.s.info = condjump(fs, op, cond, o1, o2);
+  e1->u.jmpPC = condjump(fs, op, cond, o1, o2);
   e1->k = VJMP;
 }
 

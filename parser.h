@@ -21,10 +21,12 @@ typedef enum ExprKind {
   VLOCAL,
   // Use upvalueID.
   VUPVAL,
-  // Use constID.
+  // Use globalID.
   VGLOBAL,
-  VINDEXED,   /* info = table register; aux = index register (or `k') */
-  VJMP,       /* info = instruction pc */
+  // Use indexer.
+  VINDEXED,
+  // Use jmpPC.
+  VJMP,
   VRELOCABLE, /* info = instruction pc */
   VNONRELOC,  /* info = result register */
   VCALL,      /* info = instruction pc */
@@ -41,9 +43,11 @@ typedef struct ExprIndexer {
 typedef union ExprVariant {
   size_t constID;
   double numValue;
-  ExprIndexer indexer;
   int localReg;
   size_t upvalueID;
+  size_t globalID;
+  ExprIndexer indexer;
+  size_t jmpPC;
 
   struct {
     int info;
