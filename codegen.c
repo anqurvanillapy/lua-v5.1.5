@@ -256,20 +256,13 @@ static size_t nilK(FuncState *fs) {
 }
 
 void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
-  switch (e->k) {
-  case VCALL:
-    // Expression is an open function call?.
+  if (e->k == VCALL) {
+    // Expression is an open function call?
     SETARG_C(fs->f->code[e->u.s.info], resultsNum + 1);
-    return;
-
-  case VVARARG:
+  } else if (e->k == VVARARG) {
     SETARG_B(fs->f->code[e->u.s.info], resultsNum + 1);
     SETARG_A(fs->f->code[e->u.s.info], fs->freereg);
     luaK_reserveregs(fs, 1);
-    return;
-
-  default:
-    return;
   }
 }
 
