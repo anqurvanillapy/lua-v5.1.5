@@ -39,8 +39,6 @@ typedef enum OpKind {
   OPR_OR,
 } OpKind;
 
-#define getcode(fs, e) ((fs)->f->code[(e)->u.s.info])
-
 #define luaK_codeAsBx(fs, o, A, sBx) luaK_codeABx(fs, o, A, (sBx) + MAXARG_sBx)
 
 LUAI_FUNC size_t luaK_codeABx(FuncState *fs, OpCode o, int A, unsigned int Bx);

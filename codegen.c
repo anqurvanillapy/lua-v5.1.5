@@ -259,12 +259,12 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
   switch (e->k) {
   case VCALL:
     // Expression is an open function call?.
-    SETARG_C(getcode(fs, e), resultsNum + 1);
+    SETARG_C(fs->f->code[e->u.s.info], resultsNum + 1);
     return;
 
   case VVARARG:
-    SETARG_B(getcode(fs, e), resultsNum + 1);
-    SETARG_A(getcode(fs, e), fs->freereg);
+    SETARG_B(fs->f->code[e->u.s.info], resultsNum + 1);
+    SETARG_A(fs->f->code[e->u.s.info], fs->freereg);
     luaK_reserveregs(fs, 1);
     return;
 
@@ -276,9 +276,9 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
 void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
   if (e->k == VCALL) { /* expression is an open function call? */
     e->k = VNONRELOC;
-    e->u.s.info = GETARG_A(getcode(fs, e));
+    e->u.s.info = GETARG_A(fs->f->code[e->u.s.info]);
   } else if (e->k == VVARARG) {
-    SETARG_B(getcode(fs, e), 2);
+    SETARG_B(fs->f->code[e->u.s.info], 2);
     e->k = VRELOCABLE; /* can relocate its simple result */
   }
 }
@@ -337,7 +337,7 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.numValue));
     break;
   case VRELOCABLE: {
-    Instruction *pc = &getcode(fs, e);
+    Instruction *pc = &fs->f->code[e->u.s.info];
     SETARG_A(*pc, reg);
     break;
   }
@@ -499,7 +499,7 @@ static void invertjump(FuncState *fs, ExprInfo *e) {
 
 static int jumponcond(FuncState *fs, ExprInfo *e, int cond) {
   if (e->k == VRELOCABLE) {
-    Instruction ie = getcode(fs, e);
+    Instruction ie = fs->f->code[e->u.s.info];
     if (GET_OPCODE(ie) == OP_NOT) {
       fs->pc--; /* remove previous OP_NOT */
       return condjump(fs, OP_TEST, GETARG_B(ie), 0, !cond);
@@ -760,10 +760,11 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
   }
   case OPR_CONCAT: {
     luaK_exp2val(fs, e2);
-    if (e2->k == VRELOCABLE && GET_OPCODE(getcode(fs, e2)) == OP_CONCAT) {
-      assert(e1->u.s.info == GETARG_B(getcode(fs, e2)) - 1);
+    if (e2->k == VRELOCABLE &&
+        GET_OPCODE(fs->f->code[e2->u.s.info]) == OP_CONCAT) {
+      assert(e1->u.s.info == GETARG_B(fs->f->code[e2->u.s.info]) - 1);
       freeexp(fs, e1);
-      SETARG_B(getcode(fs, e2), e1->u.s.info);
+      SETARG_B(fs->f->code[e2->u.s.info], e1->u.s.info);
       e1->k = VRELOCABLE;
       e1->u.s.info = e2->u.s.info;
     } else {

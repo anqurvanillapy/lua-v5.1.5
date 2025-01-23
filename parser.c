@@ -1255,7 +1255,7 @@ static void exprStmt(LexState *ls) {
   primaryExpr(ls, &v.v);
   if (v.v.k == VCALL) {
     // Call stmt uses no results.
-    SETARG_C(getcode(ls->fs, &v.v), 1);
+    SETARG_C(ls->fs->f->code[v.v.u.s.info], 1);
   } else {
     v.prev = nullptr;
     assignment(ls, &v, 1);
@@ -1283,8 +1283,8 @@ static void returnStmt(LexState *ls) {
   if (HAS_MULTI_RETURN(e.k)) {
     Codegen_setReturnMulti(fs, &e, LUA_MULTRET);
     if (e.k == VCALL && nret == 1) {
-      SET_OPCODE(getcode(fs, &e), OP_TAILCALL);
-      assert(GETARG_A(getcode(fs, &e)) == fs->nactvar);
+      SET_OPCODE(fs->f->code[e.u.s.info], OP_TAILCALL);
+      assert(GETARG_A(fs->f->code[e.u.s.info]) == fs->nactvar);
     }
     luaK_ret(fs, fs->nactvar, LUA_MULTRET);
     return;
