@@ -108,7 +108,7 @@ static void exprSetInfo(ExprInfo *e, ExprKind k, int info) {
   e->f = NO_JUMP;
   e->t = NO_JUMP;
   e->k = k;
-  e->u.s.info = info;
+  e->u.info = info;
 }
 
 static void exprSetKind(ExprInfo *e, ExprKind k) {
@@ -173,7 +173,7 @@ static void removevars(LexState *ls, int tolevel) {
 static size_t createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   Prototype *f = fs->f;
   for (size_t i = 0; i < f->upvaluesNum; i++) {
-    if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.s.info) {
+    if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.info) {
       assert(f->upvalues[i] == name);
       return i;
     }
@@ -441,7 +441,7 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
   checkNext(ls, '=');
   rkkey = luaK_exp2RK(fs, &key);
   expr(ls, &val);
-  luaK_codeABC(fs, OP_SETTABLE, cc->t->u.s.info, rkkey, luaK_exp2RK(fs, &val));
+  luaK_codeABC(fs, OP_SETTABLE, cc->t->u.info, rkkey, luaK_exp2RK(fs, &val));
   fs->freereg = reg; /* free registers */
 }
 
@@ -452,7 +452,7 @@ static void closelistfield(FuncState *fs, struct ConsControl *cc) {
   luaK_exp2nextreg(fs, &cc->v);
   cc->v.k = VVOID;
   if (cc->tostore == LFIELDS_PER_FLUSH) {
-    luaK_setlist(fs, cc->t->u.s.info, cc->na, cc->tostore); /* flush */
+    luaK_setlist(fs, cc->t->u.info, cc->na, cc->tostore); /* flush */
     cc->tostore = 0; /* no more items pending */
   }
 }
@@ -470,7 +470,7 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
     if (cc->v.k != VVOID) {
       luaK_exp2nextreg(fs, &cc->v);
     }
-    luaK_setlist(fs, cc->t->u.s.info, cc->na, cc->tostore);
+    luaK_setlist(fs, cc->t->u.info, cc->na, cc->tostore);
   }
 }
 
@@ -635,7 +635,7 @@ static void arguments(LexState *ls, ExprInfo *f) {
     return;
   }
   assert(f->k == VNONRELOC);
-  int base = f->u.s.info;    /* base register for call */
+  int base = f->u.info;      /* base register for call */
   int nparams = LUA_MULTRET; /* open call */
   if (!HAS_MULTI_RETURN(args.k)) {
     if (args.k != VVOID) {

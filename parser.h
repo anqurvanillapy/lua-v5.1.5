@@ -54,10 +54,7 @@ typedef union ExprVariant {
   size_t jmpPC;
   size_t callPC;
 
-  struct {
-    int info;
-    int aux;
-  } s;
+  int info;
 } ExprVariant;
 
 typedef struct ExprInfo {

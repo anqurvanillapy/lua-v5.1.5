@@ -202,7 +202,7 @@ static void freereg(FuncState *fs, int reg) {
 
 static void freeexp(FuncState *fs, ExprInfo *e) {
   if (e->k == VNONRELOC) {
-    freereg(fs, e->u.s.info);
+    freereg(fs, e->u.info);
   }
 }
 
@@ -260,8 +260,8 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
     // Expression is an open function call?
     SETARG_C(fs->f->code[e->u.callPC], resultsNum + 1);
   } else if (e->k == VVARARG) {
-    SETARG_B(fs->f->code[e->u.s.info], resultsNum + 1);
-    SETARG_A(fs->f->code[e->u.s.info], fs->freereg);
+    SETARG_B(fs->f->code[e->u.info], resultsNum + 1);
+    SETARG_A(fs->f->code[e->u.info], fs->freereg);
     luaK_reserveregs(fs, 1);
   }
 }
@@ -269,9 +269,9 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
 void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
   if (e->k == VCALL) { /* expression is an open function call? */
     e->k = VNONRELOC;
-    e->u.s.info = GETARG_A(fs->f->code[e->u.callPC]);
+    e->u.info = GETARG_A(fs->f->code[e->u.callPC]);
   } else if (e->k == VVARARG) {
-    SETARG_B(fs->f->code[e->u.s.info], 2);
+    SETARG_B(fs->f->code[e->u.info], 2);
     e->k = VRELOCABLE; /* can relocate its simple result */
   }
 }
@@ -283,18 +283,18 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     break;
   case VUPVAL:
     // FIXME(anqur): Suspicious conversion.
-    e->u.s.info = luaK_codeABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
+    e->u.info = luaK_codeABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
     e->k = VRELOCABLE;
     break;
   case VGLOBAL:
-    e->u.s.info = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
+    e->u.info = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
     e->k = VRELOCABLE;
     break;
   case VINDEXED:
     freereg(fs, e->u.indexer.idxReg);
     freereg(fs, e->u.indexer.tableReg);
-    e->u.s.info = luaK_codeABC(fs, OP_GETTABLE, 0, e->u.indexer.tableReg,
-                               e->u.indexer.idxReg);
+    e->u.info = luaK_codeABC(fs, OP_GETTABLE, 0, e->u.indexer.tableReg,
+                             e->u.indexer.idxReg);
     e->k = VRELOCABLE;
     break;
   case VVARARG:
@@ -330,13 +330,13 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.numValue));
     break;
   case VRELOCABLE: {
-    Instruction *pc = &fs->f->code[e->u.s.info];
+    Instruction *pc = &fs->f->code[e->u.info];
     SETARG_A(*pc, reg);
     break;
   }
   case VNONRELOC:
-    if (reg != e->u.s.info) {
-      luaK_codeABC(fs, OP_MOVE, reg, e->u.s.info, 0);
+    if (reg != e->u.info) {
+      luaK_codeABC(fs, OP_MOVE, reg, e->u.info, 0);
     }
     break;
   default:
@@ -344,7 +344,7 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     assert(e->k == VVOID || e->k == VJMP);
     return;
   }
-  e->u.s.info = reg;
+  e->u.info = reg;
   e->k = VNONRELOC;
 }
 
@@ -376,7 +376,7 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
     patchlistaux(fs, e->t, final, reg, p_t);
   }
   e->f = e->t = NO_JUMP;
-  e->u.s.info = reg;
+  e->u.info = reg;
   e->k = VNONRELOC;
 }
 
@@ -391,15 +391,15 @@ int luaK_exp2anyreg(FuncState *fs, ExprInfo *e) {
   Codegen_releaseVars(fs, e);
   if (e->k == VNONRELOC) {
     if (!hasjumps(e)) {
-      return e->u.s.info; /* exp is already in a register */
+      return e->u.info; /* exp is already in a register */
     }
-    if (e->u.s.info >= fs->nactvar) { /* reg. is not a local? */
-      exp2reg(fs, e, e->u.s.info);    /* put value on it */
-      return e->u.s.info;
+    if (e->u.info >= fs->nactvar) { /* reg. is not a local? */
+      exp2reg(fs, e, e->u.info);    /* put value on it */
+      return e->u.info;
     }
   }
   luaK_exp2nextreg(fs, e); /* default */
-  return e->u.s.info;
+  return e->u.info;
 }
 
 void luaK_exp2val(FuncState *fs, ExprInfo *e) {
@@ -476,9 +476,9 @@ void luaK_self(FuncState *fs, ExprInfo *e, ExprInfo *key) {
   freeexp(fs, e);
   func = fs->freereg;
   luaK_reserveregs(fs, 2);
-  luaK_codeABC(fs, OP_SELF, func, e->u.s.info, luaK_exp2RK(fs, key));
+  luaK_codeABC(fs, OP_SELF, func, e->u.info, luaK_exp2RK(fs, key));
   freeexp(fs, key);
-  e->u.s.info = func;
+  e->u.info = func;
   e->k = VNONRELOC;
 }
 
@@ -492,7 +492,7 @@ static void invertjump(FuncState *fs, ExprInfo *e) {
 
 static int jumponcond(FuncState *fs, ExprInfo *e, int cond) {
   if (e->k == VRELOCABLE) {
-    Instruction ie = fs->f->code[e->u.s.info];
+    Instruction ie = fs->f->code[e->u.info];
     if (GET_OPCODE(ie) == OP_NOT) {
       fs->pc--; /* remove previous OP_NOT */
       return condjump(fs, OP_TEST, GETARG_B(ie), 0, !cond);
@@ -501,7 +501,7 @@ static int jumponcond(FuncState *fs, ExprInfo *e, int cond) {
   }
   discharge2anyreg(fs, e);
   freeexp(fs, e);
-  return condjump(fs, OP_TESTSET, NO_REG, e->u.s.info, cond);
+  return condjump(fs, OP_TESTSET, NO_REG, e->u.info, cond);
 }
 
 void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
@@ -574,7 +574,7 @@ static void emitNot(FuncState *fs, ExprInfo *e) {
   case VNONRELOC: {
     discharge2anyreg(fs, e);
     freeexp(fs, e);
-    e->u.s.info = luaK_codeABC(fs, OP_NOT, 0, e->u.s.info, 0);
+    e->u.info = luaK_codeABC(fs, OP_NOT, 0, e->u.info, 0);
     e->k = VRELOCABLE;
     break;
   }
@@ -659,7 +659,7 @@ static void emitArith(FuncState *fs, OpCode op, ExprInfo *e1, ExprInfo *e2) {
     freeexp(fs, e2);
     freeexp(fs, e1);
   }
-  e1->u.s.info = luaK_codeABC(fs, op, 0, o1, o2);
+  e1->u.info = luaK_codeABC(fs, op, 0, o1, o2);
   e1->k = VRELOCABLE;
 }
 
@@ -754,12 +754,12 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
   case OPR_CONCAT: {
     luaK_exp2val(fs, e2);
     if (e2->k == VRELOCABLE &&
-        GET_OPCODE(fs->f->code[e2->u.s.info]) == OP_CONCAT) {
-      assert(e1->u.s.info == GETARG_B(fs->f->code[e2->u.s.info]) - 1);
+        GET_OPCODE(fs->f->code[e2->u.info]) == OP_CONCAT) {
+      assert(e1->u.info == GETARG_B(fs->f->code[e2->u.info]) - 1);
       freeexp(fs, e1);
-      SETARG_B(fs->f->code[e2->u.s.info], e1->u.s.info);
+      SETARG_B(fs->f->code[e2->u.info], e1->u.info);
       e1->k = VRELOCABLE;
-      e1->u.s.info = e2->u.s.info;
+      e1->u.info = e2->u.info;
     } else {
       luaK_exp2nextreg(fs, e2); /* operand must be on the 'stack' */
       emitArith(fs, OP_CONCAT, e1, e2);
