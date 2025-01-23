@@ -118,7 +118,7 @@ static void exprSetKind(ExprInfo *e, ExprKind k) {
 
 static void numberLiteral(ExprInfo *e, double value) {
   exprSetKind(e, VKNUM);
-  e->u.value = value;
+  e->u.numValue = value;
 }
 
 static void stringLiteral(LexState *ls, ExprInfo *e, String *s) {
@@ -190,7 +190,7 @@ static size_t createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   luaC_objbarrier(fs->L, f, name);
   assert(v->k == VLOCAL || v->k == VUPVAL);
   fs->upvalues[f->upvaluesNum].k = v->k;
-  fs->upvalues[f->upvaluesNum].info = v->u.s.info;
+  fs->upvalues[f->upvaluesNum].info = v->u.localReg;
   return f->upvaluesNum++;
 }
 
@@ -221,7 +221,8 @@ static int lookupVar(FuncState *fs, String *n, ExprInfo *var, bool isBaseLvl) {
   }
   int v = lookupLocalVar(fs, n);
   if (v >= 0) {
-    exprSetInfo(var, VLOCAL, v);
+    exprSetKind(var, VLOCAL);
+    var->u.localReg = v;
     if (!isBaseLvl) {
       // This local variable will be used as an upvalue since it escapes the
       // base level.
@@ -929,12 +930,12 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
   bool conflict = false;
   for (; lhs; lhs = lhs->prev) {
     if (lhs->v.k == VINDEXED) {
-      if (lhs->v.u.indexer.tableReg == v->u.s.info) { /* conflict? */
+      if (lhs->v.u.indexer.tableReg == v->u.localReg) { /* conflict? */
         conflict = true;
         /* previous assignment will use safe copy */
         lhs->v.u.indexer.tableReg = extra;
       }
-      if (lhs->v.u.indexer.idxReg == v->u.s.info) { /* conflict? */
+      if (lhs->v.u.indexer.idxReg == v->u.localReg) { /* conflict? */
         conflict = true;
         /* previous assignment will use safe copy */
         lhs->v.u.indexer.idxReg = extra;
@@ -942,7 +943,8 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
     }
   }
   if (conflict) {
-    luaK_codeABC(fs, OP_MOVE, fs->freereg, v->u.s.info, 0); /* make copy */
+    // Make a copy.
+    luaK_codeABC(fs, OP_MOVE, fs->freereg, v->u.localReg, 0);
     luaK_reserveregs(fs, 1);
   }
 }
@@ -1185,7 +1187,8 @@ static void localFuncStmt(LexState *ls) {
   ExprInfo v, b;
   FuncState *fs = ls->fs;
   new_localvar(ls, checkName(ls), 0);
-  exprSetInfo(&v, VLOCAL, fs->freereg);
+  exprSetKind(&v, VLOCAL);
+  v.u.localReg = fs->freereg;
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
   body(ls, &b, false, ls->linenumber);

@@ -7,15 +7,21 @@
 #include "object.h"
 
 typedef enum ExprKind {
-  // No value.
+  // No extra info.
   VVOID,
   VNIL,
   VTRUE,
   VFALSE,
+
+  // Use constID.
   VK,
+  // Use numValue.
   VKNUM,
-  VLOCAL, /* info = local register */
-  VUPVAL, /* info = index of upvalue in `upvalues' */
+  // Use localReg.
+  VLOCAL,
+  /* info = index of upvalue in `upvalues' */
+  VUPVAL,
+  // Use constID.
   VGLOBAL,
   VINDEXED,   /* info = table register; aux = index register (or `k') */
   VJMP,       /* info = instruction pc */
@@ -34,9 +40,9 @@ typedef struct ExprIndexer {
 
 typedef union ExprVariant {
   size_t constID;
+  double numValue;
   ExprIndexer indexer;
-
-  double value;
+  int localReg;
 
   struct {
     int info;

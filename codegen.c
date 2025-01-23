@@ -334,7 +334,7 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     luaK_codeABx(fs, OP_LOADK, reg, e->u.constID);
     break;
   case VKNUM:
-    luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.value));
+    luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.numValue));
     break;
   case VRELOCABLE: {
     Instruction *pc = &getcode(fs, e);
@@ -426,7 +426,7 @@ int luaK_exp2RK(FuncState *fs, ExprInfo *e) {
     // Constant fits in RK operand?
     if (fs->nk <= MAXINDEXRK) {
       e->u.constID = e->k == VNIL    ? nilK(fs)
-                     : e->k == VKNUM ? luaK_numberK(fs, e->u.value)
+                     : e->k == VKNUM ? luaK_numberK(fs, e->u.numValue)
                                      : boolK(fs, (e->k == VTRUE));
       e->k = VK;
       return RKASK(e->u.constID);
@@ -449,7 +449,7 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
   switch (var->k) {
   case VLOCAL: {
     freeexp(fs, ex);
-    exp2reg(fs, ex, var->u.s.info);
+    exp2reg(fs, ex, var->u.localReg);
     return;
   }
   case VUPVAL: {
@@ -603,8 +603,8 @@ static bool constantFolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
     return false;
   }
   double r;
-  double v1 = e1->u.value;
-  double v2 = e2->u.value;
+  double v1 = e1->u.numValue;
+  double v2 = e2->u.numValue;
   switch (op) {
   case OP_ADD:
     r = luai_numadd(v1, v2);
@@ -644,7 +644,7 @@ static bool constantFolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
     // Do not attempt to produce NaNs.
     return false;
   }
-  e1->u.value = r;
+  e1->u.numValue = r;
   return true;
 }
 
@@ -683,7 +683,7 @@ static void codecomp(FuncState *fs, OpCode op, int cond, ExprInfo *e1,
 }
 
 void Codegen_prefix(FuncState *fs, OpKind op, ExprInfo *a) {
-  ExprInfo b = {.t = NO_JUMP, .f = NO_JUMP, .k = VKNUM, .u.value = 0};
+  ExprInfo b = {.t = NO_JUMP, .f = NO_JUMP, .k = VKNUM};
   switch (op) {
   case OPR_MINUS:
     if (!isNumeric(a)) {
