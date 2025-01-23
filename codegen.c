@@ -290,11 +290,11 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     break;
   case VUPVAL:
     // FIXME(anqur): Suspicious conversion.
-    e->u.upvalueID = luaK_codeABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
+    e->u.s.info = luaK_codeABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
     e->k = VRELOCABLE;
     break;
   case VGLOBAL:
-    e->u.globalID = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
+    e->u.s.info = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
     e->k = VRELOCABLE;
     break;
   case VINDEXED:
