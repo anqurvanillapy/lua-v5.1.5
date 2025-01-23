@@ -27,10 +27,14 @@ typedef enum ExprKind {
   VINDEXED,
   // Use jmpPC.
   VJMP,
-  VRELOCABLE, /* info = instruction pc */
-  VNONRELOC,  /* info = result register */
-  VCALL,      /* info = instruction pc */
-  VVARARG     /* info = instruction pc */
+  /* info = instruction pc */
+  VRELOCABLE,
+  /* info = result register */
+  VNONRELOC,
+  // Use callPC.
+  VCALL,
+  /* info = instruction pc */
+  VVARARG
 } ExprKind;
 
 typedef struct ExprIndexer {
@@ -48,6 +52,7 @@ typedef union ExprVariant {
   size_t globalID;
   ExprIndexer indexer;
   size_t jmpPC;
+  size_t callPC;
 
   struct {
     int info;

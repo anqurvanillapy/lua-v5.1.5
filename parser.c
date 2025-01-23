@@ -257,8 +257,8 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, ExprInfo *e) {
     if (extra < 0) {
       extra = 0;
     }
-    Codegen_setReturnMulti(fs, e,
-                           extra); /* last exp. provides the difference */
+    // Last expression provides the difference.
+    Codegen_setReturnMulti(fs, e, extra);
     if (extra > 1) {
       luaK_reserveregs(fs, extra - 1);
     }
@@ -463,7 +463,8 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
   }
   if (HAS_MULTI_RETURN(cc->v.k)) {
     Codegen_setReturnMulti(fs, &cc->v, LUA_MULTRET);
-    luaK_setlist(fs, cc->t->u.s.info, cc->na, LUA_MULTRET);
+    // FIXME(anqur): Might be VVARARG here; suspicious conversion.
+    luaK_setlist(fs, (int)cc->t->u.callPC, cc->na, LUA_MULTRET);
     cc->na--; /* do not count last expression (unknown number of elements) */
   } else {
     if (cc->v.k != VVOID) {
@@ -642,7 +643,8 @@ static void arguments(LexState *ls, ExprInfo *f) {
     }
     nparams = fs->freereg - (base + 1);
   }
-  exprSetInfo(f, VCALL, luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2));
+  exprSetKind(f, VCALL);
+  f->u.callPC = luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2);
   luaK_fixline(fs, line);
   fs->freereg = base + 1; /* call remove function and arguments and leaves
                              (unless changed) one result */
@@ -1255,7 +1257,7 @@ static void exprStmt(LexState *ls) {
   primaryExpr(ls, &v.v);
   if (v.v.k == VCALL) {
     // Call stmt uses no results.
-    SETARG_C(ls->fs->f->code[v.v.u.s.info], 1);
+    SETARG_C(ls->fs->f->code[v.v.u.callPC], 1);
   } else {
     v.prev = nullptr;
     assignment(ls, &v, 1);
@@ -1283,8 +1285,8 @@ static void returnStmt(LexState *ls) {
   if (HAS_MULTI_RETURN(e.k)) {
     Codegen_setReturnMulti(fs, &e, LUA_MULTRET);
     if (e.k == VCALL && nret == 1) {
-      SET_OPCODE(fs->f->code[e.u.s.info], OP_TAILCALL);
-      assert(GETARG_A(fs->f->code[e.u.s.info]) == fs->nactvar);
+      SET_OPCODE(fs->f->code[e.u.callPC], OP_TAILCALL);
+      assert(GETARG_A(fs->f->code[e.u.callPC]) == fs->nactvar);
     }
     luaK_ret(fs, fs->nactvar, LUA_MULTRET);
     return;

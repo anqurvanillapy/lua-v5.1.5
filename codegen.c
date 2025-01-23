@@ -258,7 +258,7 @@ static size_t nilK(FuncState *fs) {
 void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
   if (e->k == VCALL) {
     // Expression is an open function call?
-    SETARG_C(fs->f->code[e->u.s.info], resultsNum + 1);
+    SETARG_C(fs->f->code[e->u.callPC], resultsNum + 1);
   } else if (e->k == VVARARG) {
     SETARG_B(fs->f->code[e->u.s.info], resultsNum + 1);
     SETARG_A(fs->f->code[e->u.s.info], fs->freereg);
@@ -269,7 +269,7 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
 void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
   if (e->k == VCALL) { /* expression is an open function call? */
     e->k = VNONRELOC;
-    e->u.s.info = GETARG_A(fs->f->code[e->u.s.info]);
+    e->u.s.info = GETARG_A(fs->f->code[e->u.callPC]);
   } else if (e->k == VVARARG) {
     SETARG_B(fs->f->code[e->u.s.info], 2);
     e->k = VRELOCABLE; /* can relocate its simple result */
