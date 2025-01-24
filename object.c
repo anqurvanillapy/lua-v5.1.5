@@ -65,23 +65,22 @@ int luaO_log2(unsigned int x) {
   return l + log_2[x];
 }
 
-int luaO_rawequalObj(const Value *t1, const Value *t2) {
+bool Object_rawEqual(const Value *t1, const Value *t2) {
   if (GET_TYPE(t1) != GET_TYPE(t2)) {
-    return 0;
-  } else {
-    switch (GET_TYPE(t1)) {
-    case LUA_TYPE_NIL:
-      return 1;
-    case LUA_TYPE_NUMBER:
-      return NUMBER_VALUE(t1) == NUMBER_VALUE(t2);
-    case LUA_TYPE_BOOLEAN:
-      return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* boolean true must be 1 !! */
-    case LUA_TYPE_PTR:
-      return PTR_VALUE(t1) == PTR_VALUE(t2);
-    default:
-      assert(IS_COLLECTABLE(t1));
-      return GC_VALUE(t1) == GC_VALUE(t2);
-    }
+    return false;
+  }
+  switch (GET_TYPE(t1)) {
+  case LUA_TYPE_NIL:
+    return true;
+  case LUA_TYPE_NUMBER:
+    return NUMBER_VALUE(t1) == NUMBER_VALUE(t2);
+  case LUA_TYPE_BOOLEAN:
+    return BOOL_VALUE(t1) == BOOL_VALUE(t2);
+  case LUA_TYPE_PTR:
+    return PTR_VALUE(t1) == PTR_VALUE(t2);
+  default:
+    assert(IS_COLLECTABLE(t1));
+    return GC_VALUE(t1) == GC_VALUE(t2);
   }
 }
 

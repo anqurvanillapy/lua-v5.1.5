@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <string.h>
+
 #include "gc.h"
 #include "object.h"
 #include "state.h"

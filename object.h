@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <math.h>
 #include <stdarg.h>
 
 #include "limits.h"
@@ -316,6 +317,9 @@ typedef struct Table {
 #define lmod(s, size)                                                          \
   (CHECK_EXPR((size & (size - 1)) == 0, (int)((s) & ((size) - 1))))
 
+// Modulo operator for Lua numbers, not acting like the standard `fmod`.
+#define NUM_MOD(a, b) ((a) - floor((a) / (b)) * (b))
+
 #define twoto(x) (1 << (x))
 #define sizenode(t) (twoto((t)->lsizenode))
 
@@ -326,7 +330,7 @@ LUAI_DATA const Value valueNil;
 LUAI_FUNC int luaO_log2(unsigned int x);
 LUAI_FUNC int luaO_int2fb(unsigned int x);
 LUAI_FUNC int luaO_fb2int(int x);
-LUAI_FUNC int luaO_rawequalObj(const Value *t1, const Value *t2);
+LUAI_FUNC bool Object_rawEqual(const Value *t1, const Value *t2);
 LUAI_FUNC int luaO_str2d(const char *s, double *result);
 LUAI_FUNC const char *luaO_pushvfstring(lua_State *L, const char *fmt,
                                         va_list argp);

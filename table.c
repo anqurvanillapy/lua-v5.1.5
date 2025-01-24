@@ -109,7 +109,7 @@ static int findindex(lua_State *L, Table *t, StackIndex key) {
   Node *n = getBucket(t, key);
   do {
     /* key may be dead already, but it is ok to use it in `next' */
-    if (luaO_rawequalObj(key2tval(n), key) ||
+    if (Object_rawEqual(key2tval(n), key) ||
         (GET_TYPE(gkey(n)) == LUA_TYPE_DEAD && IS_COLLECTABLE(key) &&
          GC_VALUE(gkey(n)) == GC_VALUE(key))) {
       i = (int)(n - gnode(t, 0)); /* key index in hash table */
@@ -412,7 +412,7 @@ const Value *Table_get(Table *t, const Value *key) {
   default: {
     Node *n = getBucket(t, key);
     do { /* check whether 'key' is somewhere in the chain */
-      if (luaO_rawequalObj(key2tval(n), key)) {
+      if (Object_rawEqual(key2tval(n), key)) {
         return gval(n); /* that's it */
       }
       n = gnext(n);

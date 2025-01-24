@@ -1,7 +1,4 @@
 #include <stdio.h>
-#include <string.h>
-
-#include "lua.h"
 
 #include "closure.h"
 #include "debug.h"
@@ -169,7 +166,7 @@ static const Value *get_compTM(lua_State *L, Table *mt1, Table *mt2,
   if (tm2 == nullptr) {
     return nullptr; /* no metamethod */
   }
-  if (luaO_rawequalObj(tm1, tm2)) { /* same metamethods? */
+  if (Object_rawEqual(tm1, tm2)) { /* same metamethods? */
     return tm1;
   }
   return nullptr;
@@ -183,7 +180,7 @@ static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
     return -1; /* no metamethod? */
   }
   tm2 = luaT_gettmbyobj(L, p2, event);
-  if (!luaO_rawequalObj(tm1, tm2)) { /* different metamethods? */
+  if (!Object_rawEqual(tm1, tm2)) { /* different metamethods? */
     return -1;
   }
   callTMres(L, L->top, tm1, p1, p2);
@@ -352,7 +349,7 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
       SET_NUMBER(ra, nb / nc);
       break;
     case TM_MOD:
-      SET_NUMBER(ra, luai_nummod(nb, nc));
+      SET_NUMBER(ra, NUM_MOD(nb, nc));
       break;
     case TM_POW:
       SET_NUMBER(ra, pow(nb, nc));
@@ -534,30 +531,24 @@ reentry: /* entry point */
       Protect(luaV_gettable(L, rb, RKC(i), ra));
       continue;
     }
-    case OP_ADD: {
+    case OP_ADD:
       ARITH_OP_INFIX(+, TM_ADD);
       continue;
-    }
-    case OP_SUB: {
+    case OP_SUB:
       ARITH_OP_INFIX(-, TM_SUB);
       continue;
-    }
-    case OP_MUL: {
+    case OP_MUL:
       ARITH_OP_INFIX(*, TM_MUL);
       continue;
-    }
-    case OP_DIV: {
+    case OP_DIV:
       ARITH_OP_INFIX(/, TM_DIV);
       continue;
-    }
-    case OP_MOD: {
-      ARITH_OP(luai_nummod, TM_MOD);
+    case OP_MOD:
+      ARITH_OP(NUM_MOD, TM_MOD);
       continue;
-    }
-    case OP_POW: {
+    case OP_POW:
       ARITH_OP(pow, TM_POW);
       continue;
-    }
     case OP_UNM: {
       Value *rb = RB(i);
       if (IS_TYPE_NUMBER(rb)) {

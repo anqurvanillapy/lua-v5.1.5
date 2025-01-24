@@ -217,7 +217,7 @@ static size_t addConstant(FuncState *fs, Value *k, Value *v) {
 
   if (IS_TYPE_NUMBER(idx)) {
     size_t i = NUMBER_VALUE(idx);
-    assert(luaO_rawequalObj(&f->constants[i], v));
+    assert(Object_rawEqual(&f->constants[i], v));
     return i;
   }
 
@@ -640,7 +640,7 @@ static bool constantFolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
       // Do not attempt to divide by 0.
       return 0;
     }
-    r = luai_nummod(v1, v2);
+    r = NUM_MOD(v1, v2);
     break;
   case OP_POW:
     r = pow(v1, v2);

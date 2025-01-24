@@ -228,7 +228,7 @@ LUA_API int lua_isuserdata(lua_State *L, int idx) {
 LUA_API int lua_rawequal(lua_State *L, int index1, int index2) {
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  return (o1 == &valueNil || o2 == &valueNil) ? 0 : luaO_rawequalObj(o1, o2);
+  return (o1 == &valueNil || o2 == &valueNil) ? 0 : Object_rawEqual(o1, o2);
 }
 
 LUA_API int lua_equal(lua_State *L, int index1, int index2) {
