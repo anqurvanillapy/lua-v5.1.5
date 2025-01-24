@@ -260,8 +260,9 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
     // Expression is an open function call?
     SETARG_C(fs->f->code[e->u.callPC], resultsNum + 1);
   } else if (e->k == VVARARG) {
-    SETARG_B(fs->f->code[e->u.info], resultsNum + 1);
-    SETARG_A(fs->f->code[e->u.info], fs->freereg);
+    const size_t pc = e->u.varargCallPC;
+    SETARG_B(fs->f->code[pc], resultsNum + 1);
+    SETARG_A(fs->f->code[pc], fs->freereg);
     luaK_reserveregs(fs, 1);
   }
 }
@@ -271,7 +272,7 @@ void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
     e->k = VNONRELOC;
     e->u.info = GETARG_A(fs->f->code[e->u.callPC]);
   } else if (e->k == VVARARG) {
-    SETARG_B(fs->f->code[e->u.info], 2);
+    SETARG_B(fs->f->code[e->u.varargCallPC], 2);
     e->k = VRELOCABLE; /* can relocate its simple result */
   }
 }

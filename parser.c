@@ -463,8 +463,11 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
   }
   if (HAS_MULTI_RETURN(cc->v.k)) {
     Codegen_setReturnMulti(fs, &cc->v, LUA_MULTRET);
-    // FIXME(anqur): Might be VVARARG here; suspicious conversion.
-    luaK_setlist(fs, (int)cc->t->u.callPC, cc->na, LUA_MULTRET);
+    // FIXME(anqur): Suspicious conversion.
+    luaK_setlist(fs,
+                 cc->v.k == VCALL ? (int)cc->t->u.callPC
+                                  : (int)cc->t->u.varargCallPC,
+                 cc->na, LUA_MULTRET);
     cc->na--; /* do not count last expression (unknown number of elements) */
   } else {
     if (cc->v.k != VVOID) {
@@ -744,16 +747,16 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
   case TK_FALSE:
     exprSetKind(v, VFALSE);
     break;
-  case TK_DOTS: {
+  case TK_DOTS:
     // Vararg.
     FuncState *fs = ls->fs;
     if (!fs->f->varargMode) {
       Lex_throw(ls, "cannot use '...' outside a vararg function");
     }
     fs->f->varargMode &= ~VARARG_NEEDS_ARG; /* don't need 'arg' */
-    exprSetInfo(v, VVARARG, luaK_codeABC(fs, OP_VARARG, 0, 1, 0));
+    exprSetKind(v, VVARARG);
+    v->u.varargCallPC = luaK_codeABC(fs, OP_VARARG, 0, 1, 0);
     break;
-  }
   case '{':
     // Constructor.
     constructor(ls, v);

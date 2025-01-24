@@ -33,7 +33,7 @@ typedef enum ExprKind {
   VNONRELOC,
   // Use callPC.
   VCALL,
-  /* info = instruction pc */
+  // Use varargCallPC.
   VVARARG
 } ExprKind;
 
@@ -53,6 +53,7 @@ typedef union ExprVariant {
   ExprIndexer indexer;
   size_t jmpPC;
   size_t callPC;
+  size_t varargCallPC;
 
   int info;
 } ExprVariant;
