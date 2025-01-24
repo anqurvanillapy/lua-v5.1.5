@@ -14,7 +14,7 @@
 #include "state.h"
 #include "table.h"
 
-#define HAS_MULTI_RETURN(k) ((k) == VCALL || (k) == VVARARG)
+#define HAS_MULTI_RETURN(k) ((k) == EXPR_CALL || (k) == EXPR_VARARG_CALL)
 
 #define GET_LOCAL_VAR(fs, i) ((fs)->f->locVars[(fs)->actvar[i]])
 
@@ -111,12 +111,12 @@ static void exprSetKind(ExprInfo *e, ExprKind k) {
 }
 
 static void numberLiteral(ExprInfo *e, double value) {
-  exprSetKind(e, VKNUM);
+  exprSetKind(e, EXPR_CONST_NUM);
   e->u.numValue = value;
 }
 
 static void stringLiteral(LexState *ls, ExprInfo *e, String *s) {
-  exprSetKind(e, VK);
+  exprSetKind(e, EXPR_CONST_STR);
   e->u.constID = Codegen_addString(ls->fs, s);
 }
 
@@ -165,12 +165,12 @@ static void removevars(LexState *ls, int tolevel) {
 
 static UpvalueInfo exprToUpvalueInfo(const ExprInfo *e) {
   switch (e->k) {
-  case VLOCAL:
+  case EXPR_LOCAL:
     return (UpvalueInfo){
         .k = e->k,
         .v = (UpvalueVariant){.localReg = e->u.localReg},
     };
-  case VUPVAL:
+  case EXPR_UPVALUE:
     return (UpvalueInfo){
         .k = e->k,
         .v = (UpvalueVariant){.upvalueID = e->u.upvalueID},
@@ -181,11 +181,11 @@ static UpvalueInfo exprToUpvalueInfo(const ExprInfo *e) {
 }
 
 static bool upvalueEqual(const UpvalueInfo *lhs, const UpvalueInfo *rhs) {
-  if (lhs->k == VLOCAL && rhs->k == VLOCAL &&
+  if (lhs->k == EXPR_LOCAL && rhs->k == EXPR_LOCAL &&
       lhs->v.localReg == rhs->v.localReg) {
     return true;
   }
-  if (lhs->k == VUPVAL && rhs->k == VUPVAL &&
+  if (lhs->k == EXPR_UPVALUE && rhs->k == EXPR_UPVALUE &&
       lhs->v.upvalueID == rhs->v.upvalueID) {
     return true;
   }
@@ -193,7 +193,7 @@ static bool upvalueEqual(const UpvalueInfo *lhs, const UpvalueInfo *rhs) {
 }
 
 static size_t createUpvalue(FuncState *fs, String *name, const ExprInfo *v) {
-  assert(v->k == VLOCAL || v->k == VUPVAL);
+  assert(v->k == EXPR_LOCAL || v->k == EXPR_UPVALUE);
   UpvalueInfo rhs = exprToUpvalueInfo(v);
   Prototype *f = fs->f;
   for (size_t i = 0; i < f->upvaluesNum; i++) {
@@ -239,32 +239,32 @@ static void markUpvalue(FuncState *fs, int level) {
 static int lookupVar(FuncState *fs, String *n, ExprInfo *var, bool isBaseLvl) {
   if (fs == nullptr) {
     // No more levels found, it's a new global variable.
-    exprSetKind(var, VGLOBAL);
-    return VGLOBAL;
+    exprSetKind(var, EXPR_GLOBAL);
+    return EXPR_GLOBAL;
   }
   int v = lookupLocalVar(fs, n);
   if (v >= 0) {
-    exprSetKind(var, VLOCAL);
+    exprSetKind(var, EXPR_LOCAL);
     var->u.localReg = v;
     if (!isBaseLvl) {
       // This local variable will be used as an upvalue since it escapes the
       // base level.
       markUpvalue(fs, v);
     }
-    return VLOCAL;
+    return EXPR_LOCAL;
   }
   // Not found at the current level, try the upper one.
-  if (lookupVar(fs->prev, n, var, false) == VGLOBAL) {
-    return VGLOBAL;
+  if (lookupVar(fs->prev, n, var, false) == EXPR_GLOBAL) {
+    return EXPR_GLOBAL;
   }
   var->u.upvalueID = createUpvalue(fs, n, var);
-  var->k = VUPVAL;
-  return VUPVAL;
+  var->k = EXPR_UPVALUE;
+  return EXPR_UPVALUE;
 }
 
 static void singleVar(LexState *ls, ExprInfo *var) {
   String *name = checkName(ls);
-  if (lookupVar(ls->fs, name, var, true) == VGLOBAL) {
+  if (lookupVar(ls->fs, name, var, true) == EXPR_GLOBAL) {
     var->u.globalID = Codegen_addString(ls->fs, name);
   }
 }
@@ -283,7 +283,7 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, ExprInfo *e) {
       luaK_reserveregs(fs, extra - 1);
     }
   } else {
-    if (e->k != VVOID) {
+    if (e->k != EXPR_VOID) {
       luaK_exp2nextreg(fs, e); /* close last expression */
     }
     if (extra > 0) {
@@ -338,10 +338,10 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   }
   f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
-  exprSetKind(v, VRELOCABLE);
+  exprSetKind(v, EXPR_RELOC);
   v->u.relocatePC = luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1);
   for (size_t i = 0; i < func->f->upvaluesNum; i++) {
-    if (func->upvalues[i].k == VLOCAL) {
+    if (func->upvalues[i].k == EXPR_LOCAL) {
       luaK_codeABC(fs, OP_MOVE, 0, func->upvalues[i].v.localReg, 0);
     } else {
       // FIXME(anqur): Suspicious conversion.
@@ -466,20 +466,20 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
   checkNext(ls, '=');
   rkkey = luaK_exp2RK(fs, &key);
   expr(ls, &val);
-  assert(cc->t->k == VNONRELOC);
+  assert(cc->t->k == EXPR_NON_RELOC);
   luaK_codeABC(fs, OP_SETTABLE, cc->t->u.nonRelocReg, rkkey,
                luaK_exp2RK(fs, &val));
   fs->freereg = reg; /* free registers */
 }
 
 static void closelistfield(FuncState *fs, struct ConsControl *cc) {
-  if (cc->v.k == VVOID) {
+  if (cc->v.k == EXPR_VOID) {
     return; /* there is no list item */
   }
   luaK_exp2nextreg(fs, &cc->v);
-  cc->v.k = VVOID;
+  cc->v.k = EXPR_VOID;
   if (cc->tostore == LFIELDS_PER_FLUSH) {
-    assert(cc->t->k == VNONRELOC);
+    assert(cc->t->k == EXPR_NON_RELOC);
     luaK_setlist(fs, cc->t->u.nonRelocReg, cc->na, cc->tostore); /* flush */
     cc->tostore = 0; /* no more items pending */
   }
@@ -493,15 +493,15 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
     Codegen_setReturnMulti(fs, &cc->v, LUA_MULTRET);
     // FIXME(anqur): Suspicious conversion.
     luaK_setlist(fs,
-                 cc->v.k == VCALL ? (int)cc->t->u.callPC
-                                  : (int)cc->t->u.varargCallPC,
+                 cc->v.k == EXPR_CALL ? (int)cc->t->u.callPC
+                                      : (int)cc->t->u.varargCallPC,
                  cc->na, LUA_MULTRET);
     cc->na--; /* do not count last expression (unknown number of elements) */
   } else {
-    if (cc->v.k != VVOID) {
+    if (cc->v.k != EXPR_VOID) {
       luaK_exp2nextreg(fs, &cc->v);
     }
-    assert(cc->t->k == VNONRELOC);
+    assert(cc->t->k == EXPR_NON_RELOC);
     luaK_setlist(fs, cc->t->u.nonRelocReg, cc->na, cc->tostore);
   }
 }
@@ -521,13 +521,13 @@ static void constructor(LexState *ls, ExprInfo *t) {
   struct ConsControl cc;
   cc.na = cc.nh = cc.tostore = 0;
   cc.t = t;
-  exprSetKind(t, VRELOCABLE);
+  exprSetKind(t, EXPR_RELOC);
   t->u.relocatePC = pc;
-  exprSetKind(&cc.v, VVOID);   /* no value (yet) */
-  luaK_exp2nextreg(ls->fs, t); /* fix it at stack top (for gc) */
+  exprSetKind(&cc.v, EXPR_VOID); /* no value (yet) */
+  luaK_exp2nextreg(ls->fs, t);   /* fix it at stack top (for gc) */
   checkNext(ls, '{');
   do {
-    assert(cc.v.k == VVOID || cc.tostore > 0);
+    assert(cc.v.k == EXPR_VOID || cc.tostore > 0);
     if (ls->t.token == '}') {
       break;
     }
@@ -649,7 +649,7 @@ static void arguments(LexState *ls, ExprInfo *f) {
     }
     luaX_next(ls);
     if (ls->t.token == ')') { /* arg list is empty? */
-      args.k = VVOID;
+      args.k = EXPR_VOID;
     } else {
       exprList1(ls, &args);
       Codegen_setReturnMulti(fs, &args, LUA_MULTRET);
@@ -667,16 +667,16 @@ static void arguments(LexState *ls, ExprInfo *f) {
     Lex_throw(ls, "function arguments expected");
     return;
   }
-  assert(f->k == VNONRELOC);
+  assert(f->k == EXPR_NON_RELOC);
   int base = f->u.nonRelocReg; /* base register for call */
   int nparams = LUA_MULTRET;   /* open call */
   if (!HAS_MULTI_RETURN(args.k)) {
-    if (args.k != VVOID) {
+    if (args.k != EXPR_VOID) {
       luaK_exp2nextreg(fs, &args); /* close last argument */
     }
     nparams = fs->freereg - (base + 1);
   }
-  exprSetKind(f, VCALL);
+  exprSetKind(f, EXPR_CALL);
   f->u.callPC = luaK_codeABC(fs, OP_CALL, base, nparams + 1, 2);
   luaK_fixline(fs, line);
   fs->freereg = base + 1; /* call remove function and arguments and leaves
@@ -769,13 +769,13 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
     stringLiteral(ls, v, ls->t.literal.str);
     break;
   case TK_NIL:
-    exprSetKind(v, VNIL);
+    exprSetKind(v, EXPR_NIL);
     break;
   case TK_TRUE:
-    exprSetKind(v, VTRUE);
+    exprSetKind(v, EXPR_TRUE);
     break;
   case TK_FALSE:
-    exprSetKind(v, VFALSE);
+    exprSetKind(v, EXPR_FALSE);
     break;
   case TK_DOTS:
     // Vararg.
@@ -784,7 +784,7 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
       Lex_throw(ls, "cannot use '...' outside a vararg function");
     }
     fs->f->varargMode &= ~VARARG_NEEDS_ARG; /* don't need 'arg' */
-    exprSetKind(v, VVARARG);
+    exprSetKind(v, EXPR_VARARG_CALL);
     v->u.varargCallPC = luaK_codeABC(fs, OP_VARARG, 0, 1, 0);
     break;
   case '{':
@@ -966,9 +966,9 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
   FuncState *fs = ls->fs;
   int extra = fs->freereg; /* eventual position to save local variable */
   bool conflict = false;
-  assert(v->k == VLOCAL);
+  assert(v->k == EXPR_LOCAL);
   for (; lhs; lhs = lhs->prev) {
-    if (lhs->v.k == VINDEXED) {
+    if (lhs->v.k == EXPR_INDEXED) {
       if (lhs->v.u.indexer.tableReg == v->u.localReg) { /* conflict? */
         conflict = true;
         /* previous assignment will use safe copy */
@@ -990,14 +990,14 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
 
 static void assignment(LexState *ls, LExpr *lh, int nvars) {
   ExprInfo e;
-  if (!(VLOCAL <= lh->v.k && lh->v.k <= VINDEXED)) {
+  if (!(EXPR_LOCAL <= lh->v.k && lh->v.k <= EXPR_INDEXED)) {
     Lex_throw(ls, "syntax error");
   }
   if (testNext(ls, ',')) { /* assignment -> `,' primaryExpr assignment */
     LExpr nv;
     nv.prev = lh;
     primaryExpr(ls, &nv.v);
-    if (nv.v.k == VLOCAL) {
+    if (nv.v.k == EXPR_LOCAL) {
       checkConflict(ls, lh, &nv.v);
     }
     CHECK_LIMIT(ls->fs, nvars, LUAI_MAX_C_CALLS - ls->L->nestedCCallsNum,
@@ -1019,7 +1019,7 @@ static void assignment(LexState *ls, LExpr *lh, int nvars) {
     }
   }
   // Default assignment.
-  exprSetKind(&e, VNONRELOC);
+  exprSetKind(&e, EXPR_NON_RELOC);
   e.u.nonRelocReg = ls->fs->freereg - 1;
   luaK_storevar(ls->fs, &lh->v, &e);
 }
@@ -1028,8 +1028,8 @@ static int cond(LexState *ls) {
   /* cond -> exp */
   ExprInfo v;
   expr(ls, &v); /* read condition */
-  if (v.k == VNIL) {
-    v.k = VFALSE; /* `falses' are all equal here */
+  if (v.k == EXPR_NIL) {
+    v.k = EXPR_FALSE; /* `falses' are all equal here */
   }
   luaK_goiftrue(ls->fs, &v);
   return v.f;
@@ -1228,7 +1228,7 @@ static void localFuncStmt(LexState *ls) {
   ExprInfo v, b;
   FuncState *fs = ls->fs;
   new_localvar(ls, checkName(ls), 0);
-  exprSetKind(&v, VLOCAL);
+  exprSetKind(&v, EXPR_LOCAL);
   v.u.localReg = fs->freereg;
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
@@ -1249,7 +1249,7 @@ static void localStmt(LexState *ls) {
   if (testNext(ls, '=')) {
     nexps = exprList1(ls, &e);
   } else {
-    e.k = VVOID;
+    e.k = EXPR_VOID;
     nexps = 0;
   }
   adjust_assign(ls, nvars, nexps, &e);
@@ -1291,7 +1291,7 @@ static void funcStmt(LexState *ls, int line) {
 static void exprStmt(LexState *ls) {
   LExpr v;
   primaryExpr(ls, &v.v);
-  if (v.v.k == VCALL) {
+  if (v.v.k == EXPR_CALL) {
     // Call stmt uses no results.
     SETARG_C(ls->fs->f->code[v.v.u.callPC], 1);
   } else {
@@ -1320,7 +1320,7 @@ static void returnStmt(LexState *ls) {
 
   if (HAS_MULTI_RETURN(e.k)) {
     Codegen_setReturnMulti(fs, &e, LUA_MULTRET);
-    if (e.k == VCALL && nret == 1) {
+    if (e.k == EXPR_CALL && nret == 1) {
       SET_OPCODE(fs->f->code[e.u.callPC], OP_TAILCALL);
       assert(GETARG_A(fs->f->code[e.u.callPC]) == fs->nactvar);
     }

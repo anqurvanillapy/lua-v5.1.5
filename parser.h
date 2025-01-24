@@ -8,33 +8,34 @@
 
 typedef enum ExprKind {
   // No extra info.
-  VVOID,
-  VNIL,
-  VTRUE,
-  VFALSE,
+
+  EXPR_VOID,
+  EXPR_NIL,
+  EXPR_TRUE,
+  EXPR_FALSE,
 
   // Use constID.
-  VK,
+  EXPR_CONST_STR,
   // Use numValue.
-  VKNUM,
+  EXPR_CONST_NUM,
   // Use localReg.
-  VLOCAL,
+  EXPR_LOCAL,
   // Use upvalueID.
-  VUPVAL,
+  EXPR_UPVALUE,
   // Use globalID.
-  VGLOBAL,
+  EXPR_GLOBAL,
   // Use indexer.
-  VINDEXED,
+  EXPR_INDEXED,
   // Use jmpPC.
-  VJMP,
+  EXPR_JMP,
   // Use relocatePC.
-  VRELOCABLE,
+  EXPR_RELOC,
   // Use nonRelocReg. Non-relocatable result register.
-  VNONRELOC,
+  EXPR_NON_RELOC,
   // Use callPC.
-  VCALL,
+  EXPR_CALL,
   // Use varargCallPC.
-  VVARARG
+  EXPR_VARARG_CALL,
 } ExprKind;
 
 typedef struct ExprIndexer {
