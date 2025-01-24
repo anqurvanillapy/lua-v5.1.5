@@ -87,7 +87,7 @@ static int arrayIndex(const Value *key) {
     double n = NUMBER_VALUE(key);
     int k;
     lua_number2int(k, n);
-    if (luai_numeq((double)k, n)) {
+    if ((double)k == n) {
       return k;
     }
   }
@@ -406,8 +406,8 @@ const Value *Table_get(Table *t, const Value *key) {
     int k;
     double n = NUMBER_VALUE(key);
     lua_number2int(k, n);
-    if (luai_numeq((double)k, NUMBER_VALUE(key))) { /* index is int? */
-      return Table_getInteger(t, k); /* use specialized version */
+    if ((double)k == NUMBER_VALUE(key)) { /* index is int? */
+      return Table_getInteger(t, k);      /* use specialized version */
     }
     [[fallthrough]];
   }

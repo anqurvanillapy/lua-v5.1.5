@@ -217,30 +217,39 @@ static int l_strcmp(const String *ls, const String *rs) {
 }
 
 int luaV_lessthan(lua_State *L, const Value *l, const Value *r) {
-  int res;
+
   if (GET_TYPE(l) != GET_TYPE(r)) {
     return luaG_ordererror(L, l, r);
-  } else if (IS_TYPE_NUMBER(l)) {
-    return luai_numlt(NUMBER_VALUE(l), NUMBER_VALUE(r));
-  } else if (IS_TYPE_STRING(l)) {
+  }
+  if (IS_TYPE_NUMBER(l)) {
+    return NUMBER_VALUE(l) < NUMBER_VALUE(r);
+  }
+  if (IS_TYPE_STRING(l)) {
     return l_strcmp(STRING_VALUE(l), STRING_VALUE(r)) < 0;
-  } else if ((res = call_orderTM(L, l, r, TM_LT)) != -1) {
+  }
+  int res = call_orderTM(L, l, r, TM_LT);
+  if (res != -1) {
     return res;
   }
   return luaG_ordererror(L, l, r);
 }
 
 static int lessequal(lua_State *L, const Value *l, const Value *r) {
-  int res;
   if (GET_TYPE(l) != GET_TYPE(r)) {
     return luaG_ordererror(L, l, r);
-  } else if (IS_TYPE_NUMBER(l)) {
-    return luai_numle(NUMBER_VALUE(l), NUMBER_VALUE(r));
-  } else if (IS_TYPE_STRING(l)) {
+  }
+  if (IS_TYPE_NUMBER(l)) {
+    return NUMBER_VALUE(l) <= NUMBER_VALUE(r);
+  }
+  if (IS_TYPE_STRING(l)) {
     return l_strcmp(STRING_VALUE(l), STRING_VALUE(r)) <= 0;
-  } else if ((res = call_orderTM(L, l, r, TM_LE)) != -1) { /* first try `le' */
+  }
+  int res = call_orderTM(L, l, r, TM_LE);
+  if (res != -1) { /* first try `le' */
     return res;
-  } else if ((res = call_orderTM(L, r, l, TM_LT)) != -1) { /* else try `lt' */
+  }
+  res = call_orderTM(L, r, l, TM_LT);
+  if (res != -1) { /* else try `lt' */
     return !res;
   }
   return luaG_ordererror(L, l, r);
@@ -253,7 +262,7 @@ int luaV_equalval(lua_State *L, const Value *t1, const Value *t2) {
   case LUA_TYPE_NIL:
     return 1;
   case LUA_TYPE_NUMBER:
-    return luai_numeq(NUMBER_VALUE(t1), NUMBER_VALUE(t2));
+    return NUMBER_VALUE(t1) == NUMBER_VALUE(t2);
   case LUA_TYPE_BOOLEAN:
     return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* true must be 1 !! */
   case LUA_TYPE_PTR:
@@ -331,28 +340,28 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
     double nb = NUMBER_VALUE(b), nc = NUMBER_VALUE(c);
     switch (op) {
     case TM_ADD:
-      SET_NUMBER(ra, luai_numadd(nb, nc));
+      SET_NUMBER(ra, nb + nc);
       break;
     case TM_SUB:
-      SET_NUMBER(ra, luai_numsub(nb, nc));
+      SET_NUMBER(ra, nb - nc);
       break;
     case TM_MUL:
-      SET_NUMBER(ra, luai_nummul(nb, nc));
+      SET_NUMBER(ra, nb * nc);
       break;
     case TM_DIV:
-      SET_NUMBER(ra, luai_numdiv(nb, nc));
+      SET_NUMBER(ra, nb / nc);
       break;
     case TM_MOD:
       SET_NUMBER(ra, luai_nummod(nb, nc));
       break;
     case TM_POW:
-      SET_NUMBER(ra, luai_numpow(nb, nc));
+      SET_NUMBER(ra, pow(nb, nc));
       break;
     case TM_UNM:
-      SET_NUMBER(ra, luai_numunm(nb));
+      SET_NUMBER(ra, -nb);
       break;
     default:
-      assert(0);
+      assert(false);
       break;
     }
   } else if (!call_binTM(L, rb, rc, ra, op)) {
@@ -400,15 +409,17 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
     base = L->base;                                                            \
   }
 
-#define arith_op(op, tm)                                                       \
+#define ARITH_OP(op, tm)                                                       \
   do {                                                                         \
     Value *rb = RKB(i);                                                        \
     Value *rc = RKC(i);                                                        \
     if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                            \
-      double nb = NUMBER_VALUE(rb), nc = NUMBER_VALUE(rc);                     \
+      double nb = NUMBER_VALUE(rb);                                            \
+      double nc = NUMBER_VALUE(rc);                                            \
       SET_NUMBER(ra, op(nb, nc));                                              \
-    } else                                                                     \
+    } else {                                                                   \
       Protect(Arith(L, ra, rb, rc, tm));                                       \
+    }                                                                          \
   } while (false)
 
 void luaV_execute(lua_State *L, int nexeccalls) {
@@ -511,34 +522,34 @@ reentry: /* entry point */
       continue;
     }
     case OP_ADD: {
-      arith_op(luai_numadd, TM_ADD);
+      ARITH_OP(luai_numadd, TM_ADD);
       continue;
     }
     case OP_SUB: {
-      arith_op(luai_numsub, TM_SUB);
+      ARITH_OP(luai_numsub, TM_SUB);
       continue;
     }
     case OP_MUL: {
-      arith_op(luai_nummul, TM_MUL);
+      ARITH_OP(luai_nummul, TM_MUL);
       continue;
     }
     case OP_DIV: {
-      arith_op(luai_numdiv, TM_DIV);
+      ARITH_OP(luai_numdiv, TM_DIV);
       continue;
     }
     case OP_MOD: {
-      arith_op(luai_nummod, TM_MOD);
+      ARITH_OP(luai_nummod, TM_MOD);
       continue;
     }
     case OP_POW: {
-      arith_op(luai_numpow, TM_POW);
+      ARITH_OP(pow, TM_POW);
       continue;
     }
     case OP_UNM: {
       Value *rb = RB(i);
       if (IS_TYPE_NUMBER(rb)) {
         double nb = NUMBER_VALUE(rb);
-        SET_NUMBER(ra, luai_numunm(nb));
+        SET_NUMBER(ra, -nb);
       } else {
         Protect(Arith(L, ra, rb, rb, TM_UNM));
       }
@@ -691,10 +702,9 @@ reentry: /* entry point */
     }
     case OP_FORLOOP: {
       double step = NUMBER_VALUE(ra + 2);
-      double idx = luai_numadd(NUMBER_VALUE(ra), step); /* increment index */
+      double idx = NUMBER_VALUE(ra) + step; /* increment index */
       double limit = NUMBER_VALUE(ra + 1);
-      if (luai_numlt(0, step) ? luai_numle(idx, limit)
-                              : luai_numle(limit, idx)) {
+      if (step > 0 ? idx <= limit : limit <= idx) {
         dojump(L, pc, GETARG_sBx(i)); /* jump back */
         SET_NUMBER(ra, idx);          /* update internal index... */
         SET_NUMBER(ra + 3, idx);      /* ...and external index */
@@ -713,7 +723,7 @@ reentry: /* entry point */
       } else if (!tonumber(pstep, ra + 2)) {
         luaG_runerror(L, "'for' step must be a number");
       }
-      SET_NUMBER(ra, luai_numsub(NUMBER_VALUE(ra), NUMBER_VALUE(pstep)));
+      SET_NUMBER(ra, NUMBER_VALUE(ra) - NUMBER_VALUE(pstep));
       dojump(L, pc, GETARG_sBx(i));
       continue;
     }

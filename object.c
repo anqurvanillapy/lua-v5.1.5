@@ -73,7 +73,7 @@ int luaO_rawequalObj(const Value *t1, const Value *t2) {
     case LUA_TYPE_NIL:
       return 1;
     case LUA_TYPE_NUMBER:
-      return luai_numeq(NUMBER_VALUE(t1), NUMBER_VALUE(t2));
+      return NUMBER_VALUE(t1) == NUMBER_VALUE(t2);
     case LUA_TYPE_BOOLEAN:
       return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* boolean true must be 1 !! */
     case LUA_TYPE_PTR:

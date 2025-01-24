@@ -201,11 +201,6 @@
 #define luai_nummul(a, b) ((a) * (b))
 #define luai_numdiv(a, b) ((a) / (b))
 #define luai_nummod(a, b) ((a) - floor((a) / (b)) * (b))
-#define luai_numpow(a, b) (pow(a, b))
-#define luai_numunm(a) (-(a))
-#define luai_numeq(a, b) ((a) == (b))
-#define luai_numlt(a, b) ((a) < (b))
-#define luai_numle(a, b) ((a) <= (b))
 
 /*
 @@ lua_number2int is a macro to convert lua_Number to int.

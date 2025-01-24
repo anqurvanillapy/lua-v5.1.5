@@ -1,7 +1,3 @@
-#include <stdlib.h>
-
-#include "lua.h"
-
 #include "codegen.h"
 #include "debug.h"
 #include "gc.h"
@@ -624,20 +620,20 @@ static bool constantFolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
   double v2 = e2->u.numValue;
   switch (op) {
   case OP_ADD:
-    r = luai_numadd(v1, v2);
+    r = v1 + v2;
     break;
   case OP_SUB:
-    r = luai_numsub(v1, v2);
+    r = v1 - v2;
     break;
   case OP_MUL:
-    r = luai_nummul(v1, v2);
+    r = v1 * v2;
     break;
   case OP_DIV:
     if (v2 == 0) {
       // Do not attempt to divide by 0.
       return false;
     }
-    r = luai_numdiv(v1, v2);
+    r = v1 / v2;
     break;
   case OP_MOD:
     if (v2 == 0) {
@@ -647,10 +643,10 @@ static bool constantFolding(OpCode op, ExprInfo *e1, ExprInfo *e2) {
     r = luai_nummod(v1, v2);
     break;
   case OP_POW:
-    r = luai_numpow(v1, v2);
+    r = pow(v1, v2);
     break;
   case OP_UNM:
-    r = luai_numunm(v1);
+    r = -v1;
     break;
   case OP_LEN:
     return false;
