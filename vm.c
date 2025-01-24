@@ -364,23 +364,26 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
 ** some macros for common tasks in `luaV_execute'
 */
 
-#define runtime_check(L, c)                                                    \
-  {                                                                            \
-    if (!(c))                                                                  \
+#define RUNTIME_CHECK(L, c)                                                    \
+  do {                                                                         \
+    if (!(c)) {                                                                \
       break;                                                                   \
-  }
+    }                                                                          \
+  } while (false)
 
 #define RA(i) (base + GETARG_A(i))
 /* to be used after possible stack reallocation */
-#define RB(i) CHECK_EXPR(getBMode(GET_OPCODE(i)) == OpArgR, base + GETARG_B(i))
-#define RC(i) CHECK_EXPR(getCMode(GET_OPCODE(i)) == OpArgR, base + GETARG_C(i))
+#define RB(i)                                                                  \
+  CHECK_EXPR(GET_B_MODE(GET_OPCODE(i)) == OP_ARG_REG_OR_OFFSET,                \
+             base + GETARG_B(i))
 #define RKB(i)                                                                 \
-  CHECK_EXPR(getBMode(GET_OPCODE(i)) == OpArgK,                                \
+  CHECK_EXPR(GET_B_MODE(GET_OPCODE(i)) == OP_ARG_CONST_OR_REG,                 \
              ISK(GETARG_B(i)) ? k + INDEXK(GETARG_B(i)) : base + GETARG_B(i))
 #define RKC(i)                                                                 \
-  CHECK_EXPR(getCMode(GET_OPCODE(i)) == OpArgK,                                \
+  CHECK_EXPR(GET_C_MODE(GET_OPCODE(i)) == OP_ARG_CONST_OR_REG,                 \
              ISK(GETARG_C(i)) ? k + INDEXK(GETARG_C(i)) : base + GETARG_C(i))
-#define KBx(i) CHECK_EXPR(getBMode(GET_OPCODE(i)) == OpArgK, k + GETARG_Bx(i))
+#define KBx(i)                                                                 \
+  CHECK_EXPR(GET_B_MODE(GET_OPCODE(i)) == OP_ARG_CONST_OR_REG, k + GETARG_Bx(i))
 
 #define dojump(L, pc, i)                                                       \
   {                                                                            \
@@ -742,7 +745,7 @@ reentry: /* entry point */
       if (c == 0) {
         c = (int)(*pc++);
       }
-      runtime_check(L, IS_TYPE_TABLE(ra));
+      RUNTIME_CHECK(L, IS_TYPE_TABLE(ra));
       h = TABLE_VALUE(ra);
       last = ((c - 1) * LFIELDS_PER_FLUSH) + n;
       if (last > h->sizearray) {       /* needs more space? */

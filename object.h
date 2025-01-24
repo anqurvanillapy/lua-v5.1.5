@@ -198,7 +198,7 @@ typedef struct Prototype {
 
   // Functions defined inside this function.
   struct Prototype **inners;
-  size_t innersSize; // FIXME(anqur): quite hard to use `size_t` here
+  size_t innersSize;
 
   String *source;
   // An int-to-int map from opcodes to source lines.

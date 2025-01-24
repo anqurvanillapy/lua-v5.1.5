@@ -345,20 +345,20 @@ static char *buildop(Prototype *p, size_t pc, char *buff, size_t size) {
   int line = getline(p, pc);
 
   snprintf(buff, size, "(%4d) %4zu - ", line, pc);
-  switch (getOpMode(o)) {
-  case iABC: {
+  switch (GET_OP_MODE(o)) {
+  case FORMAT_A_B_C: {
     size_t written = strlen(buff);
     snprintf(buff + written, size - written, "%-12s%4d %4d %4d", name,
              GETARG_A(i), GETARG_B(i), GETARG_C(i));
     break;
   }
-  case iABx: {
+  case FORMAT_A_Bx: {
     size_t written = strlen(buff);
     snprintf(buff + written, size - written, "%-12s%4d %4d", name, GETARG_A(i),
              GETARG_Bx(i));
     break;
   }
-  case iAsBx: {
+  case FORMAT_A_sBx: {
     size_t written = strlen(buff);
     snprintf(buff + written, size - written, "%-12s%4d %4d", name, GETARG_A(i),
              GETARG_sBx(i));

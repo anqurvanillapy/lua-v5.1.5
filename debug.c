@@ -30,9 +30,8 @@ static int currentline(lua_State *L, CallInfo *ci) {
   int pc = currentpc(L, ci);
   if (pc < 0) {
     return -1; /* only active lua functions have current-line information */
-  } else {
-    return getline(ci_func(ci)->l.p, pc);
   }
+  return getline(ci_func(ci)->l.p, pc);
 }
 
 /*
@@ -80,7 +79,7 @@ LUA_API int lua_getstack(lua_State *L, int level, lua_Debug *ar) {
 }
 
 static Prototype *getluaproto(CallInfo *ci) {
-  return (isLua(ci) ? ci_func(ci)->l.p : NULL);
+  return isLua(ci) ? ci_func(ci)->l.p : nullptr;
 }
 
 static const char *findlocal(lua_State *L, CallInfo *ci, int n) {
@@ -88,14 +87,12 @@ static const char *findlocal(lua_State *L, CallInfo *ci, int n) {
   Prototype *fp = getluaproto(ci);
   if (fp && (name = luaF_getlocalname(fp, n, currentpc(L, ci))) != NULL) {
     return name; /* is a local variable in a Lua function */
-  } else {
-    StackIndex limit = (ci == L->ci) ? L->top : (ci + 1)->func;
-    if (limit - ci->base >= n && n > 0) { /* is 'n' inside 'ci' stack? */
-      return "(*temporary)";
-    } else {
-      return NULL;
-    }
   }
+  StackIndex limit = (ci == L->ci) ? L->top : (ci + 1)->func;
+  if (limit - ci->base >= n && n > 0) { /* is 'n' inside 'ci' stack? */
+    return "(*temporary)";
+  }
+  return nullptr;
 }
 
 LUA_API const char *lua_getlocal(lua_State *L, const lua_Debug *ar, int n) {
@@ -138,20 +135,22 @@ static void funcinfo(lua_Debug *ar, Closure *cl) {
 static void info_tailcall(lua_Debug *ar) {
   ar->name = ar->namewhat = "";
   ar->what = "tail";
-  ar->lastlinedefined = ar->linedefined = ar->currentline = -1;
+  ar->lastlinedefined = -1;
+  ar->linedefined = -1;
+  ar->currentline = -1;
   ar->source = "=(tail call)";
   luaO_chunkid(ar->short_src, ar->source, LUA_IDSIZE);
   ar->nups = 0;
 }
 
-static void collectvalidlines(lua_State *L, Closure *f) {
-  if (f == NULL || f->c.header.isC) {
+static void collectValidLines(lua_State *L, Closure *f) {
+  if (f == nullptr || f->c.header.isC) {
     SET_NIL(L->top);
   } else {
     Table *t = Table_new(L, 0, 0);
-    int *lineinfo = f->l.p->lineInfo;
+    int *lineInfo = f->l.p->lineInfo;
     for (size_t i = 0; i < f->l.p->lineInfoSize; i++) {
-      SET_BOOL(Table_insertInteger(L, t, lineinfo[i]), 1);
+      SET_BOOL(Table_insertInteger(L, t, lineInfo[i]), 1);
     }
     SET_TABLE(L, L->top, t);
   }
@@ -172,15 +171,16 @@ static int auxgetinfo(lua_State *L, const char *what, lua_Debug *ar, Closure *f,
       break;
     }
     case 'l': {
-      ar->currentline = (ci) ? currentline(L, ci) : -1;
+      ar->currentline = ci ? currentline(L, ci) : -1;
       break;
     }
     case 'u': {
-      ar->nups = f->c.header.nupvalues;
+      // FIXME(anqur): Suspicious conversion.
+      ar->nups = (int)f->c.header.nupvalues;
       break;
     }
     case 'n': {
-      ar->namewhat = (ci) ? getfuncname(L, ci, &ar->name) : nullptr;
+      ar->namewhat = ci ? getfuncname(L, ci, &ar->name) : nullptr;
       if (ar->namewhat == nullptr) {
         ar->namewhat = ""; /* not found */
         ar->name = nullptr;
@@ -222,7 +222,7 @@ LUA_API int lua_getinfo(lua_State *L, const char *what, lua_Debug *ar) {
     incr_top(L);
   }
   if (strchr(what, 'L')) {
-    collectvalidlines(L, f);
+    collectValidLines(L, f);
   }
   lua_unlock(L);
   return status;
@@ -275,15 +275,15 @@ int luaG_checkopenop(Instruction i) {
 
 static int checkArgMode(const Prototype *pt, int r, enum OpArgMask mode) {
   switch (mode) {
-  case OpArgN:
+  case OP_ARG_NOT_USED:
     check(r == 0);
     break;
-  case OpArgU:
+  case OP_ARG_USED:
     break;
-  case OpArgR:
+  case OP_ARG_REG_OR_OFFSET:
     checkreg(pt, r);
     break;
-  case OpArgK:
+  case OP_ARG_CONST_OR_REG:
     check(ISK(r) ? INDEXK(r) < pt->constantsSize : r < pt->maxStackSize);
     break;
   }
@@ -303,24 +303,24 @@ static Instruction symbexec(const Prototype *pt, size_t lastpc, int reg) {
     int c = 0;
     check(op < NUM_OPCODES);
     checkreg(pt, a);
-    switch (getOpMode(op)) {
-    case iABC: {
+    switch (GET_OP_MODE(op)) {
+    case FORMAT_A_B_C: {
       b = GETARG_B(i);
       c = GETARG_C(i);
-      check(checkArgMode(pt, b, getBMode(op)));
-      check(checkArgMode(pt, c, getCMode(op)));
+      check(checkArgMode(pt, b, GET_B_MODE(op)));
+      check(checkArgMode(pt, c, GET_C_MODE(op)));
       break;
     }
-    case iABx: {
+    case FORMAT_A_Bx: {
       b = GETARG_Bx(i);
-      if (getBMode(op) == OpArgK) {
+      if (GET_B_MODE(op) == OP_ARG_CONST_OR_REG) {
         check((size_t)b < pt->constantsSize);
       }
       break;
     }
-    case iAsBx: {
+    case FORMAT_A_sBx: {
       b = GETARG_sBx(i);
-      if (getBMode(op) == OpArgR) {
+      if (GET_B_MODE(op) == OP_ARG_REG_OR_OFFSET) {
         size_t dest = pc + 1 + b;
         check(0 <= dest && dest < pt->codeSize);
         if (dest > 0) {
@@ -343,12 +343,12 @@ static Instruction symbexec(const Prototype *pt, size_t lastpc, int reg) {
       break;
     }
     }
-    if (testAMode(op)) {
+    if (TEST_A_MODE(op)) {
       if (a == reg) {
         last = pc; /* change register `a' */
       }
     }
-    if (testTMode(op)) {
+    if (TEST_T_MODE(op)) {
       check(pc + 2 < pt->codeSize); /* check skip */
       check(GET_OPCODE(pt->code[pc + 1]) == OP_JMP);
     }

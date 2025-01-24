@@ -21,7 +21,12 @@
   unsigned argument.
 ===========================================================================*/
 
-enum OpMode { iABC, iABx, iAsBx }; /* basic instruction format */
+// Basic instruction format.
+typedef enum OpMode {
+  FORMAT_A_B_C,
+  FORMAT_A_Bx,
+  FORMAT_A_sBx,
+} OpMode;
 
 /*
 ** size and position of opcode arguments.
@@ -126,7 +131,7 @@ enum OpMode { iABC, iABx, iAsBx }; /* basic instruction format */
 ** RK(x) == if ISK(x) then Kst(INDEXK(x)) else R(x)
 */
 
-typedef enum {
+typedef enum OpCode {
   OP_MOVE /* A B */,       // R(A) := R(B)
   OP_LOADK /* A Bx */,     // R(A) := Kst(Bx)
   OP_LOADBOOL /* A B C */, // R(A) := (Bool)B; if (C) pc++
@@ -214,20 +219,22 @@ typedef enum {
 ** bit 7: operator is a test
 */
 
-enum OpArgMask {
-  OpArgN, /* argument is not used */
-  OpArgU, /* argument is used */
-  OpArgR, /* argument is a register or a jump offset */
-  OpArgK  /* argument is a constant or register/constant */
-};
+typedef enum OpArgMask {
+  OP_ARG_NOT_USED,
+  OP_ARG_USED,
+  // Argument is a register or a jump offset.
+  OP_ARG_REG_OR_OFFSET,
+  // argument is a constant or register-constant.
+  OP_ARG_CONST_OR_REG,
+} OpArgMask;
 
 LUAI_DATA const uint8_t luaP_opmodes[NUM_OPCODES];
 
-#define getOpMode(m) (cast(enum OpMode, luaP_opmodes[m] & 3))
-#define getBMode(m) (cast(enum OpArgMask, (luaP_opmodes[m] >> 4) & 3))
-#define getCMode(m) (cast(enum OpArgMask, (luaP_opmodes[m] >> 2) & 3))
-#define testAMode(m) (luaP_opmodes[m] & (1 << 6))
-#define testTMode(m) (luaP_opmodes[m] & (1 << 7))
+#define GET_OP_MODE(m) ((OpMode)(luaP_opmodes[m] & 3))
+#define GET_B_MODE(m) ((OpArgMask)((luaP_opmodes[m] >> 4) & 3))
+#define GET_C_MODE(m) ((OpArgMask)((luaP_opmodes[m] >> 2) & 3))
+#define TEST_A_MODE(m) (luaP_opmodes[m] & (1 << 6))
+#define TEST_T_MODE(m) (luaP_opmodes[m] & (1 << 7))
 
 LUAI_DATA const char *const luaP_opnames[NUM_OPCODES + 1]; /* opcode names */
 

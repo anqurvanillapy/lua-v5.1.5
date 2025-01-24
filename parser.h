@@ -38,12 +38,12 @@ typedef enum ExprKind {
   EXPR_VARARG_CALL,
 } ExprKind;
 
-typedef struct ExprIndexer {
+typedef struct Indexer {
   // Register of the target table.
   int tableReg;
   // Register of the index argument.
   int idxReg;
-} ExprIndexer;
+} Indexer;
 
 typedef union ExprVariant {
   size_t constID;
@@ -51,7 +51,7 @@ typedef union ExprVariant {
   int localReg;
   size_t upvalueID;
   size_t globalID;
-  ExprIndexer indexer;
+  Indexer indexer;
   size_t jmpPC;
   size_t relocatePC;
   int nonRelocReg;
@@ -94,8 +94,8 @@ typedef struct FuncState {
   size_t np;              /* number of elements in `p' */
   size_t nlocvars;        /* number of elements in `locVars' */
   uint8_t nactvar;        /* number of active local variables */
-  UpvalueInfo upvalues[LUAI_MAX_UPVALUES]; /* upvalues */
-  int actvar[LUAI_MAX_VARS];               /* declared-variable stack */
+  UpvalueInfo upvalues[LUAI_MAX_UPVALUES];
+  int actvar[LUAI_MAX_VARS]; /* declared-variable stack */
 } FuncState;
 
 LUAI_FUNC Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,

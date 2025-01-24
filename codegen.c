@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "lua.h"
@@ -19,32 +18,37 @@ static int isNumeric(ExprInfo *e) {
   return e->k == EXPR_CONST_NUM && e->t == NO_JUMP && e->f == NO_JUMP;
 }
 
-void luaK_nil(FuncState *fs, int from, int n) {
-  Instruction *previous;
-  if ((ptrdiff_t)fs->pc > fs->lasttarget) { /* no jumps to current position? */
-    if (fs->pc == 0) {                      /* function start? */
+void Codegen_emitNil(FuncState *fs, int from, int n) {
+  // No jumps to current position?
+  if ((ptrdiff_t)fs->pc > fs->lasttarget) {
+    // Function start?
+    if (fs->pc == 0) {
       if (from >= fs->nactvar) {
-        return; /* positions are already clean */
+        // Positions are already clean.
+        return;
       }
     } else {
-      previous = &fs->f->code[fs->pc - 1];
-      if (GET_OPCODE(*previous) == OP_LOADNIL) {
-        int pfrom = GETARG_A(*previous);
-        int pto = GETARG_B(*previous);
-        if (pfrom <= from && from <= pto + 1) { /* can connect both? */
+      Instruction *prev = &fs->f->code[fs->pc - 1];
+      if (GET_OPCODE(*prev) == OP_LOADNIL) {
+        int pfrom = GETARG_A(*prev);
+        int pto = GETARG_B(*prev);
+
+        // Can connect both?
+        if (pfrom <= from && from <= pto + 1) {
           if (from + n - 1 > pto) {
-            SETARG_B(*previous, from + n - 1);
+            SETARG_B(*prev, from + n - 1);
           }
           return;
         }
       }
     }
   }
-  luaK_codeABC(fs, OP_LOADNIL, from, from + n - 1,
-               0); /* else no optimization */
+
+  // Slow path, no optimization.
+  Codegen_emitABC(fs, OP_LOADNIL, from, from + n - 1, 0);
 }
 
-int luaK_jump(FuncState *fs) {
+int Codegen_jump(FuncState *fs) {
   int jpc = fs->jpc; /* save list of jumps to here */
   fs->jpc = NO_JUMP;
   int j = luaK_codeAsBx(fs, OP_JMP, 0, NO_JUMP);
@@ -52,16 +56,16 @@ int luaK_jump(FuncState *fs) {
   return j;
 }
 
-void luaK_ret(FuncState *fs, int first, int nret) {
-  luaK_codeABC(fs, OP_RETURN, first, nret + 1, 0);
+void Codegen_return(FuncState *fs, int first, int nret) {
+  Codegen_emitABC(fs, OP_RETURN, first, nret + 1, 0);
 }
 
 static int condjump(FuncState *fs, OpCode op, int A, int B, int C) {
-  luaK_codeABC(fs, op, A, B, C);
-  return luaK_jump(fs);
+  Codegen_emitABC(fs, op, A, B, C);
+  return Codegen_jump(fs);
 }
 
-static void fixjump(FuncState *fs, size_t pc, ptrdiff_t dest) {
+static void fixJump(FuncState *fs, size_t pc, ptrdiff_t dest) {
   Instruction *jmp = &fs->f->code[pc];
   ptrdiff_t offset = dest - ((ptrdiff_t)pc + 1);
   assert(dest != NO_JUMP);
@@ -71,30 +75,29 @@ static void fixjump(FuncState *fs, size_t pc, ptrdiff_t dest) {
   SETARG_sBx(*jmp, offset);
 }
 
-/*
-** returns current `pc' and marks it as a jump target (to avoid wrong
-** optimizations with consecutive instructions not in the same basic block).
-*/
-size_t luaK_getlabel(FuncState *fs) {
+/// Returns current PC and marks it as a jump target (to avoid wrong
+/// optimizations with consecutive instructions not in the same basic block).
+size_t Codegen_getLabel(FuncState *fs) {
   fs->lasttarget = (ptrdiff_t)fs->pc;
   return fs->pc;
 }
 
-static int getjump(FuncState *fs, int pc) {
+static int getJump(FuncState *fs, int pc) {
   int offset = GETARG_sBx(fs->f->code[pc]);
-  if (offset == NO_JUMP) { /* point to itself represents end of list */
-    return NO_JUMP;        /* end of list */
-  } else {
-    return (pc + 1) + offset; /* turn offset into absolute position */
+  if (offset == NO_JUMP) {
+    // Point to itself represents the end of list.
+    return NO_JUMP;
   }
+  // Turn offset into absolute position.
+  return (pc + 1) + offset;
 }
 
-static Instruction *getjumpcontrol(FuncState *fs, int pc) {
-  Instruction *pi = &fs->f->code[pc];
-  if (pc >= 1 && testTMode(GET_OPCODE(*(pi - 1)))) {
-    return pi - 1;
+static Instruction *getJumpControl(FuncState *fs, int pc) {
+  Instruction *i = &fs->f->code[pc];
+  if (pc >= 1 && TEST_T_MODE(GET_OPCODE(*(i - 1)))) {
+    return i - 1;
   }
-  return pi;
+  return i;
 }
 
 /*
@@ -102,8 +105,8 @@ static Instruction *getjumpcontrol(FuncState *fs, int pc) {
 ** (or produce an inverted value)
 */
 static int need_value(FuncState *fs, int list) {
-  for (; list != NO_JUMP; list = getjump(fs, list)) {
-    Instruction i = *getjumpcontrol(fs, list);
+  for (; list != NO_JUMP; list = getJump(fs, list)) {
+    Instruction i = *getJumpControl(fs, list);
     if (GET_OPCODE(i) != OP_TESTSET) {
       return 1;
     }
@@ -112,7 +115,7 @@ static int need_value(FuncState *fs, int list) {
 }
 
 static int patchtestreg(FuncState *fs, int node, int reg) {
-  Instruction *i = getjumpcontrol(fs, node);
+  Instruction *i = getJumpControl(fs, node);
   if (GET_OPCODE(*i) != OP_TESTSET) {
     return 0; /* cannot patch other instructions */
   }
@@ -126,7 +129,7 @@ static int patchtestreg(FuncState *fs, int node, int reg) {
 }
 
 static void removevalues(FuncState *fs, int list) {
-  for (; list != NO_JUMP; list = getjump(fs, list)) {
+  for (; list != NO_JUMP; list = getJump(fs, list)) {
     patchtestreg(fs, list, NO_REG);
   }
 }
@@ -134,11 +137,11 @@ static void removevalues(FuncState *fs, int list) {
 static void patchlistaux(FuncState *fs, int list, ptrdiff_t vtarget, int reg,
                          ptrdiff_t dtarget) {
   while (list != NO_JUMP) {
-    int next = getjump(fs, list);
+    int next = getJump(fs, list);
     if (patchtestreg(fs, list, reg)) {
-      fixjump(fs, list, vtarget);
+      fixJump(fs, list, vtarget);
     } else {
-      fixjump(fs, list, dtarget); /* jump to default target */
+      fixJump(fs, list, dtarget); /* jump to default target */
     }
     list = next;
   }
@@ -159,7 +162,7 @@ void luaK_patchlist(FuncState *fs, int list, ptrdiff_t target) {
 }
 
 void luaK_patchtohere(FuncState *fs, int list) {
-  luaK_getlabel(fs);
+  Codegen_getLabel(fs);
   luaK_concat(fs, &fs->jpc, list);
 }
 
@@ -172,10 +175,10 @@ void luaK_concat(FuncState *fs, int *l1, int l2) {
   } else {
     int list = *l1;
     int next;
-    while ((next = getjump(fs, list)) != NO_JUMP) { /* find last element */
+    while ((next = getJump(fs, list)) != NO_JUMP) { /* find last element */
       list = next;
     }
-    fixjump(fs, list, l2);
+    fixJump(fs, list, l2);
   }
 }
 
@@ -288,18 +291,19 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
     break;
   case EXPR_UPVALUE:
     // FIXME(anqur): Suspicious conversion.
-    e->u.relocatePC = luaK_codeABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
+    e->u.relocatePC =
+        Codegen_emitABC(fs, OP_GETUPVAL, 0, (int)e->u.upvalueID, 0);
     e->k = EXPR_RELOC;
     break;
   case EXPR_GLOBAL:
-    e->u.relocatePC = luaK_codeABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
+    e->u.relocatePC = Codegen_emitABx(fs, OP_GETGLOBAL, 0, e->u.globalID);
     e->k = EXPR_RELOC;
     break;
   case EXPR_INDEXED:
     freereg(fs, e->u.indexer.idxReg);
     freereg(fs, e->u.indexer.tableReg);
-    e->u.relocatePC = luaK_codeABC(fs, OP_GETTABLE, 0, e->u.indexer.tableReg,
-                                   e->u.indexer.idxReg);
+    e->u.relocatePC = Codegen_emitABC(fs, OP_GETTABLE, 0, e->u.indexer.tableReg,
+                                      e->u.indexer.idxReg);
     e->k = EXPR_RELOC;
     break;
   case EXPR_VARARG_CALL:
@@ -314,25 +318,25 @@ void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
 
 static ptrdiff_t emitLabel(FuncState *fs, int A, int b, int jump) {
   // Those instructions may be jump targets.
-  luaK_getlabel(fs);
-  return (ptrdiff_t)luaK_codeABC(fs, OP_LOADBOOL, A, b, jump);
+  Codegen_getLabel(fs);
+  return (ptrdiff_t)Codegen_emitABC(fs, OP_LOADBOOL, A, b, jump);
 }
 
 static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
   Codegen_releaseVars(fs, e);
   switch (e->k) {
   case EXPR_NIL:
-    luaK_nil(fs, reg, 1);
+    Codegen_emitNil(fs, reg, 1);
     break;
   case EXPR_FALSE:
   case EXPR_TRUE:
-    luaK_codeABC(fs, OP_LOADBOOL, reg, e->k == EXPR_TRUE, 0);
+    Codegen_emitABC(fs, OP_LOADBOOL, reg, e->k == EXPR_TRUE, 0);
     break;
   case EXPR_CONST_STR:
-    luaK_codeABx(fs, OP_LOADK, reg, e->u.constID);
+    Codegen_emitABx(fs, OP_LOADK, reg, e->u.constID);
     break;
   case EXPR_CONST_NUM:
-    luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.numValue));
+    Codegen_emitABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.numValue));
     break;
   case EXPR_RELOC:
     Instruction *pc = &fs->f->code[e->u.relocatePC];
@@ -340,7 +344,7 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     break;
   case EXPR_NON_RELOC:
     if (reg != e->u.nonRelocReg) {
-      luaK_codeABC(fs, OP_MOVE, reg, e->u.nonRelocReg, 0);
+      Codegen_emitABC(fs, OP_MOVE, reg, e->u.nonRelocReg, 0);
     }
     break;
   default:
@@ -369,13 +373,13 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
     ptrdiff_t p_f = NO_JUMP; /* position of an eventual LOAD false */
     ptrdiff_t p_t = NO_JUMP; /* position of an eventual LOAD true */
     if (need_value(fs, e->t) || need_value(fs, e->f)) {
-      int fj = (e->k == EXPR_JMP) ? NO_JUMP : luaK_jump(fs);
+      int fj = (e->k == EXPR_JMP) ? NO_JUMP : Codegen_jump(fs);
       p_f = emitLabel(fs, reg, 0, 1);
       p_t = emitLabel(fs, reg, 1, 0);
       luaK_patchtohere(fs, fj);
     }
     // Position after whole expression.
-    ptrdiff_t final = (ptrdiff_t)luaK_getlabel(fs);
+    ptrdiff_t final = (ptrdiff_t)Codegen_getLabel(fs);
     patchlistaux(fs, e->f, final, reg, p_f);
     patchlistaux(fs, e->t, final, reg, p_t);
   }
@@ -455,18 +459,18 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
   case EXPR_UPVALUE: {
     int e = luaK_exp2anyreg(fs, ex);
     // FIXME(anqur): Suspicious conversion,
-    luaK_codeABC(fs, OP_SETUPVAL, e, (int)var->u.upvalueID, 0);
+    Codegen_emitABC(fs, OP_SETUPVAL, e, (int)var->u.upvalueID, 0);
     break;
   }
   case EXPR_GLOBAL: {
     int e = luaK_exp2anyreg(fs, ex);
-    luaK_codeABx(fs, OP_SETGLOBAL, e, var->u.globalID);
+    Codegen_emitABx(fs, OP_SETGLOBAL, e, var->u.globalID);
     break;
   }
   case EXPR_INDEXED: {
     int e = luaK_exp2RK(fs, ex);
-    luaK_codeABC(fs, OP_SETTABLE, var->u.indexer.tableReg,
-                 var->u.indexer.idxReg, e);
+    Codegen_emitABC(fs, OP_SETTABLE, var->u.indexer.tableReg,
+                    var->u.indexer.idxReg, e);
     break;
   }
   default: {
@@ -482,7 +486,7 @@ void luaK_self(FuncState *fs, ExprInfo *e, ExprInfo *key) {
   int func = fs->freereg;
   luaK_reserveregs(fs, 2);
   assert(e->k == EXPR_NON_RELOC);
-  luaK_codeABC(fs, OP_SELF, func, e->u.nonRelocReg, luaK_exp2RK(fs, key));
+  Codegen_emitABC(fs, OP_SELF, func, e->u.nonRelocReg, luaK_exp2RK(fs, key));
   freeexp(fs, key);
   e->u.nonRelocReg = func;
   e->k = EXPR_NON_RELOC;
@@ -490,8 +494,8 @@ void luaK_self(FuncState *fs, ExprInfo *e, ExprInfo *key) {
 
 static void invertjump(FuncState *fs, ExprInfo *e) {
   // FIXME(anqur): Suspicious conversion.
-  Instruction *pc = getjumpcontrol(fs, (int)e->u.jmpPC);
-  assert(testTMode(GET_OPCODE(*pc)) && GET_OPCODE(*pc) != OP_TESTSET &&
+  Instruction *pc = getJumpControl(fs, (int)e->u.jmpPC);
+  assert(TEST_T_MODE(GET_OPCODE(*pc)) && GET_OPCODE(*pc) != OP_TESTSET &&
          GET_OPCODE(*pc) != OP_TEST);
   SETARG_A(*pc, !(GETARG_A(*pc)));
 }
@@ -581,13 +585,13 @@ static void emitNot(FuncState *fs, ExprInfo *e) {
     discharge2anyreg(fs, e);
     freeexp(fs, e);
     // FIXME(anqur): Suspicious conversion.
-    e->u.relocatePC = luaK_codeABC(fs, OP_NOT, 0, (int)e->u.relocatePC, 0);
+    e->u.relocatePC = Codegen_emitABC(fs, OP_NOT, 0, (int)e->u.relocatePC, 0);
     e->k = EXPR_RELOC;
     break;
   case EXPR_NON_RELOC:
     discharge2anyreg(fs, e);
     freeexp(fs, e);
-    e->u.relocatePC = luaK_codeABC(fs, OP_NOT, 0, e->u.nonRelocReg, 0);
+    e->u.relocatePC = Codegen_emitABC(fs, OP_NOT, 0, e->u.nonRelocReg, 0);
     e->k = EXPR_RELOC;
     break;
   default:
@@ -671,7 +675,7 @@ static void emitArith(FuncState *fs, OpCode op, ExprInfo *e1, ExprInfo *e2) {
     freeexp(fs, e2);
     freeexp(fs, e1);
   }
-  e1->u.relocatePC = luaK_codeABC(fs, op, 0, o1, o2);
+  e1->u.relocatePC = Codegen_emitABC(fs, op, 0, o1, o2);
   e1->k = EXPR_RELOC;
 }
 
@@ -715,7 +719,7 @@ void Codegen_prefix(FuncState *fs, OpKind op, ExprInfo *a) {
   }
 }
 
-void luaK_infix(FuncState *fs, OpKind op, ExprInfo *v) {
+void Codegen_infix(FuncState *fs, OpKind op, ExprInfo *v) {
   switch (op) {
   case OPR_AND: {
     luaK_goiftrue(fs, v);
@@ -747,23 +751,23 @@ void luaK_infix(FuncState *fs, OpKind op, ExprInfo *v) {
   }
 }
 
-void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
+void Codegen_suffix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
   switch (op) {
-  case OPR_AND: {
-    assert(e1->t == NO_JUMP); /* list must be closed */
+  case OPR_AND:
+    // List must be closed.
+    assert(e1->t == NO_JUMP);
     Codegen_releaseVars(fs, e2);
     luaK_concat(fs, &e2->f, e1->f);
     *e1 = *e2;
     break;
-  }
-  case OPR_OR: {
-    assert(e1->f == NO_JUMP); /* list must be closed */
+  case OPR_OR:
+    // List must be closed.
+    assert(e1->f == NO_JUMP);
     Codegen_releaseVars(fs, e2);
     luaK_concat(fs, &e2->t, e1->t);
     *e1 = *e2;
     break;
-  }
-  case OPR_CONCAT: {
+  case OPR_CONCAT:
     luaK_exp2val(fs, e2);
     if (e2->k == EXPR_RELOC &&
         GET_OPCODE(fs->f->code[e2->u.relocatePC]) == OP_CONCAT) {
@@ -778,7 +782,6 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
       emitArith(fs, OP_CONCAT, e1, e2);
     }
     break;
-  }
   case OPR_ADD:
     emitArith(fs, OP_ADD, e1, e2);
     break;
@@ -816,39 +819,38 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
     codecomp(fs, OP_LE, 0, e1, e2);
     break;
   default:
-    assert(0);
+    assert(false);
   }
 }
 
-void luaK_fixline(FuncState *fs, int line) {
+void Codegen_fixLine(FuncState *fs, int line) {
   fs->f->lineInfo[fs->pc - 1] = line;
 }
 
-static size_t luaK_code(FuncState *fs, Instruction i, int line) {
+static size_t emitCode(FuncState *fs, Instruction i, int line) {
   Prototype *f = fs->f;
-  dischargejpc(fs); /* `pc' will change */
-  /* put new instruction in code array */
+  // `pc` will change.
+  dischargejpc(fs);
   Mem_growVec(fs->L, f->code, fs->pc, f->codeSize, Instruction, SAFE_INT_MAX,
               "code size overflow");
   f->code[fs->pc] = i;
-  /* save corresponding line information */
   Mem_growVec(fs->L, f->lineInfo, fs->pc, f->lineInfoSize, int, SAFE_INT_MAX,
-              "code size overflow");
+              "line info size overflow");
   f->lineInfo[fs->pc] = line;
   return fs->pc++;
 }
 
-size_t luaK_codeABC(FuncState *fs, OpCode o, int a, int b, int c) {
-  assert(getOpMode(o) == iABC);
-  assert(getBMode(o) != OpArgN || b == 0);
-  assert(getCMode(o) != OpArgN || c == 0);
-  return luaK_code(fs, CREATE_ABC(o, a, b, c), fs->ls->lastline);
+size_t Codegen_emitABC(FuncState *fs, OpCode o, int a, int b, int c) {
+  assert(GET_OP_MODE(o) == FORMAT_A_B_C);
+  assert(GET_B_MODE(o) != OP_ARG_NOT_USED || b == 0);
+  assert(GET_C_MODE(o) != OP_ARG_NOT_USED || c == 0);
+  return emitCode(fs, CREATE_ABC(o, a, b, c), fs->ls->lastline);
 }
 
-size_t luaK_codeABx(FuncState *fs, OpCode o, int a, unsigned int bc) {
-  assert(getOpMode(o) == iABx || getOpMode(o) == iAsBx);
-  assert(getCMode(o) == OpArgN);
-  return luaK_code(fs, CREATE_ABx(o, a, bc), fs->ls->lastline);
+size_t Codegen_emitABx(FuncState *fs, OpCode o, int A, unsigned int Bx) {
+  assert(GET_OP_MODE(o) == FORMAT_A_Bx || GET_OP_MODE(o) == FORMAT_A_sBx);
+  assert(GET_C_MODE(o) == OP_ARG_NOT_USED);
+  return emitCode(fs, CREATE_ABx(o, A, Bx), fs->ls->lastline);
 }
 
 void luaK_setlist(FuncState *fs, int base, int nelems, int tostore) {
@@ -856,10 +858,10 @@ void luaK_setlist(FuncState *fs, int base, int nelems, int tostore) {
   int b = (tostore == LUA_MULTRET) ? 0 : tostore;
   assert(tostore != 0);
   if (c <= MAXARG_C) {
-    luaK_codeABC(fs, OP_SETLIST, base, b, c);
+    Codegen_emitABC(fs, OP_SETLIST, base, b, c);
   } else {
-    luaK_codeABC(fs, OP_SETLIST, base, b, 0);
-    luaK_code(fs, cast(Instruction, c), fs->ls->lastline);
+    Codegen_emitABC(fs, OP_SETLIST, base, b, 0);
+    emitCode(fs, (Instruction)c, fs->ls->lastline);
   }
   fs->freereg = base + 1; /* free registers with list values */
 }

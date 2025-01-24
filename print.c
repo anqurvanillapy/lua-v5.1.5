@@ -97,24 +97,24 @@ static void printCode(const Prototype *f) {
       printf("[-]\t");
     }
     printf("%-9s\t", luaP_opnames[o]);
-    switch (getOpMode(o)) {
-    case iABC:
+    switch (GET_OP_MODE(o)) {
+    case FORMAT_A_B_C:
       printf("%d", a);
-      if (getBMode(o) != OpArgN) {
+      if (GET_B_MODE(o) != OP_ARG_NOT_USED) {
         printf(" %zu", ISK(b) ? (-1 - INDEXK(b)) : b);
       }
-      if (getCMode(o) != OpArgN) {
+      if (GET_C_MODE(o) != OP_ARG_NOT_USED) {
         printf(" %zu", ISK(c) ? (-1 - INDEXK(c)) : c);
       }
       break;
-    case iABx:
-      if (getBMode(o) == OpArgK) {
+    case FORMAT_A_Bx:
+      if (GET_B_MODE(o) == OP_ARG_CONST_OR_REG) {
         printf("%d %d", a, -1 - bx);
       } else {
         printf("%d %d", a, bx);
       }
       break;
-    case iAsBx:
+    case FORMAT_A_sBx:
       if (o == OP_JMP) {
         printf("%d", sbx);
       } else {
