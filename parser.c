@@ -280,15 +280,15 @@ static void adjust_assign(LexState *ls, int nvars, int nexps, ExprInfo *e) {
     // Last expression provides the difference.
     Codegen_setReturnMulti(fs, e, extra);
     if (extra > 1) {
-      luaK_reserveregs(fs, extra - 1);
+      luaK_reserveRegs(fs, extra - 1);
     }
   } else {
     if (e->k != EXPR_VOID) {
-      luaK_exp2nextreg(fs, e); /* close last expression */
+      Codegen_exprToNextReg(fs, e); /* close last expression */
     }
     if (extra > 0) {
       int reg = fs->freereg;
-      luaK_reserveregs(fs, extra);
+      luaK_reserveRegs(fs, extra);
       Codegen_emitNil(fs, reg, extra);
     }
   }
@@ -324,7 +324,7 @@ static void leaveBlock(FuncState *fs) {
   assert(!bl->isBreakable || !bl->hasUpvalues);
   assert(bl->nactvar == fs->nactvar);
   fs->freereg = fs->nactvar; /* free registers */
-  luaK_patchtohere(fs, bl->breaklist);
+  Codegen_patchTo(fs, bl->breaklist);
 }
 
 static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
@@ -425,10 +425,10 @@ static void field(LexState *ls, ExprInfo *v) {
   /* field -> ['.' | ':'] NAME */
   FuncState *fs = ls->fs;
   ExprInfo key;
-  luaK_exp2anyreg(fs, v);
+  Codegen_exprToAnyReg(fs, v);
   luaX_next(ls); /* skip the dot or colon */
   checkname(ls, &key);
-  luaK_indexed(fs, v, &key);
+  Codegen_indexed(fs, v, &key);
 }
 
 /// \code
@@ -439,7 +439,7 @@ static void field(LexState *ls, ExprInfo *v) {
 static void indexing(LexState *ls, ExprInfo *v) {
   luaX_next(ls); /* skip the '[' */
   expr(ls, v);
-  luaK_exp2val(ls->fs, v);
+  Codegen_exprToValue(ls->fs, v);
   checkNext(ls, ']');
 }
 
@@ -465,11 +465,11 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
   }
   cc->nh++;
   checkNext(ls, '=');
-  rkkey = luaK_exp2RK(fs, &key);
+  rkkey = Codegen_exprToRK(fs, &key);
   expr(ls, &val);
   assert(cc->t->k == EXPR_NON_RELOC);
   Codegen_emitABC(fs, OP_SETTABLE, cc->t->u.nonRelocReg, rkkey,
-                  luaK_exp2RK(fs, &val));
+                  Codegen_exprToRK(fs, &val));
   fs->freereg = reg; /* free registers */
 }
 
@@ -477,7 +477,7 @@ static void closelistfield(FuncState *fs, struct ConsControl *cc) {
   if (cc->v.k == EXPR_VOID) {
     return; /* there is no list item */
   }
-  luaK_exp2nextreg(fs, &cc->v);
+  Codegen_exprToNextReg(fs, &cc->v);
   cc->v.k = EXPR_VOID;
   if (cc->tostore == LFIELDS_PER_FLUSH) {
     assert(cc->t->k == EXPR_NON_RELOC);
@@ -500,7 +500,7 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
     cc->na--; /* do not count last expression (unknown number of elements) */
   } else {
     if (cc->v.k != EXPR_VOID) {
-      luaK_exp2nextreg(fs, &cc->v);
+      Codegen_exprToNextReg(fs, &cc->v);
     }
     assert(cc->t->k == EXPR_NON_RELOC);
     luaK_setlist(fs, cc->t->u.nonRelocReg, cc->na, cc->tostore);
@@ -524,8 +524,8 @@ static void constructor(LexState *ls, ExprInfo *t) {
   cc.t = t;
   exprSetKind(t, EXPR_RELOC);
   t->u.relocatePC = pc;
-  exprSetKind(&cc.v, EXPR_VOID); /* no value (yet) */
-  luaK_exp2nextreg(ls->fs, t);   /* fix it at stack top (for gc) */
+  exprSetKind(&cc.v, EXPR_VOID);    /* no value (yet) */
+  Codegen_exprToNextReg(ls->fs, t); /* fix it at stack top (for gc) */
   checkNext(ls, '{');
   do {
     assert(cc.v.k == EXPR_VOID || cc.tostore > 0);
@@ -590,7 +590,7 @@ static void parlist(LexState *ls) {
   }
   adjustlocalvars(ls, nparams);
   f->paramsNum = (uint8_t)(fs->nactvar - (f->varargMode & VARARG_HAS_ARG));
-  luaK_reserveregs(fs, fs->nactvar); /* reserve register for parameters */
+  luaK_reserveRegs(fs, fs->nactvar); /* reserve register for parameters */
 }
 
 /// \code
@@ -625,7 +625,7 @@ static int exprList1(LexState *ls, ExprInfo *v) {
   int exprNum = 1;
   expr(ls, v);
   while (testNext(ls, ',')) {
-    luaK_exp2nextreg(ls->fs, v);
+    Codegen_exprToNextReg(ls->fs, v);
     expr(ls, v);
     exprNum++;
   }
@@ -673,7 +673,7 @@ static void arguments(LexState *ls, ExprInfo *f) {
   int nparams = LUA_MULTRET;   /* open call */
   if (!HAS_MULTI_RETURN(args.k)) {
     if (args.k != EXPR_VOID) {
-      luaK_exp2nextreg(fs, &args); /* close last argument */
+      Codegen_exprToNextReg(fs, &args); /* close last argument */
     }
     nparams = fs->freereg - (base + 1);
   }
@@ -722,24 +722,24 @@ static void primaryExpr(LexState *ls, ExprInfo *v) {
       field(ls, v);
       break;
     case '[': {
-      luaK_exp2anyreg(fs, v);
+      Codegen_exprToAnyReg(fs, v);
       ExprInfo key;
       indexing(ls, &key);
-      luaK_indexed(fs, v, &key);
+      Codegen_indexed(fs, v, &key);
       break;
     }
     case ':': {
       luaX_next(ls);
       ExprInfo key;
       checkname(ls, &key);
-      luaK_self(fs, v, &key);
+      Codegen_self(fs, v, &key);
       arguments(ls, v);
       break;
     }
     case '(':
     case TK_STRING:
     case '{':
-      luaK_exp2nextreg(fs, v);
+      Codegen_exprToNextReg(fs, v);
       arguments(ls, v);
       break;
     default:
@@ -985,7 +985,7 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
   if (conflict) {
     // Make a copy.
     Codegen_emitABC(fs, OP_MOVE, fs->freereg, v->u.localReg, 0);
-    luaK_reserveregs(fs, 1);
+    luaK_reserveRegs(fs, 1);
   }
 }
 
@@ -1015,14 +1015,14 @@ static void assignment(LexState *ls, LExpr *lh, int nvars) {
       }
     } else {
       Codegen_setReturn(ls->fs, &e); /* close last expression */
-      luaK_storevar(ls->fs, &lh->v, &e);
+      Codegen_storeVar(ls->fs, &lh->v, &e);
       return; /* avoid default */
     }
   }
   // Default assignment.
   exprSetKind(&e, EXPR_NON_RELOC);
   e.u.nonRelocReg = ls->fs->freereg - 1;
-  luaK_storevar(ls->fs, &lh->v, &e);
+  Codegen_storeVar(ls->fs, &lh->v, &e);
 }
 
 static int cond(LexState *ls) {
@@ -1032,7 +1032,7 @@ static int cond(LexState *ls) {
   if (v.k == EXPR_NIL) {
     v.k = EXPR_FALSE; /* `falses' are all equal here */
   }
-  luaK_goiftrue(ls->fs, &v);
+  Codegen_goIfTrue(ls->fs, &v);
   return v.f;
 }
 
@@ -1050,7 +1050,7 @@ static void breakStmt(LexState *ls) {
   if (upval) {
     Codegen_emitABC(fs, OP_CLOSE, bl->nactvar, 0, 0);
   }
-  luaK_concat(fs, &bl->breaklist, Codegen_jump(fs));
+  Codegen_concat(fs, &bl->breaklist, Codegen_jump(fs));
 }
 
 static void whileStmt(LexState *ls, int line) {
@@ -1065,10 +1065,10 @@ static void whileStmt(LexState *ls, int line) {
   enterBlock(fs, &bl, true);
   checkNext(ls, TK_DO);
   block(ls);
-  luaK_patchlist(fs, Codegen_jump(fs), whileinit);
+  Codegen_patchList(fs, Codegen_jump(fs), whileinit);
   check_match(ls, TK_END, TK_WHILE, line);
   leaveBlock(fs);
-  luaK_patchtohere(fs, condexit); /* false conditions finish the loop */
+  Codegen_patchTo(fs, condexit); /* false conditions finish the loop */
 }
 
 static void repeatStmt(LexState *ls, int line) {
@@ -1085,12 +1085,12 @@ static void repeatStmt(LexState *ls, int line) {
   condexit = cond(ls);    /* read condition (inside scope block) */
   if (!bl2.hasUpvalues) { /* no upvalues? */
     leaveBlock(fs);       /* finish scope */
-    luaK_patchlist(ls->fs, condexit, repeat_init); /* close the loop */
+    Codegen_patchList(ls->fs, condexit, repeat_init); /* close the loop */
   } else {         /* complete semantics when there are upvalues */
     breakStmt(ls); /* if condition then break */
-    luaK_patchtohere(ls->fs, condexit);                    /* else... */
-    leaveBlock(fs);                                        /* finish scope... */
-    luaK_patchlist(ls->fs, Codegen_jump(fs), repeat_init); /* and repeat */
+    Codegen_patchTo(ls->fs, condexit); /* else... */
+    leaveBlock(fs);                    /* finish scope... */
+    Codegen_patchList(ls->fs, Codegen_jump(fs), repeat_init); /* and repeat */
   }
   leaveBlock(fs); /* finish loop */
 }
@@ -1100,7 +1100,7 @@ static int exp1(LexState *ls) {
   int k;
   expr(ls, &e);
   k = e.k;
-  luaK_exp2nextreg(ls->fs, &e);
+  Codegen_exprToNextReg(ls->fs, &e);
   return k;
 }
 
@@ -1115,14 +1115,14 @@ static void forbody(LexState *ls, int base, int line, int nvars, int isnum) {
       isnum ? luaK_codeAsBx(fs, OP_FORPREP, base, NO_JUMP) : Codegen_jump(fs);
   enterBlock(fs, &bl, false); /* scope for declared variables */
   adjustlocalvars(ls, nvars);
-  luaK_reserveregs(fs, nvars);
+  luaK_reserveRegs(fs, nvars);
   block(ls);
   leaveBlock(fs); /* end of scope for declared variables */
-  luaK_patchtohere(fs, prep);
+  Codegen_patchTo(fs, prep);
   endfor = (isnum) ? luaK_codeAsBx(fs, OP_FORLOOP, base, NO_JUMP)
                    : Codegen_emitABC(fs, OP_TFORLOOP, base, 0, nvars);
   Codegen_fixLine(fs, line); /* pretend that `OP_FOR' starts the loop */
-  luaK_patchlist(fs, (isnum ? endfor : Codegen_jump(fs)), prep + 1);
+  Codegen_patchList(fs, (isnum ? endfor : Codegen_jump(fs)), prep + 1);
 }
 
 static void fornum(LexState *ls, String *varname, int line) {
@@ -1140,8 +1140,8 @@ static void fornum(LexState *ls, String *varname, int line) {
   if (testNext(ls, ',')) {
     exp1(ls); /* optional step */
   } else {    /* default step = 1 */
-    Codegen_emitABx(fs, OP_LOADK, fs->freereg, luaK_numberK(fs, 1));
-    luaK_reserveregs(fs, 1);
+    Codegen_emitABx(fs, OP_LOADK, fs->freereg, Codegen_addNumber(fs, 1));
+    luaK_reserveRegs(fs, 1);
   }
   forbody(ls, base, line, 1, 1);
 }
@@ -1165,7 +1165,7 @@ static void forlist(LexState *ls, String *indexname) {
   checkNext(ls, TK_IN);
   line = ls->linenumber;
   adjust_assign(ls, 3, exprList1(ls, &e), &e);
-  luaK_checkstack(fs, 3); /* extra space to call generator */
+  Codegen_reserveStack(fs, 3); /* extra space to call generator */
   forbody(ls, base, line, nvars - 3, 0);
 }
 
@@ -1210,19 +1210,19 @@ static void ifStmt(LexState *ls, int line) {
   int escapelist = NO_JUMP;
   flist = test_then_block(ls); /* IF cond THEN block */
   while (ls->t.token == TK_ELSEIF) {
-    luaK_concat(fs, &escapelist, Codegen_jump(fs));
-    luaK_patchtohere(fs, flist);
+    Codegen_concat(fs, &escapelist, Codegen_jump(fs));
+    Codegen_patchTo(fs, flist);
     flist = test_then_block(ls); /* ELSEIF cond THEN block */
   }
   if (ls->t.token == TK_ELSE) {
-    luaK_concat(fs, &escapelist, Codegen_jump(fs));
-    luaK_patchtohere(fs, flist);
+    Codegen_concat(fs, &escapelist, Codegen_jump(fs));
+    Codegen_patchTo(fs, flist);
     luaX_next(ls); /* skip ELSE (after patch, for correct line info) */
     block(ls);     /* `else' part */
   } else {
-    luaK_concat(fs, &escapelist, flist);
+    Codegen_concat(fs, &escapelist, flist);
   }
-  luaK_patchtohere(fs, escapelist);
+  Codegen_patchTo(fs, escapelist);
   check_match(ls, TK_END, TK_IF, line);
 }
 
@@ -1232,10 +1232,10 @@ static void localFuncStmt(LexState *ls) {
   new_localvar(ls, checkName(ls), 0);
   exprSetKind(&v, EXPR_LOCAL);
   v.u.localReg = fs->freereg;
-  luaK_reserveregs(fs, 1);
+  luaK_reserveRegs(fs, 1);
   adjustlocalvars(ls, 1);
   body(ls, &b, false, ls->linenumber);
-  luaK_storevar(fs, &v, &b);
+  Codegen_storeVar(fs, &v, &b);
   /* debug information will only see the variable after this point! */
   GET_LOCAL_VAR(fs, fs->nactvar - 1).startPC = fs->pc;
 }
@@ -1279,7 +1279,7 @@ static void funcStmt(LexState *ls, int line) {
   bool hasSelf = funcname(ls, &v);
   ExprInfo b;
   body(ls, &b, hasSelf, line);
-  luaK_storevar(ls->fs, &v, &b);
+  Codegen_storeVar(ls->fs, &v, &b);
   Codegen_fixLine(ls->fs, line); /* definition `happens' in the first line */
 }
 
@@ -1332,10 +1332,10 @@ static void returnStmt(LexState *ls) {
 
   int first; // registers with returned values
   if (nret == 1) {
-    first = luaK_exp2anyreg(fs, &e);
+    first = Codegen_exprToAnyReg(fs, &e);
   } else {
     // Values must go to the stack.
-    luaK_exp2nextreg(fs, &e);
+    Codegen_exprToNextReg(fs, &e);
     // Returns all active values.
     first = fs->nactvar;
     assert(nret == fs->freereg - first);

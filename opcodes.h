@@ -115,10 +115,10 @@ typedef enum OpMode {
 /* gets the index of the constant */
 #define INDEXK(r) ((size_t)(r) & ~BITRK)
 
-#define MAXINDEXRK (BITRK - 1)
+#define MAX_RK_INDEX (BITRK - 1)
 
 /* code a constant index as a RK value */
-#define RKASK(x) ((x) | BITRK)
+#define RK_AS_K(x) ((x) | BITRK)
 
 /*
 ** invalid register that fits in 8 bits
