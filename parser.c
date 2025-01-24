@@ -318,7 +318,8 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   }
   f->inners[fs->np++] = func->f;
   luaC_objbarrier(ls->L, f, func->f);
-  exprSetInfo(v, VRELOCABLE, luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1));
+  exprSetKind(v, VRELOCABLE);
+  v->u.relocatePC = luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1);
   for (size_t i = 0; i < func->f->upvaluesNum; i++) {
     OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
     luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
@@ -488,11 +489,12 @@ static void constructor(LexState *ls, ExprInfo *t) {
   /* constructor -> ?? */
   FuncState *fs = ls->fs;
   int line = ls->linenumber;
-  int pc = luaK_codeABC(fs, OP_NEWTABLE, 0, 0, 0);
+  size_t pc = luaK_codeABC(fs, OP_NEWTABLE, 0, 0, 0);
   struct ConsControl cc;
   cc.na = cc.nh = cc.tostore = 0;
   cc.t = t;
-  exprSetInfo(t, VRELOCABLE, pc);
+  exprSetKind(t, VRELOCABLE);
+  t->u.relocatePC = pc;
   exprSetInfo(&cc.v, VVOID, 0); /* no value (yet) */
   luaK_exp2nextreg(ls->fs, t);  /* fix it at stack top (for gc) */
   checkNext(ls, '{');

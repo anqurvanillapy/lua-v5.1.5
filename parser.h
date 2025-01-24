@@ -27,7 +27,7 @@ typedef enum ExprKind {
   VINDEXED,
   // Use jmpPC.
   VJMP,
-  /* info = instruction pc */
+  // Use relocatePC.
   VRELOCABLE,
   /* info = result register */
   VNONRELOC,
@@ -52,6 +52,7 @@ typedef union ExprVariant {
   size_t globalID;
   ExprIndexer indexer;
   size_t jmpPC;
+  size_t relocatePC;
   size_t callPC;
   size_t varargCallPC;
 
