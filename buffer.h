@@ -4,12 +4,6 @@
 
 #include "memory.h"
 
-#define EOZ (-1) /* end of stream */
-
-#define char2int(c) (int)(uint8_t)(c)
-
-#define zgetc(z) (((z)->n--) > 0 ? char2int(*(z)->p++) : luaZ_fill(z))
-
 typedef struct StringBuilder {
   char *str;
   size_t size;
@@ -22,17 +16,22 @@ typedef struct StringBuilder {
     (b)->size = 0;                                                             \
     (b)->len = 0;                                                              \
   } while (false)
-
 #define StringBuilder_get(b) ((b)->str)
 #define StringBuilder_len(b) ((b)->len)
 #define StringBuilder_size(b) ((b)->size)
-#define StringBuilder_reset(b) ((b)->len = 0)
+#define StringBuilder_reset(b)                                                 \
+  do {                                                                         \
+    (b)->len = 0;                                                              \
+  } while (false)
 #define StringBuilder_resize(L, b, sz)                                         \
   do {                                                                         \
     Mem_reallocVec(L, (b)->str, (b)->size, sz, char);                          \
     (b)->size = (sz);                                                          \
   } while (false)
 #define StringBuilder_free(L, b) StringBuilder_resize(L, b, 0)
+
+#define EOZ (-1) /* end of stream */
+#define READ_CHAR(z) (((z)->n--) > 0 ? (int)(uint8_t)*(z)->p++ : luaZ_fill(z))
 
 typedef struct Zio {
   // Number of bytes still unread.

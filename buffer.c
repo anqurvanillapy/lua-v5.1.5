@@ -17,7 +17,7 @@ int luaZ_fill(ZIO *z) {
   }
   z->n = size - 1;
   z->p = buff;
-  return char2int(*(z->p++));
+  return (int)(uint8_t)*z->p++;
 }
 
 int luaZ_lookahead(ZIO *z) {
@@ -29,7 +29,7 @@ int luaZ_lookahead(ZIO *z) {
     z->n++;
     z->p--;
   }
-  return char2int(*z->p);
+  return (int)(uint8_t)*z->p;
 }
 
 void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *ud) {
