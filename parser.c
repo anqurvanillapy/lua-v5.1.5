@@ -104,13 +104,6 @@ static String *checkName(LexState *ls) {
   return ts;
 }
 
-static void exprSetInfo(ExprInfo *e, ExprKind k, int info) {
-  e->f = NO_JUMP;
-  e->t = NO_JUMP;
-  e->k = k;
-  e->u.info = info;
-}
-
 static void exprSetKind(ExprInfo *e, ExprKind k) {
   e->f = NO_JUMP;
   e->t = NO_JUMP;
@@ -170,10 +163,14 @@ static void removevars(LexState *ls, int tolevel) {
   }
 }
 
-static size_t createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
+static size_t createUpvalue(FuncState *fs, String *name, const ExprInfo *v) {
+  assert(v->k == VLOCAL || v->k == VUPVAL);
+  // FIXME(anqur): Suspicious conversion;
+  int info = v->k == VLOCAL ? v->u.localReg : (int)v->u.upvalueID;
+
   Prototype *f = fs->f;
   for (size_t i = 0; i < f->upvaluesNum; i++) {
-    if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == v->u.info) {
+    if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == info) {
       assert(f->upvalues[i] == name);
       return i;
     }
@@ -189,11 +186,8 @@ static size_t createUpvalue(FuncState *fs, String *name, ExprInfo *v) {
   }
   f->upvalues[f->upvaluesNum] = name;
   luaC_objbarrier(fs->L, f, name);
-  assert(v->k == VLOCAL || v->k == VUPVAL);
   fs->upvalues[f->upvaluesNum].k = v->k;
-  // FIXME(anqur): Suspicious conversion.
-  fs->upvalues[f->upvaluesNum].info =
-      v->k == VLOCAL ? v->u.localReg : (int)v->u.upvalueID;
+  fs->upvalues[f->upvaluesNum].info = info;
   return f->upvaluesNum++;
 }
 
@@ -442,7 +436,9 @@ static void recfield(LexState *ls, struct ConsControl *cc) {
   checkNext(ls, '=');
   rkkey = luaK_exp2RK(fs, &key);
   expr(ls, &val);
-  luaK_codeABC(fs, OP_SETTABLE, cc->t->u.info, rkkey, luaK_exp2RK(fs, &val));
+  assert(cc->t->k == VNONRELOC);
+  luaK_codeABC(fs, OP_SETTABLE, cc->t->u.nonRelocReg, rkkey,
+               luaK_exp2RK(fs, &val));
   fs->freereg = reg; /* free registers */
 }
 
@@ -453,7 +449,8 @@ static void closelistfield(FuncState *fs, struct ConsControl *cc) {
   luaK_exp2nextreg(fs, &cc->v);
   cc->v.k = VVOID;
   if (cc->tostore == LFIELDS_PER_FLUSH) {
-    luaK_setlist(fs, cc->t->u.info, cc->na, cc->tostore); /* flush */
+    assert(cc->t->k == VNONRELOC);
+    luaK_setlist(fs, cc->t->u.nonRelocReg, cc->na, cc->tostore); /* flush */
     cc->tostore = 0; /* no more items pending */
   }
 }
@@ -474,7 +471,8 @@ static void lastlistfield(FuncState *fs, struct ConsControl *cc) {
     if (cc->v.k != VVOID) {
       luaK_exp2nextreg(fs, &cc->v);
     }
-    luaK_setlist(fs, cc->t->u.info, cc->na, cc->tostore);
+    assert(cc->t->k == VNONRELOC);
+    luaK_setlist(fs, cc->t->u.nonRelocReg, cc->na, cc->tostore);
   }
 }
 
@@ -495,8 +493,8 @@ static void constructor(LexState *ls, ExprInfo *t) {
   cc.t = t;
   exprSetKind(t, VRELOCABLE);
   t->u.relocatePC = pc;
-  exprSetInfo(&cc.v, VVOID, 0); /* no value (yet) */
-  luaK_exp2nextreg(ls->fs, t);  /* fix it at stack top (for gc) */
+  exprSetKind(&cc.v, VVOID);   /* no value (yet) */
+  luaK_exp2nextreg(ls->fs, t); /* fix it at stack top (for gc) */
   checkNext(ls, '{');
   do {
     assert(cc.v.k == VVOID || cc.tostore > 0);
@@ -640,8 +638,8 @@ static void arguments(LexState *ls, ExprInfo *f) {
     return;
   }
   assert(f->k == VNONRELOC);
-  int base = f->u.info;      /* base register for call */
-  int nparams = LUA_MULTRET; /* open call */
+  int base = f->u.nonRelocReg; /* base register for call */
+  int nparams = LUA_MULTRET;   /* open call */
   if (!HAS_MULTI_RETURN(args.k)) {
     if (args.k != VVOID) {
       luaK_exp2nextreg(fs, &args); /* close last argument */
@@ -938,6 +936,7 @@ static void checkConflict(LexState *ls, LExpr *lhs, ExprInfo *v) {
   FuncState *fs = ls->fs;
   int extra = fs->freereg; /* eventual position to save local variable */
   bool conflict = false;
+  assert(v->k == VLOCAL);
   for (; lhs; lhs = lhs->prev) {
     if (lhs->v.k == VINDEXED) {
       if (lhs->v.u.indexer.tableReg == v->u.localReg) { /* conflict? */
@@ -989,7 +988,9 @@ static void assignment(LexState *ls, LExpr *lh, int nvars) {
       return; /* avoid default */
     }
   }
-  exprSetInfo(&e, VNONRELOC, ls->fs->freereg - 1); /* default assignment */
+  // Default assignment.
+  exprSetKind(&e, VNONRELOC);
+  e.u.nonRelocReg = ls->fs->freereg - 1;
   luaK_storevar(ls->fs, &lh->v, &e);
 }
 

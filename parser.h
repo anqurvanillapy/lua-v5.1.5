@@ -29,7 +29,7 @@ typedef enum ExprKind {
   VJMP,
   // Use relocatePC.
   VRELOCABLE,
-  /* info = result register */
+  // Use nonRelocReg. Non-relocatable result register.
   VNONRELOC,
   // Use callPC.
   VCALL,
@@ -53,10 +53,9 @@ typedef union ExprVariant {
   ExprIndexer indexer;
   size_t jmpPC;
   size_t relocatePC;
+  int nonRelocReg;
   size_t callPC;
   size_t varargCallPC;
-
-  int info;
 } ExprVariant;
 
 typedef struct ExprInfo {

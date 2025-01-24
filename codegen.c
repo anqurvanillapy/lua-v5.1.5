@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "lua.h"
@@ -202,7 +203,7 @@ static void freereg(FuncState *fs, int reg) {
 
 static void freeexp(FuncState *fs, ExprInfo *e) {
   if (e->k == VNONRELOC) {
-    freereg(fs, e->u.info);
+    freereg(fs, e->u.nonRelocReg);
   }
 }
 
@@ -270,7 +271,7 @@ void Codegen_setReturnMulti(FuncState *fs, ExprInfo *e, int resultsNum) {
 void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
   if (e->k == VCALL) { /* expression is an open function call? */
     e->k = VNONRELOC;
-    e->u.info = GETARG_A(fs->f->code[e->u.callPC]);
+    e->u.nonRelocReg = GETARG_A(fs->f->code[e->u.callPC]);
   } else if (e->k == VVARARG) {
     SETARG_B(fs->f->code[e->u.varargCallPC], 2);
     // Can relocate its simple result.
@@ -282,6 +283,7 @@ void Codegen_setReturn(FuncState *fs, ExprInfo *e) {
 void Codegen_releaseVars(FuncState *fs, ExprInfo *e) {
   switch (e->k) {
   case VLOCAL:
+    e->u.nonRelocReg = e->u.localReg;
     e->k = VNONRELOC;
     break;
   case VUPVAL:
@@ -333,12 +335,12 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     luaK_codeABx(fs, OP_LOADK, reg, luaK_numberK(fs, e->u.numValue));
     break;
   case VRELOCABLE:
-    Instruction *pc = &fs->f->code[e->u.info];
+    Instruction *pc = &fs->f->code[e->u.relocatePC];
     SETARG_A(*pc, reg);
     break;
   case VNONRELOC:
-    if (reg != e->u.info) {
-      luaK_codeABC(fs, OP_MOVE, reg, e->u.info, 0);
+    if (reg != e->u.nonRelocReg) {
+      luaK_codeABC(fs, OP_MOVE, reg, e->u.nonRelocReg, 0);
     }
     break;
   default:
@@ -346,7 +348,7 @@ static void discharge2reg(FuncState *fs, ExprInfo *e, int reg) {
     assert(e->k == VVOID || e->k == VJMP);
     return;
   }
-  e->u.info = reg;
+  e->u.nonRelocReg = reg;
   e->k = VNONRELOC;
 }
 
@@ -377,8 +379,9 @@ static void exp2reg(FuncState *fs, ExprInfo *e, int reg) {
     patchlistaux(fs, e->f, final, reg, p_f);
     patchlistaux(fs, e->t, final, reg, p_t);
   }
-  e->f = e->t = NO_JUMP;
-  e->u.info = reg;
+  e->f = NO_JUMP;
+  e->t = NO_JUMP;
+  e->u.nonRelocReg = reg;
   e->k = VNONRELOC;
 }
 
@@ -393,15 +396,16 @@ int luaK_exp2anyreg(FuncState *fs, ExprInfo *e) {
   Codegen_releaseVars(fs, e);
   if (e->k == VNONRELOC) {
     if (!hasjumps(e)) {
-      return e->u.info; /* exp is already in a register */
+      return e->u.nonRelocReg; /* exp is already in a register */
     }
-    if (e->u.info >= fs->nactvar) { /* reg. is not a local? */
-      exp2reg(fs, e, e->u.info);    /* put value on it */
-      return e->u.info;
+    if (e->u.nonRelocReg >= fs->nactvar) { /* reg. is not a local? */
+      exp2reg(fs, e, e->u.nonRelocReg);    /* put value on it */
+      return e->u.nonRelocReg;
     }
   }
-  luaK_exp2nextreg(fs, e); /* default */
-  return e->u.info;
+  luaK_exp2nextreg(fs, e);
+  assert(e->k == VNONRELOC);
+  return e->u.nonRelocReg;
 }
 
 void luaK_exp2val(FuncState *fs, ExprInfo *e) {
@@ -473,14 +477,14 @@ void luaK_storevar(FuncState *fs, ExprInfo *var, ExprInfo *ex) {
 }
 
 void luaK_self(FuncState *fs, ExprInfo *e, ExprInfo *key) {
-  int func;
   luaK_exp2anyreg(fs, e);
   freeexp(fs, e);
-  func = fs->freereg;
+  int func = fs->freereg;
   luaK_reserveregs(fs, 2);
-  luaK_codeABC(fs, OP_SELF, func, e->u.info, luaK_exp2RK(fs, key));
+  assert(e->k == VNONRELOC);
+  luaK_codeABC(fs, OP_SELF, func, e->u.nonRelocReg, luaK_exp2RK(fs, key));
   freeexp(fs, key);
-  e->u.info = func;
+  e->u.nonRelocReg = func;
   e->k = VNONRELOC;
 }
 
@@ -503,7 +507,8 @@ static int jumponcond(FuncState *fs, ExprInfo *e, int cond) {
   }
   discharge2anyreg(fs, e);
   freeexp(fs, e);
-  return condjump(fs, OP_TESTSET, NO_REG, e->u.info, cond);
+  assert(e->k == VNONRELOC);
+  return condjump(fs, OP_TESTSET, NO_REG, e->u.nonRelocReg, cond);
 }
 
 void luaK_goiftrue(FuncState *fs, ExprInfo *e) {
@@ -573,13 +578,18 @@ static void emitNot(FuncState *fs, ExprInfo *e) {
     break;
   }
   case VRELOCABLE:
-  case VNONRELOC: {
     discharge2anyreg(fs, e);
     freeexp(fs, e);
-    e->u.relocatePC = luaK_codeABC(fs, OP_NOT, 0, e->u.info, 0);
+    // FIXME(anqur): Suspicious conversion.
+    e->u.relocatePC = luaK_codeABC(fs, OP_NOT, 0, (int)e->u.relocatePC, 0);
     e->k = VRELOCABLE;
     break;
-  }
+  case VNONRELOC:
+    discharge2anyreg(fs, e);
+    freeexp(fs, e);
+    e->u.relocatePC = luaK_codeABC(fs, OP_NOT, 0, e->u.nonRelocReg, 0);
+    e->k = VRELOCABLE;
+    break;
   default:
     assert(false);
   }
@@ -758,9 +768,9 @@ void luaK_posfix(FuncState *fs, OpKind op, ExprInfo *e1, ExprInfo *e2) {
     if (e2->k == VRELOCABLE &&
         GET_OPCODE(fs->f->code[e2->u.relocatePC]) == OP_CONCAT) {
       assert(e1->k == VNONRELOC);
-      assert(e1->u.info == GETARG_B(fs->f->code[e2->u.relocatePC]) - 1);
+      assert(e1->u.nonRelocReg == GETARG_B(fs->f->code[e2->u.relocatePC]) - 1);
       freeexp(fs, e1);
-      SETARG_B(fs->f->code[e2->u.relocatePC], e1->u.info);
+      SETARG_B(fs->f->code[e2->u.relocatePC], e1->u.nonRelocReg);
       e1->k = VRELOCABLE;
       e1->u.relocatePC = e2->u.relocatePC;
     } else {
