@@ -163,14 +163,41 @@ static void removevars(LexState *ls, int tolevel) {
   }
 }
 
+static UpvalueInfo exprToUpvalueInfo(const ExprInfo *e) {
+  switch (e->k) {
+  case VLOCAL:
+    return (UpvalueInfo){
+        .k = e->k,
+        .v = (UpvalueVariant){.localReg = e->u.localReg},
+    };
+  case VUPVAL:
+    return (UpvalueInfo){
+        .k = e->k,
+        .v = (UpvalueVariant){.upvalueID = e->u.upvalueID},
+    };
+  default:
+    assert(false);
+  }
+}
+
+static bool upvalueEqual(const UpvalueInfo *lhs, const UpvalueInfo *rhs) {
+  if (lhs->k == VLOCAL && rhs->k == VLOCAL &&
+      lhs->v.localReg == rhs->v.localReg) {
+    return true;
+  }
+  if (lhs->k == VUPVAL && rhs->k == VUPVAL &&
+      lhs->v.upvalueID == rhs->v.upvalueID) {
+    return true;
+  }
+  return false;
+}
+
 static size_t createUpvalue(FuncState *fs, String *name, const ExprInfo *v) {
   assert(v->k == VLOCAL || v->k == VUPVAL);
-  // FIXME(anqur): Suspicious conversion;
-  int info = v->k == VLOCAL ? v->u.localReg : (int)v->u.upvalueID;
-
+  UpvalueInfo rhs = exprToUpvalueInfo(v);
   Prototype *f = fs->f;
   for (size_t i = 0; i < f->upvaluesNum; i++) {
-    if (fs->upvalues[i].k == v->k && fs->upvalues[i].info == info) {
+    if (upvalueEqual(&fs->upvalues[i], &rhs)) {
       assert(f->upvalues[i] == name);
       return i;
     }
@@ -186,8 +213,7 @@ static size_t createUpvalue(FuncState *fs, String *name, const ExprInfo *v) {
   }
   f->upvalues[f->upvaluesNum] = name;
   luaC_objbarrier(fs->L, f, name);
-  fs->upvalues[f->upvaluesNum].k = v->k;
-  fs->upvalues[f->upvaluesNum].info = info;
+  fs->upvalues[f->upvaluesNum] = rhs;
   return f->upvaluesNum++;
 }
 
@@ -315,8 +341,12 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
   exprSetKind(v, VRELOCABLE);
   v->u.relocatePC = luaK_codeABx(fs, OP_CLOSURE, 0, fs->np - 1);
   for (size_t i = 0; i < func->f->upvaluesNum; i++) {
-    OpCode o = (func->upvalues[i].k == VLOCAL) ? OP_MOVE : OP_GETUPVAL;
-    luaK_codeABC(fs, o, 0, func->upvalues[i].info, 0);
+    if (func->upvalues[i].k == VLOCAL) {
+      luaK_codeABC(fs, OP_MOVE, 0, func->upvalues[i].v.localReg, 0);
+    } else {
+      // FIXME(anqur): Suspicious conversion.
+      luaK_codeABC(fs, OP_GETUPVAL, 0, (int)func->upvalues[i].v.upvalueID, 0);
+    }
   }
 }
 

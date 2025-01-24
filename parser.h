@@ -65,9 +65,14 @@ typedef struct ExprInfo {
   int f; /* patch list of `exit when false' */
 } ExprInfo;
 
+typedef union UpvalueVariant {
+  int localReg;
+  size_t upvalueID;
+} UpvalueVariant;
+
 typedef struct UpvalueInfo {
   ExprKind k;
-  int info;
+  UpvalueVariant v;
 } UpvalueInfo;
 
 struct Block;
