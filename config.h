@@ -196,10 +196,6 @@
 @@ The luai_num* macros define the primitive operations over numbers.
 */
 #include <math.h>
-#define luai_numadd(a, b) ((a) + (b))
-#define luai_numsub(a, b) ((a) - (b))
-#define luai_nummul(a, b) ((a) * (b))
-#define luai_numdiv(a, b) ((a) / (b))
 #define luai_nummod(a, b) ((a) - floor((a) / (b)) * (b))
 
 /*

@@ -409,6 +409,19 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
     base = L->base;                                                            \
   }
 
+#define ARITH_OP_INFIX(op, tm)                                                 \
+  do {                                                                         \
+    Value *rb = RKB(i);                                                        \
+    Value *rc = RKC(i);                                                        \
+    if (IS_TYPE_NUMBER(rb) && IS_TYPE_NUMBER(rc)) {                            \
+      double nb = NUMBER_VALUE(rb);                                            \
+      double nc = NUMBER_VALUE(rc);                                            \
+      SET_NUMBER(ra, nb op nc);                                                \
+    } else {                                                                   \
+      Protect(Arith(L, ra, rb, rc, tm));                                       \
+    }                                                                          \
+  } while (false)
+
 #define ARITH_OP(op, tm)                                                       \
   do {                                                                         \
     Value *rb = RKB(i);                                                        \
@@ -522,19 +535,19 @@ reentry: /* entry point */
       continue;
     }
     case OP_ADD: {
-      ARITH_OP(luai_numadd, TM_ADD);
+      ARITH_OP_INFIX(+, TM_ADD);
       continue;
     }
     case OP_SUB: {
-      ARITH_OP(luai_numsub, TM_SUB);
+      ARITH_OP_INFIX(-, TM_SUB);
       continue;
     }
     case OP_MUL: {
-      ARITH_OP(luai_nummul, TM_MUL);
+      ARITH_OP_INFIX(*, TM_MUL);
       continue;
     }
     case OP_DIV: {
-      ARITH_OP(luai_numdiv, TM_DIV);
+      ARITH_OP_INFIX(/, TM_DIV);
       continue;
     }
     case OP_MOD: {
