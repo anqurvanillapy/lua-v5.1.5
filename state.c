@@ -90,7 +90,7 @@ static void closeState(lua_State *L) {
   assert(g->rootgc == LuaObjectToGCObject(L));
   assert(g->pool.itemsNum == 0);
   Mem_freeVec(L, G(L)->pool.buckets, G(L)->pool.bucketsSize, String *);
-  luaZ_freebuffer(L, &g->buff);
+  StringBuilder_free(L, &g->buff);
   freeStack(L, L);
   assert(g->totalbytes == sizeof(MainThread));
   g->alloc(g->allocData, FROM_STATE(L), STATE_SIZE(MainThread), 0);
@@ -144,7 +144,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
   g->pool.itemsNum = 0;
   g->pool.buckets = nullptr;
   SET_NIL(REGISTRY(L));
-  luaZ_initbuffer(L, &g->buff);
+  StringBuilder_init(L, &g->buff);
   g->panic = nullptr;
   g->gcstate = GCSpause;
   g->rootgc = LuaObjectToGCObject(L);

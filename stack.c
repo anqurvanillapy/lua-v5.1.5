@@ -473,7 +473,7 @@ int luaD_pcall(lua_State *L, Pfunc func, void *u, ptrdiff_t old_top,
 */
 struct SParser {
   ZIO *z;
-  Mbuffer buff; /* buffer to be used by the scanner */
+  StringBuilder buff; /* buffer to be used by the scanner */
   const char *name;
 };
 
@@ -497,8 +497,8 @@ static void f_parser(lua_State *L, void *ud) {
 
 int luaD_protectedparser(lua_State *L, ZIO *z, const char *name) {
   struct SParser p = {.z = z, .name = name};
-  luaZ_initbuffer(L, &p.buff);
+  StringBuilder_init(L, &p.buff);
   int status = luaD_pcall(L, f_parser, &p, savestack(L, L->top), L->errFunc);
-  luaZ_freebuffer(L, &p.buff);
+  StringBuilder_free(L, &p.buff);
   return status;
 }

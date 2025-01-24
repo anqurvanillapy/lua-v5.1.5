@@ -255,8 +255,8 @@
 #endif
 
 /*
-@@ LUAI_EXTRASPACE allows you to add user-specific data in a lua_State
-@* (the data goes just *before* the lua_State pointer).
+@@ LUAI_EXTRASPACE allows you to add user-specific ud in a lua_State
+@* (the ud goes just *before* the lua_State pointer).
 ** CHANGE (define) this if you really need that. This value must be
 ** a multiple of the maximum alignment required for your machine.
 */

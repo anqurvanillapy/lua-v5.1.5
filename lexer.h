@@ -71,10 +71,10 @@ typedef struct LexState {
   Token lookahead;      /* look ahead token */
   struct FuncState *fs; /* `FuncState' is private to the parser */
   struct lua_State *L;
-  ZIO *z;         /* input stream */
-  Mbuffer *buff;  /* buffer for tokens */
-  String *source; /* current source name */
-  char decpoint;  /* locale decimal point */
+  ZIO *z;              /* input stream */
+  StringBuilder *buff; /* buffer for tokens */
+  String *source;      /* current source name */
+  char decpoint;       /* locale decimal point */
 } LexState;
 
 LUAI_FUNC void luaX_init(lua_State *L);

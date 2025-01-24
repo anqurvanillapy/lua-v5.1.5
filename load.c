@@ -10,7 +10,7 @@
 typedef struct {
   lua_State *L;
   ZIO *Z;
-  Mbuffer *b;
+  StringBuilder *b;
   const char *name;
 } LoadState;
 
@@ -182,7 +182,8 @@ static void LoadHeader(LoadState *S) {
 /*
 ** load precompiled chunk
 */
-Prototype *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff, const char *name) {
+Prototype *luaU_undump(lua_State *L, ZIO *Z, StringBuilder *buff,
+                       const char *name) {
   LoadState S;
   if (*name == '@' || *name == '=') {
     S.name = name + 1;

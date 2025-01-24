@@ -10,7 +10,7 @@ int luaZ_fill(ZIO *z) {
   lua_unlock(L);
   // Enter the userspace, so we unlock first.
   size_t size;
-  const char *buff = z->reader(L, z->data, &size);
+  const char *buff = z->reader(L, z->ud, &size);
   lua_lock(L);
   if (buff == nullptr || size == 0) {
     return EOZ;
@@ -32,10 +32,10 @@ int luaZ_lookahead(ZIO *z) {
   return char2int(*z->p);
 }
 
-void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data) {
+void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *ud) {
   z->L = L;
   z->reader = reader;
-  z->data = data;
+  z->ud = ud;
   z->n = 0;
   z->p = nullptr;
 }
@@ -57,12 +57,12 @@ size_t luaZ_read(ZIO *z, void *b, size_t n) {
   return 0;
 }
 
-char *luaZ_reserve(lua_State *L, Mbuffer *buff, size_t n) {
-  if (n > buff->buffsize) {
+char *luaZ_reserve(lua_State *L, StringBuilder *buff, size_t n) {
+  if (n > buff->size) {
     if (n < LUA_MIN_BUF_SIZE) {
       n = LUA_MIN_BUF_SIZE;
     }
-    luaZ_resizebuffer(L, buff, n);
+    StringBuilder_resize(L, buff, n);
   }
-  return buff->buffer;
+  return buff->str;
 }

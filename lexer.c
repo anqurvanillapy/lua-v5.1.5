@@ -26,15 +26,15 @@ static const char *const TOKENS[] = {
 #define saveAndNext(ls) (save(ls, ls->current), next(ls))
 
 static void save(LexState *ls, int c) {
-  Mbuffer *b = ls->buff;
-  if (b->n + 1 > b->buffsize) {
-    if (b->buffsize >= SIZE_MAX / 2) {
+  StringBuilder *b = ls->buff;
+  if (b->len + 1 > b->size) {
+    if (b->size >= SIZE_MAX / 2) {
       Lex_throwWith(ls, "lexical element too long", 0);
     }
-    size_t newSize = b->buffsize * 2;
-    luaZ_resizebuffer(ls->L, b, newSize);
+    size_t newSize = b->size * 2;
+    StringBuilder_resize(ls->L, b, newSize);
   }
-  b->buffer[b->n++] = cast(char, c);
+  b->str[b->len++] = cast(char, c);
 }
 
 void luaX_init(lua_State *L) {
@@ -63,7 +63,7 @@ static const char *txtToken(LexState *ls, int token) {
   case TK_STRING:
   case TK_NUMBER:
     save(ls, '\0');
-    return luaZ_buffer(ls->buff);
+    return StringBuilder_get(ls->buff);
   default:
     return Lex_tokenText(ls, token);
   }
@@ -115,8 +115,9 @@ void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, String *source) {
   ls->linenumber = 1;
   ls->lastline = 1;
   ls->source = source;
-  luaZ_resizebuffer(ls->L, ls->buff, LUA_MIN_BUF_SIZE); /* initialize buffer */
-  next(ls);                                             /* read first char */
+  StringBuilder_resize(ls->L, ls->buff,
+                       LUA_MIN_BUF_SIZE); /* initialize buffer */
+  next(ls);                               /* read first char */
 }
 
 /*
@@ -134,8 +135,8 @@ static int check_next(LexState *ls, const char *set) {
 }
 
 static void buffreplace(LexState *ls, char from, char to) {
-  size_t n = luaZ_bufflen(ls->buff);
-  char *p = luaZ_buffer(ls->buff);
+  size_t n = StringBuilder_len(ls->buff);
+  char *p = StringBuilder_get(ls->buff);
   while (n--) {
     if (p[n] == from) {
       p[n] = to;
@@ -149,7 +150,7 @@ static void trydecpoint(LexState *ls, Literal *seminfo) {
   char old = ls->decpoint;
   ls->decpoint = (cv ? cv->decimal_point[0] : '.');
   buffreplace(ls, old, ls->decpoint); /* try updated decimal separator */
-  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->num)) {
+  if (!luaO_str2d(StringBuilder_get(ls->buff), &seminfo->num)) {
     /* format error with correct decimal point: no more options */
     buffreplace(ls, ls->decpoint, '.'); /* undo change (for error message) */
     Lex_throwWith(ls, "malformed number", TK_NUMBER);
@@ -170,8 +171,9 @@ static void read_numeral(LexState *ls, Literal *seminfo) {
   }
   save(ls, '\0');
   buffreplace(ls, '.', ls->decpoint); /* follow locale for decimal point */
-  if (!luaO_str2d(luaZ_buffer(ls->buff), &seminfo->num)) { /* format error? */
-    trydecpoint(ls, seminfo); /* try to update decimal point separator */
+  if (!luaO_str2d(StringBuilder_get(ls->buff),
+                  &seminfo->num)) { /* format error? */
+    trydecpoint(ls, seminfo);       /* try to update decimal point separator */
   }
 }
 
@@ -223,7 +225,7 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
       save(ls, '\n');
       inclinenumber(ls);
       if (!seminfo) {
-        luaZ_resetbuffer(ls->buff); /* avoid wasting space */
+        StringBuilder_reset(ls->buff); /* avoid wasting space */
       }
       break;
     }
@@ -238,8 +240,8 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
   }
 endloop:
   if (seminfo) {
-    seminfo->str = luaX_newstring(ls, luaZ_buffer(ls->buff) + (2 + sep),
-                                  luaZ_bufflen(ls->buff) - 2 * (2 + sep));
+    seminfo->str = luaX_newstring(ls, StringBuilder_get(ls->buff) + (2 + sep),
+                                  StringBuilder_len(ls->buff) - 2 * (2 + sep));
   }
 }
 
@@ -313,12 +315,12 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
     }
   }
   saveAndNext(ls); /* skip delimiter */
-  seminfo->str =
-      luaX_newstring(ls, luaZ_buffer(ls->buff) + 1, luaZ_bufflen(ls->buff) - 2);
+  seminfo->str = luaX_newstring(ls, StringBuilder_get(ls->buff) + 1,
+                                StringBuilder_len(ls->buff) - 2);
 }
 
 static int llex(LexState *ls, Literal *seminfo) {
-  luaZ_resetbuffer(ls->buff);
+  StringBuilder_reset(ls->buff);
   for (;;) {
     switch (ls->current) {
     case '\n':
@@ -335,10 +337,10 @@ static int llex(LexState *ls, Literal *seminfo) {
       next(ls);
       if (ls->current == '[') {
         int sep = skip_sep(ls);
-        luaZ_resetbuffer(ls->buff); /* `skip_sep' may dirty the buffer */
+        StringBuilder_reset(ls->buff); /* `skip_sep' may dirty the buffer */
         if (sep >= 0) {
           read_long_string(ls, NULL, sep); /* long comment */
-          luaZ_resetbuffer(ls->buff);
+          StringBuilder_reset(ls->buff);
           continue;
         }
       }
@@ -432,7 +434,8 @@ static int llex(LexState *ls, Literal *seminfo) {
         do {
           saveAndNext(ls);
         } while (isalnum(ls->current) || ls->current == '_');
-        ts = luaX_newstring(ls, luaZ_buffer(ls->buff), luaZ_bufflen(ls->buff));
+        ts = luaX_newstring(ls, StringBuilder_get(ls->buff),
+                            StringBuilder_len(ls->buff));
         if (ts->keywordID) {
           return ts->keywordID - 1 + FIRST_RESERVED;
         }

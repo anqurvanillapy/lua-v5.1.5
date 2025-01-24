@@ -98,5 +98,5 @@ typedef struct FuncState {
   int actvar[LUAI_MAX_VARS]; /* declared-variable stack */
 } FuncState;
 
-LUAI_FUNC Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff,
+LUAI_FUNC Prototype *luaY_parser(lua_State *L, ZIO *z, StringBuilder *buff,
                                  const char *name);

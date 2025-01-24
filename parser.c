@@ -404,7 +404,8 @@ static void closeFunc(LexState *ls) {
   L->top -= 2; /* remove table and prototype from the stack */
 }
 
-Prototype *luaY_parser(lua_State *L, ZIO *z, Mbuffer *buff, const char *name) {
+Prototype *luaY_parser(lua_State *L, ZIO *z, StringBuilder *buff,
+                       const char *name) {
   struct LexState lexstate;
   struct FuncState funcstate;
   lexstate.buff = buff;

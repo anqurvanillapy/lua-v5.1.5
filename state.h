@@ -56,7 +56,7 @@ typedef struct GlobalState {
   GCObject *grayagain; /* list of objects to be traversed atomically */
   GCObject *weak;      /* list of weak tables (to be cleared) */
   GCObject *tmudata;   /* last element of list of userdata to be GC */
-  Mbuffer buff;        /* temporary buffer for string concatentation */
+  StringBuilder buff;  /* temporary buffer for string concatentation */
   size_t GCthreshold;
   size_t totalbytes;   /* number of bytes currently allocated */
   size_t estimate;     /* an estimate of number of bytes actually in use */

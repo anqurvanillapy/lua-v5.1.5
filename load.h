@@ -5,7 +5,7 @@
 #include "buffer.h"
 #include "object.h"
 
-LUAI_FUNC Prototype *luaU_undump(lua_State *L, ZIO *Z, Mbuffer *buff,
+LUAI_FUNC Prototype *luaU_undump(lua_State *L, ZIO *Z, StringBuilder *buff,
                                  const char *name);
 
 LUAI_FUNC void luaU_header(char *h);
