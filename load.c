@@ -1,10 +1,8 @@
-#include <string.h>
-
+#include "load.h"
 #include "buffer.h"
 #include "closure.h"
 #include "debug.h"
 #include "intern.h"
-#include "load.h"
 #include "memory.h"
 #include "object.h"
 #include "stack.h"
@@ -59,11 +57,10 @@ static String *LoadString(LoadState *S) {
   LoadVar(S, size);
   if (size == 0) {
     return nullptr;
-  } else {
-    char *s = luaZ_openspace(S->L, S->b, size);
-    LoadBlock(S, s, size);
-    return String_createSized(S->L, s, size - 1); /* remove trailing '\0' */
   }
+  char *s = luaZ_reserve(S->L, S->b, size);
+  LoadBlock(S, s, size);
+  return String_createSized(S->L, s, size - 1); /* remove trailing '\0' */
 }
 
 static void LoadCode(LoadState *S, Prototype *f) {

@@ -44,8 +44,8 @@ typedef uint32_t Instruction;
 #endif
 
 /* minimum size for string buffer */
-#ifndef LUA_MINBUFFER
-#define LUA_MINBUFFER 32
+#ifndef LUA_MIN_BUF_SIZE
+#define LUA_MIN_BUF_SIZE 32
 #endif
 
 #ifndef lua_lock

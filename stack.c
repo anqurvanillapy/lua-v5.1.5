@@ -483,8 +483,8 @@ static void f_parser(lua_State *L, void *ud) {
   struct SParser *p = ud;
   int c = luaZ_lookahead(p->z);
   luaC_checkGC(L);
-  tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
-                                                             p->name);
+  tf = (c == LUA_SIGNATURE[0] ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
+                                                           p->name);
   cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
   cl->l.p = tf;
   for (size_t i = 0; i < tf->upvaluesNum; i++) {
@@ -496,12 +496,9 @@ static void f_parser(lua_State *L, void *ud) {
 }
 
 int luaD_protectedparser(lua_State *L, ZIO *z, const char *name) {
-  struct SParser p;
-  int status;
-  p.z = z;
-  p.name = name;
+  struct SParser p = {.z = z, .name = name};
   luaZ_initbuffer(L, &p.buff);
-  status = luaD_pcall(L, f_parser, &p, savestack(L, L->top), L->errFunc);
+  int status = luaD_pcall(L, f_parser, &p, savestack(L, L->top), L->errFunc);
   luaZ_freebuffer(L, &p.buff);
   return status;
 }

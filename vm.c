@@ -314,7 +314,7 @@ void luaV_concat(lua_State *L, int total, int last) {
         }
         tl += l;
       }
-      buffer = luaZ_openspace(L, &G(L)->buff, tl);
+      buffer = luaZ_reserve(L, &G(L)->buff, tl);
       tl = 0;
       for (i = n; i > 0; i--) { /* concat all strings */
         size_t l = STRING_VALUE(top - i)->len;

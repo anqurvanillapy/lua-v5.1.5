@@ -115,8 +115,8 @@ void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, String *source) {
   ls->linenumber = 1;
   ls->lastline = 1;
   ls->source = source;
-  luaZ_resizebuffer(ls->L, ls->buff, LUA_MINBUFFER); /* initialize buffer */
-  next(ls);                                          /* read first char */
+  luaZ_resizebuffer(ls->L, ls->buff, LUA_MIN_BUF_SIZE); /* initialize buffer */
+  next(ls);                                             /* read first char */
 }
 
 /*
