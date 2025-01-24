@@ -198,17 +198,6 @@
 #include <math.h>
 #define luai_nummod(a, b) ((a) - floor((a) / (b)) * (b))
 
-/*
-@@ lua_number2int is a macro to convert lua_Number to int.
-@@ lua_number2integer is a macro to convert lua_Number to lua_Integer.
-** CHANGE them if you know a faster way to convert a lua_Number to
-** int (with any rounding method and without throwing errors) in your
-** system. In Pentium machines, a naive typecast from double to int
-** in C is extremely slow, so any alternative is worth trying.
-*/
-#define lua_number2int(i, d) ((i) = (int)(d))
-#define lua_number2integer(i, d) ((i) = (lua_Integer)(d))
-
 /* }================================================================== */
 
 /*

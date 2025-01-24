@@ -85,8 +85,7 @@ static Node *getBucket(const Table *t, const Value *key) {
 static int arrayIndex(const Value *key) {
   if (IS_TYPE_NUMBER(key)) {
     double n = NUMBER_VALUE(key);
-    int k;
-    lua_number2int(k, n);
+    int k = (int)n;
     if ((double)k == n) {
       return k;
     }
@@ -403,9 +402,8 @@ const Value *Table_get(Table *t, const Value *key) {
   case LUA_TYPE_STRING:
     return Table_getString(t, STRING_VALUE(key));
   case LUA_TYPE_NUMBER: {
-    int k;
     double n = NUMBER_VALUE(key);
-    lua_number2int(k, n);
+    int k = (int)n;
     if ((double)k == NUMBER_VALUE(key)) { /* index is int? */
       return Table_getInteger(t, k);      /* use specialized version */
     }

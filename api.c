@@ -262,9 +262,7 @@ LUA_API lua_Integer lua_tointeger(lua_State *L, int idx) {
   const Value *o = indexToAddr(L, idx);
   Value n;
   if (tonumber(o, &n)) {
-    lua_Integer res;
-    lua_number2integer(res, NUMBER_VALUE(o));
-    return res;
+    return NUMBER_VALUE(o);
   }
   return 0;
 }
