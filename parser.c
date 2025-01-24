@@ -408,8 +408,8 @@ Prototype *luaY_parser(lua_State *L, ZIO *z, StringBuilder *buff,
                        const char *name) {
   struct LexState lexstate;
   struct FuncState funcstate;
-  lexstate.buff = buff;
-  luaX_setinput(L, &lexstate, z, String_create(L, name));
+  lexstate.tokens = buff;
+  Lexer_setInput(L, &lexstate, z, String_create(L, name));
   openFunc(&lexstate, &funcstate);
   funcstate.f->varargMode = VARARG_IS_VARARG; /* main func. is always vararg */
   luaX_next(&lexstate);                       /* read first token */

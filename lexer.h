@@ -7,15 +7,12 @@
 
 #define FIRST_RESERVED 257
 
-/* maximum length of a reserved word */
-#define TOKEN_LEN (sizeof("function") / sizeof(char))
+// Maximum length of a reserved word.
+#define TOKEN_LEN sizeof("function")
 
-/*
- * WARNING: if you change the order of this enumeration,
- * grep "ORDER RESERVED"
- */
-enum RESERVED {
-  /* terminal symbols denoted by reserved words */
+enum Reserved {
+  // Reserved words.
+
   TK_AND = FIRST_RESERVED,
   TK_BREAK,
   TK_DO,
@@ -37,7 +34,9 @@ enum RESERVED {
   TK_TRUE,
   TK_UNTIL,
   TK_WHILE,
-  /* other terminal symbols */
+
+  // Other reserved symbols.
+
   TK_CONCAT,
   TK_DOTS,
   TK_EQ,
@@ -47,11 +46,12 @@ enum RESERVED {
   TK_NUMBER,
   TK_NAME,
   TK_STRING,
+
   TK_EOS
 };
 
 // Number of reserved keywords.
-#define NUM_RESERVED (cast(int, TK_WHILE - FIRST_RESERVED + 1))
+#define NUM_RESERVED (TK_WHILE - FIRST_RESERVED + 1)
 
 typedef union Literal {
   double num;
@@ -71,15 +71,18 @@ typedef struct LexState {
   Token lookahead;      /* look ahead token */
   struct FuncState *fs; /* `FuncState' is private to the parser */
   struct lua_State *L;
-  ZIO *z;              /* input stream */
-  StringBuilder *buff; /* buffer for tokens */
-  String *source;      /* current source name */
-  char decpoint;       /* locale decimal point */
+  // Input stream.
+  ZIO *z;
+  StringBuilder *tokens;
+  // Current source name.
+  String *source;
+  // Locale decimal point.
+  char decpoint;
 } LexState;
 
-LUAI_FUNC void luaX_init(lua_State *L);
-LUAI_FUNC void luaX_setinput(lua_State *L, LexState *ls, ZIO *z,
-                             String *source);
+LUAI_FUNC void Lexer_init(lua_State *L);
+LUAI_FUNC void Lexer_setInput(lua_State *L, LexState *ls, ZIO *z,
+                              String *source);
 LUAI_FUNC String *luaX_newstring(LexState *ls, const char *str, size_t l);
 LUAI_FUNC void luaX_next(LexState *ls);
 LUAI_FUNC void luaX_lookahead(LexState *ls);

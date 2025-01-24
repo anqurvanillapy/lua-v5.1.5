@@ -22,10 +22,14 @@ static const char *const TOKENS[] = {
     "<name>", "<string>", "<eof>",  nullptr,
 };
 
-#define SAVE_AND_NEXT(ls) (save(ls, ls->current), NEXT(ls))
+#define SAVE_AND_NEXT(ls)                                                      \
+  do {                                                                         \
+    save(ls, ls->current);                                                     \
+    NEXT(ls);                                                                  \
+  } while (false)
 
 static void save(LexState *ls, int c) {
-  StringBuilder *b = ls->buff;
+  StringBuilder *b = ls->tokens;
   if (b->len + 1 > b->size) {
     if (b->size >= SIZE_MAX / 2) {
       Lex_throwWith(ls, "lexical element too long", 0);
@@ -33,19 +37,17 @@ static void save(LexState *ls, int c) {
     size_t newSize = b->size * 2;
     StringBuilder_resize(ls->L, b, newSize);
   }
-  b->str[b->len++] = cast(char, c);
+  b->str[b->len++] = (char)c;
 }
 
-void luaX_init(lua_State *L) {
+void Lexer_init(lua_State *L) {
   for (size_t i = 0; i < NUM_RESERVED; i++) {
     String *ts = String_create(L, TOKENS[i]);
-    String_intern(ts); /* reserved words are never collected */
+    String_intern(ts);
     assert(strlen(TOKENS[i]) + 1 <= TOKEN_LEN);
     ts->keywordID = (uint8_t)(i + 1);
   }
 }
-
-#define MAXSRC 80
 
 const char *Lex_tokenText(LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
@@ -62,15 +64,15 @@ static const char *txtToken(LexState *ls, int token) {
   case TK_STRING:
   case TK_NUMBER:
     save(ls, '\0');
-    return StringBuilder_get(ls->buff);
+    return StringBuilder_get(ls->tokens);
   default:
     return Lex_tokenText(ls, token);
   }
 }
 
 void Lex_throwWith(LexState *ls, const char *msg, int token) {
-  char buff[MAXSRC];
-  Lexer_chunkID(buff, STRING_CONTENT(ls->source), MAXSRC);
+  char buff[80];
+  Lexer_chunkID(buff, STRING_CONTENT(ls->source), sizeof(buff));
   msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
   if (token) {
     luaO_pushfstring(ls->L, "%s near '%s'", msg, txtToken(ls, token));
@@ -93,49 +95,46 @@ String *luaX_newstring(LexState *ls, const char *str, size_t l) {
   return ts;
 }
 
-static void inclinenumber(LexState *ls) {
+static void incLineNumber(LexState *ls) {
   int old = ls->current;
   assert(IS_CUR_NEWLINE(ls));
-  NEXT(ls); /* skip `\n' or `\r' */
+  // Skip `\n` or `\r`.
+  NEXT(ls);
   if (IS_CUR_NEWLINE(ls) && ls->current != old) {
-    NEXT(ls); /* skip `\n\r' or `\r\n' */
+    // skip `\n\r` or `\r\n`.
+    NEXT(ls);
   }
   if (++ls->linenumber >= SAFE_INT_MAX) {
     Lex_throw(ls, "chunk has too many lines");
   }
 }
 
-void luaX_setinput(lua_State *L, LexState *ls, ZIO *z, String *source) {
+void Lexer_setInput(lua_State *L, LexState *ls, ZIO *z, String *source) {
   ls->decpoint = '.';
   ls->L = L;
-  ls->lookahead.token = TK_EOS; /* no look-ahead token */
+  // No look-ahead token.
+  ls->lookahead.token = TK_EOS;
   ls->z = z;
-  ls->fs = NULL;
+  ls->fs = nullptr;
   ls->linenumber = 1;
   ls->lastline = 1;
   ls->source = source;
-  StringBuilder_resize(ls->L, ls->buff,
-                       LUA_MIN_BUF_SIZE); /* initialize buffer */
-  NEXT(ls);                               /* read first char */
+  StringBuilder_resize(ls->L, ls->tokens, LUA_MIN_BUF_SIZE);
+  // Read first char.
+  NEXT(ls);
 }
 
-/*
-** =======================================================
-** LEXICAL ANALYZER
-** =======================================================
-*/
-
-static int check_next(LexState *ls, const char *set) {
+static bool checkNextContains(LexState *ls, const char *set) {
   if (!strchr(set, ls->current)) {
-    return 0;
+    return false;
   }
   SAVE_AND_NEXT(ls);
-  return 1;
+  return true;
 }
 
 static void buffreplace(LexState *ls, char from, char to) {
-  size_t n = StringBuilder_len(ls->buff);
-  char *p = StringBuilder_get(ls->buff);
+  size_t n = StringBuilder_len(ls->tokens);
+  char *p = StringBuilder_get(ls->tokens);
   while (n--) {
     if (p[n] == from) {
       p[n] = to;
@@ -144,33 +143,32 @@ static void buffreplace(LexState *ls, char from, char to) {
 }
 
 static void trydecpoint(LexState *ls, Literal *seminfo) {
-  /* format error: try to update decimal point separator */
+  // Format error: try to update the decimal point separator.
   struct lconv *cv = localeconv();
   char old = ls->decpoint;
-  ls->decpoint = (cv ? cv->decimal_point[0] : '.');
+  ls->decpoint = cv ? cv->decimal_point[0] : '.';
   buffreplace(ls, old, ls->decpoint); /* try updated decimal separator */
-  if (!luaO_str2d(StringBuilder_get(ls->buff), &seminfo->num)) {
+  if (!luaO_str2d(StringBuilder_get(ls->tokens), &seminfo->num)) {
     /* format error with correct decimal point: no more options */
     buffreplace(ls, ls->decpoint, '.'); /* undo change (for error message) */
     Lex_throwWith(ls, "malformed number", TK_NUMBER);
   }
 }
 
-/* LUA_NUMBER */
 static void read_numeral(LexState *ls, Literal *seminfo) {
   assert(isdigit(ls->current));
   do {
     SAVE_AND_NEXT(ls);
   } while (isdigit(ls->current) || ls->current == '.');
-  if (check_next(ls, "Ee")) { /* `E'? */
-    check_next(ls, "+-");     /* optional exponent sign */
+  if (checkNextContains(ls, "Ee")) { /* `E'? */
+    checkNextContains(ls, "+-");     /* optional exponent sign */
   }
   while (isalnum(ls->current) || ls->current == '_') {
     SAVE_AND_NEXT(ls);
   }
   save(ls, '\0');
   buffreplace(ls, '.', ls->decpoint); /* follow locale for decimal point */
-  if (!luaO_str2d(StringBuilder_get(ls->buff),
+  if (!luaO_str2d(StringBuilder_get(ls->tokens),
                   &seminfo->num)) { /* format error? */
     trydecpoint(ls, seminfo);       /* try to update decimal point separator */
   }
@@ -193,7 +191,7 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
   (void)(cont);             /* avoid warnings when `cont' is not used */
   SAVE_AND_NEXT(ls);        /* skip 2nd `[' */
   if (IS_CUR_NEWLINE(ls)) { /* string starts with a newline? */
-    inclinenumber(ls);      /* skip it */
+    incLineNumber(ls);      /* skip it */
   }
   for (;;) {
     switch (ls->current) {
@@ -222,9 +220,9 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
     case '\n':
     case '\r': {
       save(ls, '\n');
-      inclinenumber(ls);
+      incLineNumber(ls);
       if (!seminfo) {
-        StringBuilder_reset(ls->buff); /* avoid wasting space */
+        StringBuilder_reset(ls->tokens); /* avoid wasting space */
       }
       break;
     }
@@ -239,8 +237,9 @@ static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
   }
 endloop:
   if (seminfo) {
-    seminfo->str = luaX_newstring(ls, StringBuilder_get(ls->buff) + (2 + sep),
-                                  StringBuilder_len(ls->buff) - 2 * (2 + sep));
+    seminfo->str =
+        luaX_newstring(ls, StringBuilder_get(ls->tokens) + (2 + sep),
+                       StringBuilder_len(ls->tokens) - 2 * (2 + sep));
   }
 }
 
@@ -283,7 +282,7 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
       case '\n': /* go through */
       case '\r':
         save(ls, '\n');
-        inclinenumber(ls);
+        incLineNumber(ls);
         continue;
       case EOZ:
         continue; /* will raise an error next loop */
@@ -314,17 +313,17 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
     }
   }
   SAVE_AND_NEXT(ls); /* skip delimiter */
-  seminfo->str = luaX_newstring(ls, StringBuilder_get(ls->buff) + 1,
-                                StringBuilder_len(ls->buff) - 2);
+  seminfo->str = luaX_newstring(ls, StringBuilder_get(ls->tokens) + 1,
+                                StringBuilder_len(ls->tokens) - 2);
 }
 
 static int llex(LexState *ls, Literal *seminfo) {
-  StringBuilder_reset(ls->buff);
+  StringBuilder_reset(ls->tokens);
   for (;;) {
     switch (ls->current) {
     case '\n':
     case '\r': {
-      inclinenumber(ls);
+      incLineNumber(ls);
       continue;
     }
     case '-': {
@@ -336,10 +335,10 @@ static int llex(LexState *ls, Literal *seminfo) {
       NEXT(ls);
       if (ls->current == '[') {
         int sep = skip_sep(ls);
-        StringBuilder_reset(ls->buff); /* `skip_sep' may dirty the buffer */
+        StringBuilder_reset(ls->tokens); /* `skip_sep' may dirty the buffer */
         if (sep >= 0) {
           read_long_string(ls, NULL, sep); /* long comment */
-          StringBuilder_reset(ls->buff);
+          StringBuilder_reset(ls->tokens);
           continue;
         }
       }
@@ -403,8 +402,8 @@ static int llex(LexState *ls, Literal *seminfo) {
     }
     case '.': {
       SAVE_AND_NEXT(ls);
-      if (check_next(ls, ".")) {
-        if (check_next(ls, ".")) {
+      if (checkNextContains(ls, ".")) {
+        if (checkNextContains(ls, ".")) {
           return TK_DOTS; /* ... */
         } else {
           return TK_CONCAT; /* .. */
@@ -433,8 +432,8 @@ static int llex(LexState *ls, Literal *seminfo) {
         do {
           SAVE_AND_NEXT(ls);
         } while (isalnum(ls->current) || ls->current == '_');
-        ts = luaX_newstring(ls, StringBuilder_get(ls->buff),
-                            StringBuilder_len(ls->buff));
+        ts = luaX_newstring(ls, StringBuilder_get(ls->tokens),
+                            StringBuilder_len(ls->tokens));
         if (ts->keywordID) {
           return ts->keywordID - 1 + FIRST_RESERVED;
         }

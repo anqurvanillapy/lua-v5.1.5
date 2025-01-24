@@ -54,7 +54,7 @@ static void initWithHeap(lua_State *L, void *) {
   SET_TABLE(L, REGISTRY(L), Table_new(L, 0, 2));
   StringPool_resize(L, MINSTRTABSIZE);
   luaT_init(L);
-  luaX_init(L);
+  Lexer_init(L);
   String_intern(String_createLiteral(L, MEMERRMSG));
   g->GCthreshold = 4 * g->totalbytes;
 }
