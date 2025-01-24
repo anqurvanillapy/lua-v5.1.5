@@ -1,8 +1,5 @@
 #include <ctype.h>
 #include <locale.h>
-#include <string.h>
-
-#include "lua.h"
 
 #include "buffer.h"
 #include "intern.h"
@@ -74,7 +71,7 @@ static const char *txtToken(LexState *ls, int token) {
 
 void Lex_throwWith(LexState *ls, const char *msg, int token) {
   char buff[MAXSRC];
-  luaO_chunkid(buff, STRING_CONTENT(ls->source), MAXSRC);
+  Lexer_chunkID(buff, STRING_CONTENT(ls->source), MAXSRC);
   msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
   if (token) {
     luaO_pushfstring(ls->L, "%s near '%s'", msg, txtToken(ls, token));
@@ -464,4 +461,41 @@ void luaX_next(LexState *ls) {
 void luaX_lookahead(LexState *ls) {
   assert(ls->lookahead.token == TK_EOS);
   ls->lookahead.token = llex(ls, &ls->lookahead.literal);
+}
+
+void Lexer_chunkID(char *out, const char *source, size_t bufSize) {
+  if (*source == '=') {
+    // Remove first char.
+    strncpy(out, source + 1, bufSize);
+    // Ensures null termination.
+    out[bufSize - 1] = '\0';
+    return;
+  }
+  // out = "source", or "...source".
+  if (*source == '@') {
+    source++; /* skip the `@' */
+    bufSize -= sizeof(" '...' ");
+    size_t l = strlen(source);
+    strcpy(out, "");
+    if (l > bufSize) {
+      source += (l - bufSize); /* get last part of file name */
+      strcat(out, "...");
+    }
+    strcat(out, source);
+    return;
+  }
+  // out = [string "string"].
+  size_t len = strcspn(source, "\n\r"); /* stop at first newline */
+  bufSize -= sizeof(" [string \"...\"] ");
+  if (len > bufSize) {
+    len = bufSize;
+  }
+  strcpy(out, "[string \"");
+  if (source[len] != '\0') { /* must truncate? */
+    strncat(out, source, len);
+    strcat(out, "...");
+  } else {
+    strcat(out, source);
+  }
+  strcat(out, "\"]");
 }

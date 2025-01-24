@@ -86,3 +86,4 @@ LUAI_FUNC void luaX_lookahead(LexState *ls);
 LUAI_FUNC void Lex_throwWith(LexState *ls, const char *msg, int token);
 LUAI_FUNC void Lex_throw(LexState *ls, const char *errmsg);
 LUAI_FUNC const char *Lex_tokenText(LexState *ls, int token);
+LUAI_FUNC void Lexer_chunkID(char *out, const char *source, size_t bufSize);

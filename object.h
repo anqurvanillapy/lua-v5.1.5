@@ -335,4 +335,3 @@ LUAI_FUNC int luaO_str2d(const char *s, double *result);
 LUAI_FUNC const char *luaO_pushvfstring(lua_State *L, const char *fmt,
                                         va_list argp);
 LUAI_FUNC const char *luaO_pushfstring(lua_State *L, const char *fmt, ...);
-LUAI_FUNC void luaO_chunkid(char *out, const char *source, size_t len);

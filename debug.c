@@ -2,11 +2,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "lua.h"
-
 #include "closure.h"
 #include "debug.h"
 #include "gc.h"
+#include "lexer.h"
 #include "object.h"
 #include "opcodes.h"
 #include "stack.h"
@@ -129,7 +128,7 @@ static void funcinfo(lua_Debug *ar, Closure *cl) {
     ar->lastlinedefined = cl->l.p->lineDefinedLast;
     ar->what = (ar->linedefined == 0) ? "main" : "Lua";
   }
-  luaO_chunkid(ar->short_src, ar->source, LUA_IDSIZE);
+  Lexer_chunkID(ar->short_src, ar->source, LUA_IDSIZE);
 }
 
 static void info_tailcall(lua_Debug *ar) {
@@ -139,7 +138,7 @@ static void info_tailcall(lua_Debug *ar) {
   ar->linedefined = -1;
   ar->currentline = -1;
   ar->source = "=(tail call)";
-  luaO_chunkid(ar->short_src, ar->source, LUA_IDSIZE);
+  Lexer_chunkID(ar->short_src, ar->source, LUA_IDSIZE);
   ar->nups = 0;
 }
 
@@ -607,10 +606,10 @@ int luaG_ordererror(lua_State *L, const Value *p1, const Value *p2) {
 
 static void addinfo(lua_State *L, const char *msg) {
   CallInfo *ci = L->ci;
-  if (isLua(ci)) {         /* is Lua code? */
-    char buff[LUA_IDSIZE]; /* add file:line information */
+  if (isLua(ci)) { /* is Lua code? */
     int line = currentline(L, ci);
-    luaO_chunkid(buff, STRING_CONTENT(getluaproto(ci)->source), LUA_IDSIZE);
+    char buff[LUA_IDSIZE]; /* add file:line information */
+    Lexer_chunkID(buff, STRING_CONTENT(getluaproto(ci)->source), LUA_IDSIZE);
     luaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
   }
 }
