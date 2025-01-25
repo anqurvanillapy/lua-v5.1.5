@@ -110,7 +110,7 @@ static void incLineNumber(LexState *ls) {
 }
 
 void Lexer_setInput(lua_State *L, LexState *ls, ZIO *z, String *source) {
-  ls->decpoint = '.';
+  ls->dec_point = '.';
   ls->L = L;
   // No look-ahead token.
   ls->lookahead.token = TK_EOS;
@@ -132,7 +132,10 @@ static bool checkNextContains(LexState *ls, const char *set) {
   return true;
 }
 
-static void buffreplace(LexState *ls, char from, char to) {
+static void replaceAll(LexState *ls, char from, char to) {
+  if (from == to) {
+    return;
+  }
   size_t n = StringBuilder_len(ls->tokens);
   char *p = StringBuilder_get(ls->tokens);
   while (n--) {
@@ -142,39 +145,42 @@ static void buffreplace(LexState *ls, char from, char to) {
   }
 }
 
-static void trydecpoint(LexState *ls, Literal *seminfo) {
+static void tryLocaleDecPoint(LexState *ls, Literal *lit) {
   // Format error: try to update the decimal point separator.
   struct lconv *cv = localeconv();
-  char old = ls->decpoint;
-  ls->decpoint = cv ? cv->decimal_point[0] : '.';
-  buffreplace(ls, old, ls->decpoint); /* try updated decimal separator */
-  if (!luaO_str2d(StringBuilder_get(ls->tokens), &seminfo->num)) {
-    /* format error with correct decimal point: no more options */
-    buffreplace(ls, ls->decpoint, '.'); /* undo change (for error message) */
+  char old = ls->dec_point;
+  ls->dec_point = cv ? cv->decimal_point[0] : '.';
+  replaceAll(ls, old, ls->dec_point);
+
+  if (!luaO_str2d(StringBuilder_get(ls->tokens), &lit->num)) {
+    // Still getting format error with the correct decimal point.
+
+    // Undo changes (for error messages).
+    replaceAll(ls, ls->dec_point, '.');
     Lex_throwWith(ls, "malformed number", TK_NUMBER);
   }
 }
 
-static void read_numeral(LexState *ls, Literal *seminfo) {
+static void readNumber(LexState *ls, Literal *lit) {
   assert(isdigit(ls->current));
   do {
     SAVE_AND_NEXT(ls);
   } while (isdigit(ls->current) || ls->current == '.');
-  if (checkNextContains(ls, "Ee")) { /* `E'? */
-    checkNextContains(ls, "+-");     /* optional exponent sign */
+  if (checkNextContains(ls, "Ee")) {
+    checkNextContains(ls, "+-");
   }
   while (isalnum(ls->current) || ls->current == '_') {
     SAVE_AND_NEXT(ls);
   }
   save(ls, '\0');
-  buffreplace(ls, '.', ls->decpoint); /* follow locale for decimal point */
-  if (!luaO_str2d(StringBuilder_get(ls->tokens),
-                  &seminfo->num)) { /* format error? */
-    trydecpoint(ls, seminfo);       /* try to update decimal point separator */
+
+  replaceAll(ls, '.', ls->dec_point);
+  if (!luaO_str2d(StringBuilder_get(ls->tokens), &lit->num)) {
+    tryLocaleDecPoint(ls, lit);
   }
 }
 
-static int skip_sep(LexState *ls) {
+static int skipSep(LexState *ls) {
   int count = 0;
   int s = ls->current;
   assert(s == '[' || s == ']');
@@ -183,80 +189,77 @@ static int skip_sep(LexState *ls) {
     SAVE_AND_NEXT(ls);
     count++;
   }
-  return (ls->current == s) ? count : (-count) - 1;
+  return ls->current == s ? count : -count - 1;
 }
 
-static void read_long_string(LexState *ls, Literal *seminfo, int sep) {
-  int cont = 0;
-  (void)(cont);             /* avoid warnings when `cont' is not used */
-  SAVE_AND_NEXT(ls);        /* skip 2nd `[' */
-  if (IS_CUR_NEWLINE(ls)) { /* string starts with a newline? */
-    incLineNumber(ls);      /* skip it */
+static void readLongString(LexState *ls, Literal *lit, int sep) {
+  // Skip 2nd `[`.
+  SAVE_AND_NEXT(ls);
+  if (IS_CUR_NEWLINE(ls)) {
+    incLineNumber(ls);
   }
-  for (;;) {
+  while (true) {
     switch (ls->current) {
     case EOZ:
-      Lex_throwWith(
-          ls, (seminfo) ? "unfinished long string" : "unfinished long comment",
-          TK_EOS);
-      break; /* to avoid warnings */
-    case '[': {
-      if (skip_sep(ls) == sep) {
-        SAVE_AND_NEXT(ls); /* skip 2nd `[' */
-        cont++;
+      Lex_throwWith(ls,
+                    lit ? "unfinished long string" : "unfinished long comment",
+                    TK_EOS);
+      continue;
+    case '[':
+      if (skipSep(ls) == sep) {
+        // Skip 2nd `[`.
+        SAVE_AND_NEXT(ls);
         if (sep == 0) {
           Lex_throwWith(ls, "nesting of [[...]] is deprecated", '[');
         }
       }
       break;
-    }
-    case ']': {
-      if (skip_sep(ls) == sep) {
-        SAVE_AND_NEXT(ls); /* skip 2nd `]' */
+    case ']':
+      if (skipSep(ls) == sep) {
+        // Skip 2nd `]`.
+        SAVE_AND_NEXT(ls);
         goto endloop;
       }
       break;
-    }
     case '\n':
-    case '\r': {
+    case '\r':
       save(ls, '\n');
       incLineNumber(ls);
-      if (!seminfo) {
-        StringBuilder_reset(ls->tokens); /* avoid wasting space */
+      if (!lit) {
+        // Avoid wasting space.
+        StringBuilder_reset(ls->tokens);
       }
       break;
-    }
-    default: {
-      if (seminfo) {
+    default:
+      if (lit) {
         SAVE_AND_NEXT(ls);
       } else {
         NEXT(ls);
       }
     }
-    }
   }
 endloop:
-  if (seminfo) {
-    seminfo->str =
-        luaX_newstring(ls, StringBuilder_get(ls->tokens) + (2 + sep),
-                       StringBuilder_len(ls->tokens) - 2 * (2 + sep));
+  if (lit) {
+    lit->str = luaX_newstring(ls, StringBuilder_get(ls->tokens) + (2 + sep),
+                              StringBuilder_len(ls->tokens) - 2 * (2 + sep));
   }
 }
 
-static void read_string(LexState *ls, int del, Literal *seminfo) {
+static void readString(LexState *ls, int del, Literal *lit) {
   SAVE_AND_NEXT(ls);
   while (ls->current != del) {
     switch (ls->current) {
     case EOZ:
       Lex_throwWith(ls, "unfinished string", TK_EOS);
-      continue; /* to avoid warnings */
+      continue;
     case '\n':
     case '\r':
       Lex_throwWith(ls, "unfinished string", TK_STRING);
-      continue; /* to avoid warnings */
-    case '\\': {
+      continue;
+    case '\\':
       int c;
-      NEXT(ls); /* do not save the `\' */
+      // Do not save the `\`.
+      NEXT(ls);
       switch (ls->current) {
       case 'a':
         c = '\a';
@@ -279,17 +282,20 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
       case 'v':
         c = '\v';
         break;
-      case '\n': /* go through */
+      case '\n':
       case '\r':
         save(ls, '\n');
         incLineNumber(ls);
         continue;
       case EOZ:
-        continue; /* will raise an error next loop */
-      default: {
+        // Will raise an error next loop.
+        continue;
+      default:
         if (!isdigit(ls->current)) {
-          SAVE_AND_NEXT(ls); /* handles \\, \", \', and \? */
-        } else {             /* \xxx */
+          // Handles \\, \", \', and \?
+          SAVE_AND_NEXT(ls);
+        } else {
+          // \xxx
           int i = 0;
           c = 0;
           do {
@@ -303,131 +309,119 @@ static void read_string(LexState *ls, int del, Literal *seminfo) {
         }
         continue;
       }
-      }
       save(ls, c);
       NEXT(ls);
       continue;
-    }
     default:
       SAVE_AND_NEXT(ls);
     }
   }
-  SAVE_AND_NEXT(ls); /* skip delimiter */
-  seminfo->str = luaX_newstring(ls, StringBuilder_get(ls->tokens) + 1,
-                                StringBuilder_len(ls->tokens) - 2);
+  // Skip delimiter.
+  SAVE_AND_NEXT(ls);
+  lit->str = luaX_newstring(ls, StringBuilder_get(ls->tokens) + 1,
+                            StringBuilder_len(ls->tokens) - 2);
 }
 
-static int llex(LexState *ls, Literal *seminfo) {
+static int doLex(LexState *ls, Literal *lit) {
   StringBuilder_reset(ls->tokens);
-  for (;;) {
+  while (true) {
     switch (ls->current) {
     case '\n':
-    case '\r': {
+    case '\r':
       incLineNumber(ls);
       continue;
-    }
-    case '-': {
+    case '-':
       NEXT(ls);
       if (ls->current != '-') {
         return '-';
       }
-      /* else is a comment */
+      // Comment.
       NEXT(ls);
       if (ls->current == '[') {
-        int sep = skip_sep(ls);
-        StringBuilder_reset(ls->tokens); /* `skip_sep' may dirty the buffer */
+        int sep = skipSep(ls);
+        // skipSep may dirty the buffer.
+        StringBuilder_reset(ls->tokens);
         if (sep >= 0) {
-          read_long_string(ls, NULL, sep); /* long comment */
+          readLongString(ls, nullptr, sep);
           StringBuilder_reset(ls->tokens);
           continue;
         }
       }
-      /* else short comment */
+      // Short comment.
       while (!IS_CUR_NEWLINE(ls) && ls->current != EOZ) {
         NEXT(ls);
       }
       continue;
-    }
-    case '[': {
-      int sep = skip_sep(ls);
+    case '[':
+      int sep = skipSep(ls);
       if (sep >= 0) {
-        read_long_string(ls, seminfo, sep);
+        readLongString(ls, lit, sep);
         return TK_STRING;
-      } else if (sep == -1) {
-        return '[';
-      } else {
-        Lex_throwWith(ls, "invalid long string delimiter", TK_STRING);
       }
-    }
-    case '=': {
+      if (sep == -1) {
+        return '[';
+      }
+      Lex_throwWith(ls, "invalid long string delimiter", TK_STRING);
+      continue;
+    case '=':
       NEXT(ls);
       if (ls->current != '=') {
         return '=';
-      } else {
-        NEXT(ls);
-        return TK_EQ;
       }
-    }
-    case '<': {
+      NEXT(ls);
+      return TK_EQ;
+    case '<':
       NEXT(ls);
       if (ls->current != '=') {
         return '<';
-      } else {
-        NEXT(ls);
-        return TK_LE;
       }
-    }
-    case '>': {
+      NEXT(ls);
+      return TK_LE;
+    case '>':
       NEXT(ls);
       if (ls->current != '=') {
         return '>';
-      } else {
-        NEXT(ls);
-        return TK_GE;
       }
-    }
-    case '~': {
+      NEXT(ls);
+      return TK_GE;
+    case '~':
       NEXT(ls);
       if (ls->current != '=') {
         return '~';
-      } else {
-        NEXT(ls);
-        return TK_NE;
       }
-    }
+      NEXT(ls);
+      return TK_NE;
     case '"':
-    case '\'': {
-      read_string(ls, ls->current, seminfo);
+    case '\'':
+      readString(ls, ls->current, lit);
       return TK_STRING;
-    }
-    case '.': {
+    case '.':
       SAVE_AND_NEXT(ls);
       if (checkNextContains(ls, ".")) {
         if (checkNextContains(ls, ".")) {
           return TK_DOTS; /* ... */
-        } else {
-          return TK_CONCAT; /* .. */
         }
-      } else if (!isdigit(ls->current)) {
-        return '.';
-      } else {
-        read_numeral(ls, seminfo);
-        return TK_NUMBER;
+        return TK_CONCAT; /* .. */
       }
-    }
-    case EOZ: {
+      if (!isdigit(ls->current)) {
+        return '.';
+      }
+      readNumber(ls, lit);
+      return TK_NUMBER;
+    case EOZ:
       return TK_EOS;
-    }
-    default: {
+    default:
       if (isspace(ls->current)) {
         assert(!IS_CUR_NEWLINE(ls));
         NEXT(ls);
         continue;
-      } else if (isdigit(ls->current)) {
-        read_numeral(ls, seminfo);
+      }
+      if (isdigit(ls->current)) {
+        readNumber(ls, lit);
         return TK_NUMBER;
-      } else if (isalpha(ls->current) || ls->current == '_') {
-        /* identifier or reserved word */
+      }
+      if (isalpha(ls->current) || ls->current == '_') {
+        // Identifier or reserved word.
         String *ts;
         do {
           SAVE_AND_NEXT(ls);
@@ -437,14 +431,13 @@ static int llex(LexState *ls, Literal *seminfo) {
         if (ts->keywordID) {
           return ts->keywordID - 1 + FIRST_RESERVED;
         }
-        seminfo->str = ts;
+        lit->str = ts;
         return TK_NAME;
-      } else {
-        int c = ls->current;
-        NEXT(ls);
-        return c; /* single-char tokens (+ - / ...) */
       }
-    }
+      int c = ls->current;
+      NEXT(ls);
+      // Single-char tokens, e.g. `+`.
+      return c;
     }
   }
 }
@@ -455,13 +448,13 @@ void luaX_next(LexState *ls) {
     ls->t = ls->lookahead;             /* use this one */
     ls->lookahead.token = TK_EOS;      /* and discharge it */
   } else {
-    ls->t.token = llex(ls, &ls->t.literal); /* read next token */
+    ls->t.token = doLex(ls, &ls->t.literal); /* read next token */
   }
 }
 
 void luaX_lookahead(LexState *ls) {
   assert(ls->lookahead.token == TK_EOS);
-  ls->lookahead.token = llex(ls, &ls->lookahead.literal);
+  ls->lookahead.token = doLex(ls, &ls->lookahead.literal);
 }
 
 void Lexer_chunkID(char *out, const char *source, size_t bufSize) {

@@ -77,7 +77,7 @@ typedef struct LexState {
   // Current source name.
   String *source;
   // Locale decimal point.
-  char decpoint;
+  char dec_point;
 } LexState;
 
 LUAI_FUNC void Lexer_init(lua_State *L);
