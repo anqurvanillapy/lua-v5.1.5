@@ -726,6 +726,8 @@ static int str_gsub(lua_State *L) {
 
 /* }====================================================== */
 
+#define INT_FORMAT "ll"
+
 /* maximum size of each formatted item (> len(format('%99.99f', -1e308))) */
 #define MAX_ITEM 512
 /* valid flags in a format specification */
@@ -734,7 +736,7 @@ static int str_gsub(lua_State *L) {
 ** maximum size of each format specification (such as '%-099.99d')
 ** (+10 accounts for %99.99x plus margin of error)
 */
-#define MAX_FORMAT (sizeof(FLAGS) + sizeof(LUA_INTFRMLEN) + 10)
+#define MAX_FORMAT (sizeof(FLAGS) + sizeof(INT_FORMAT) + 10)
 
 static void addquoted(lua_State *L, luaL_Buffer *b, int arg) {
   size_t l;
@@ -803,9 +805,9 @@ static const char *scanformat(lua_State *L, const char *strfrmt, char *form) {
 static void addintlen(char *form) {
   size_t l = strlen(form);
   char spec = form[l - 1];
-  strcpy(form + l - 1, LUA_INTFRMLEN);
-  form[l + sizeof(LUA_INTFRMLEN) - 2] = spec;
-  form[l + sizeof(LUA_INTFRMLEN) - 1] = '\0';
+  strcpy(form + l - 1, INT_FORMAT);
+  form[l + sizeof(INT_FORMAT) - 2] = spec;
+  form[l + sizeof(INT_FORMAT) - 1] = '\0';
 }
 
 static int str_format(lua_State *L) {
@@ -836,8 +838,7 @@ static int str_format(lua_State *L) {
       case 'd':
       case 'i': {
         addintlen(form);
-        snprintf(buff, sizeof(buff), form,
-                 (LUA_INTFRM_T)luaL_checknumber(L, arg));
+        snprintf(buff, sizeof(buff), form, (long long)luaL_checknumber(L, arg));
         break;
       }
       case 'o':
@@ -846,7 +847,7 @@ static int str_format(lua_State *L) {
       case 'X': {
         addintlen(form);
         snprintf(buff, sizeof(buff), form,
-                 (unsigned LUA_INTFRM_T)luaL_checknumber(L, arg));
+                 (unsigned long long)luaL_checknumber(L, arg));
         break;
       }
       case 'e':

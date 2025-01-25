@@ -224,26 +224,6 @@
 #define luai_userstateresume(L, n) ((void)L)
 #define luai_userstateyield(L, n) ((void)L)
 
-/*
-@@ LUA_INTFRMLEN is the length modifier for integer conversions
-@* in 'string.format'.
-@@ LUA_INTFRM_T is the integer type correspoding to the previous length
-@* modifier.
-** CHANGE them if your system supports long long or does not support long.
-*/
-
-#if defined(LUA_USELONGLONG)
-
-#define LUA_INTFRMLEN "ll"
-#define LUA_INTFRM_T long long
-
-#else
-
-#define LUA_INTFRMLEN "l"
-#define LUA_INTFRM_T long
-
-#endif
-
 /* =================================================================== */
 
 /*
