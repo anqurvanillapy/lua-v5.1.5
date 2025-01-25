@@ -96,7 +96,7 @@ int luaO_str2d(const char *s, double *result) {
   if (*endptr == '\0') {
     return 1; /* most common case */
   }
-  while (isspace(cast(unsigned char, *endptr))) {
+  while (isspace(*endptr)) {
     endptr++;
   }
   if (*endptr != '\0') {
@@ -105,18 +105,17 @@ int luaO_str2d(const char *s, double *result) {
   return 1;
 }
 
-static void pushstr(lua_State *L, const char *str) {
+static void pushStr(lua_State *L, const char *str) {
   SET_STRING_TO_STACK(L, L->top, String_create(L, str));
   incr_top(L);
 }
 
-/* this function handles only `%d', `%c', %f, %p, and `%s' formats */
-const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
+const char *Object_vsprintf(lua_State *L, const char *fmt, va_list argp) {
   int n = 1;
-  pushstr(L, "");
+  pushStr(L, "");
   while (true) {
     const char *e = strchr(fmt, '%');
-    if (e == NULL) {
+    if (e == nullptr) {
       break;
     }
     SET_STRING_TO_STACK(L, L->top, String_createSized(L, fmt, e - fmt));
@@ -124,63 +123,51 @@ const char *luaO_pushvfstring(lua_State *L, const char *fmt, va_list argp) {
     switch (*(e + 1)) {
     case 's': {
       const char *s = va_arg(argp, char *);
-      if (s == NULL) {
+      if (s == nullptr) {
         s = "(null)";
       }
-      pushstr(L, s);
+      pushStr(L, s);
       break;
     }
-    case 'c': {
-      char buff[2];
-      buff[0] = cast(char, va_arg(argp, int));
-      buff[1] = '\0';
-      pushstr(L, buff);
+    case 'c':
+      const char c[] = {(char)va_arg(argp, int), '\0'};
+      pushStr(L, c);
       break;
-    }
-    case 'd': {
-      SET_NUMBER(L->top, (double)va_arg(argp, int));
+    case 'd':
+      SET_NUMBER(L->top, va_arg(argp, int));
       incr_top(L);
       break;
-    }
-    case 'f': {
-      SET_NUMBER(L->top, (double)va_arg(argp, double));
+    case 'f':
+      SET_NUMBER(L->top, va_arg(argp, double));
       incr_top(L);
       break;
-    }
-    case 'p': {
+    case 'p':
       // Should be enough space for a pointer.
-      char buff[4 * sizeof(void *) + 8];
-      snprintf(buff, sizeof(buff), "%p", va_arg(argp, void *));
-      pushstr(L, buff);
+      char ptr[4 * sizeof(void *) + 8];
+      snprintf(ptr, sizeof(ptr), "%p", va_arg(argp, void *));
+      pushStr(L, ptr);
       break;
-    }
-    case '%': {
-      pushstr(L, "%");
+    case '%':
+      pushStr(L, "%");
       break;
-    }
-    default: {
-      char buff[3];
-      buff[0] = '%';
-      buff[1] = *(e + 1);
-      buff[2] = '\0';
-      pushstr(L, buff);
+    default:
+      const char raw[] = {'%', *(e + 1), '\0'};
+      pushStr(L, raw);
       break;
-    }
     }
     n += 2;
     fmt = e + 2;
   }
-  pushstr(L, fmt);
+  pushStr(L, fmt);
   luaV_concat(L, n + 1, (int)(L->top - L->base) - 1);
   L->top -= n;
   return VALUE_STRING_CONTENT(L->top - 1);
 }
 
-const char *luaO_pushfstring(lua_State *L, const char *fmt, ...) {
-  const char *msg;
+const char *Object_sprintf(lua_State *L, const char *fmt, ...) {
   va_list argp;
   va_start(argp, fmt);
-  msg = luaO_pushvfstring(L, fmt, argp);
+  const char *msg = Object_vsprintf(L, fmt, argp);
   va_end(argp);
   return msg;
 }

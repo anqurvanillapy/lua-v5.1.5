@@ -52,22 +52,22 @@ static void anchor_token(LexState *ls) {
 
 static void throwToken(LexState *ls, int token) {
   Lex_throw(ls,
-            luaO_pushfstring(ls->L, "'%s' expected", Lex_tokenText(ls, token)));
+            Object_sprintf(ls->L, "'%s' expected", Lex_tokenText(ls, token)));
 }
 
 static void errorlimit(FuncState *fs, int limit, const char *what) {
   const char *msg =
       fs->f->lineDefined == 0
-          ? luaO_pushfstring(fs->L, "main function has more than %d %s", limit,
-                             what)
-          : luaO_pushfstring(fs->L, "function at line %d has more than %d %s",
-                             fs->f->lineDefined, limit, what);
+          ? Object_sprintf(fs->L, "main function has more than %d %s", limit,
+                           what)
+          : Object_sprintf(fs->L, "function at line %d has more than %d %s",
+                           fs->f->lineDefined, limit, what);
   Lex_throwWith(fs->ls, msg, 0);
 }
 
 static bool testNext(LexState *ls, int c) {
   if (ls->t.token == c) {
-    luaX_next(ls);
+    Lexer_next(ls);
     return true;
   }
   return false;
@@ -81,7 +81,7 @@ static void check(LexState *ls, int c) {
 
 static void checkNext(LexState *ls, int c) {
   check(ls, c);
-  luaX_next(ls);
+  Lexer_next(ls);
 }
 
 static void check_match(LexState *ls, int what, int who, int where) {
@@ -89,10 +89,10 @@ static void check_match(LexState *ls, int what, int who, int where) {
     if (where == ls->linenumber) {
       throwToken(ls, what);
     } else {
-      Lex_throw(ls, luaO_pushfstring(ls->L,
-                                     "'%s' expected (to close '%s' at line %d)",
-                                     Lex_tokenText(ls, what),
-                                     Lex_tokenText(ls, who), where));
+      Lex_throw(ls, Object_sprintf(ls->L,
+                                   "'%s' expected (to close '%s' at line %d)",
+                                   Lex_tokenText(ls, what),
+                                   Lex_tokenText(ls, who), where));
     }
   }
 }
@@ -100,7 +100,7 @@ static void check_match(LexState *ls, int what, int who, int where) {
 static String *checkName(LexState *ls) {
   check(ls, TK_NAME);
   String *ts = ls->t.literal.str;
-  luaX_next(ls);
+  Lexer_next(ls);
   return ts;
 }
 
@@ -412,7 +412,7 @@ Prototype *luaY_parser(lua_State *L, ZIO *z, StringBuilder *buff,
   Lexer_setInput(L, &lexstate, z, String_create(L, name));
   openFunc(&lexstate, &funcstate);
   funcstate.f->varargMode = VARARG_IS_VARARG; /* main func. is always vararg */
-  luaX_next(&lexstate);                       /* read first token */
+  Lexer_next(&lexstate);                      /* read first token */
   chunk(&lexstate);
   check(&lexstate, TK_EOS);
   closeFunc(&lexstate);
@@ -427,7 +427,7 @@ static void field(LexState *ls, ExprInfo *v) {
   FuncState *fs = ls->fs;
   ExprInfo key;
   Codegen_exprToAnyReg(fs, v);
-  luaX_next(ls); /* skip the dot or colon */
+  Lexer_next(ls); /* skip the dot or colon */
   checkname(ls, &key);
   Codegen_indexed(fs, v, &key);
 }
@@ -438,7 +438,7 @@ static void field(LexState *ls, ExprInfo *v) {
 ///     ;
 /// \endcode
 static void indexing(LexState *ls, ExprInfo *v) {
-  luaX_next(ls); /* skip the '[' */
+  Lexer_next(ls); /* skip the '[' */
   expr(ls, v);
   Codegen_exprToValue(ls->fs, v);
   checkNext(ls, ']');
@@ -536,7 +536,7 @@ static void constructor(LexState *ls, ExprInfo *t) {
     closelistfield(fs, &cc);
     switch (ls->t.token) {
     case TK_NAME: { /* may be listfields or recfields */
-      luaX_lookahead(ls);
+      Lexer_lookahead(ls);
       if (ls->lookahead.token != '=') { /* expression? */
         listfield(ls, &cc);
       } else {
@@ -574,7 +574,7 @@ static void parlist(LexState *ls) {
         break;
       }
       case TK_DOTS: { /* param -> `...' */
-        luaX_next(ls);
+        Lexer_next(ls);
 
         // Compatible with the old-style variadic arguments: Use `arg` as the
         // default name.
@@ -649,7 +649,7 @@ static void arguments(LexState *ls, ExprInfo *f) {
     if (line != ls->lastline) {
       Lex_throw(ls, "ambiguous syntax (function call x new stmt)");
     }
-    luaX_next(ls);
+    Lexer_next(ls);
     if (ls->t.token == ')') { /* arg list is empty? */
       args.k = EXPR_VOID;
     } else {
@@ -663,7 +663,7 @@ static void arguments(LexState *ls, ExprInfo *f) {
     break;
   case TK_STRING:
     stringLiteral(ls, &args, ls->t.literal.str);
-    luaX_next(ls); /* must use `literal' before `next' */
+    Lexer_next(ls); /* must use `literal' before `next' */
     break;
   default:
     Lex_throw(ls, "function arguments expected");
@@ -695,7 +695,7 @@ static void prefixExpr(LexState *ls, ExprInfo *v) {
   switch (ls->t.token) {
   case '(':
     int line = ls->linenumber;
-    luaX_next(ls);
+    Lexer_next(ls);
     expr(ls, v);
     check_match(ls, ')', '(', line);
     Codegen_releaseVars(ls->fs, v);
@@ -730,7 +730,7 @@ static void primaryExpr(LexState *ls, ExprInfo *v) {
       break;
     }
     case ':': {
-      luaX_next(ls);
+      Lexer_next(ls);
       ExprInfo key;
       checkname(ls, &key);
       Codegen_self(fs, v, &key);
@@ -794,14 +794,14 @@ static void simpleExpr(LexState *ls, ExprInfo *v) {
     constructor(ls, v);
     return;
   case TK_FUNCTION:
-    luaX_next(ls);
+    Lexer_next(ls);
     body(ls, v, false, ls->linenumber);
     return;
   default:
     primaryExpr(ls, v);
     return;
   }
-  luaX_next(ls);
+  Lexer_next(ls);
 }
 
 static OpKind unaryOp(int token) {
@@ -898,7 +898,7 @@ static OpKind subExpr(LexState *ls, ExprInfo *v, uint32_t minPriority) {
 
   OpKind op = unaryOp(ls->t.token);
   if (op != OPR_NONE) {
-    luaX_next(ls);
+    Lexer_next(ls);
     subExpr(ls, v, UNARY_PRIORITY);
     Codegen_prefix(ls->fs, op, v);
   } else {
@@ -910,7 +910,7 @@ static OpKind subExpr(LexState *ls, ExprInfo *v, uint32_t minPriority) {
   while (op != OPR_NONE && priority[op].left > minPriority) {
     ExprInfo v2;
     OpKind nextop;
-    luaX_next(ls);
+    Lexer_next(ls);
     Codegen_infix(ls->fs, op, v);
     /* read sub-expression with higher priority */
     nextop = subExpr(ls, &v2, priority[op].right);
@@ -1060,7 +1060,7 @@ static void whileStmt(LexState *ls, int line) {
   int whileinit;
   int condexit;
   Block bl;
-  luaX_next(ls); /* skip WHILE */
+  Lexer_next(ls); /* skip WHILE */
   whileinit = Codegen_getLabel(fs);
   condexit = cond(ls);
   enterBlock(fs, &bl, true);
@@ -1080,7 +1080,7 @@ static void repeatStmt(LexState *ls, int line) {
   Block bl1, bl2;
   enterBlock(fs, &bl1, true);  /* loop block */
   enterBlock(fs, &bl2, false); /* scope block */
-  luaX_next(ls);               /* skip REPEAT */
+  Lexer_next(ls);              /* skip REPEAT */
   chunk(ls);
   check_match(ls, TK_UNTIL, TK_REPEAT, line);
   condexit = cond(ls);    /* read condition (inside scope block) */
@@ -1176,7 +1176,7 @@ static void forStmt(LexState *ls, int line) {
   String *varname;
   Block bl;
   enterBlock(fs, &bl, true); /* scope for loop and control variables */
-  luaX_next(ls);             /* skip `for' */
+  Lexer_next(ls);            /* skip `for' */
   varname = checkName(ls);   /* first variable name */
   switch (ls->t.token) {
   case '=':
@@ -1196,7 +1196,7 @@ static void forStmt(LexState *ls, int line) {
 static int test_then_block(LexState *ls) {
   /* test_then_block -> [IF | ELSEIF] cond THEN block */
   int condexit;
-  luaX_next(ls); /* skip IF or ELSEIF */
+  Lexer_next(ls); /* skip IF or ELSEIF */
   condexit = cond(ls);
   checkNext(ls, TK_THEN);
   block(ls); /* `then' part */
@@ -1218,8 +1218,8 @@ static void ifStmt(LexState *ls, int line) {
   if (ls->t.token == TK_ELSE) {
     Codegen_concat(fs, &escapelist, Codegen_jump(fs));
     Codegen_patchTo(fs, flist);
-    luaX_next(ls); /* skip ELSE (after patch, for correct line info) */
-    block(ls);     /* `else' part */
+    Lexer_next(ls); /* skip ELSE (after patch, for correct line info) */
+    block(ls);      /* `else' part */
   } else {
     Codegen_concat(fs, &escapelist, flist);
   }
@@ -1275,7 +1275,7 @@ static bool funcname(LexState *ls, ExprInfo *v) {
 
 static void funcStmt(LexState *ls, int line) {
   /* funcStmt -> FUNCTION funcname body */
-  luaX_next(ls); /* skip FUNCTION */
+  Lexer_next(ls); /* skip FUNCTION */
   ExprInfo v;
   bool hasSelf = funcname(ls, &v);
   ExprInfo b;
@@ -1309,7 +1309,7 @@ static void exprStmt(LexState *ls) {
 ///     ;
 /// \endcode
 static void returnStmt(LexState *ls) {
-  luaX_next(ls); // skip RETURN
+  Lexer_next(ls); // skip RETURN
 
   if (isBlockEnded(ls->t.token) || ls->t.token == ';') {
     // Returns no values.
@@ -1369,7 +1369,7 @@ static bool stmt(LexState *ls) {
     whileStmt(ls, line); // WHILE skipped inside, not here
     return false;
   case TK_DO:
-    luaX_next(ls); // skip DO
+    Lexer_next(ls); // skip DO
     block(ls);
     check_match(ls, TK_END, TK_DO, line);
     return false;
@@ -1383,7 +1383,7 @@ static bool stmt(LexState *ls) {
     funcStmt(ls, line);
     return false;
   case TK_LOCAL:
-    luaX_next(ls); // skip LOCAL
+    Lexer_next(ls); // skip LOCAL
     if (testNext(ls, TK_FUNCTION)) {
       localFuncStmt(ls);
     } else {
@@ -1394,7 +1394,7 @@ static bool stmt(LexState *ls) {
     returnStmt(ls); // RETURN skipped inside, not here
     return true;    // must be last stmt
   case TK_BREAK:
-    luaX_next(ls); // skip BREAK
+    Lexer_next(ls); // skip BREAK
     breakStmt(ls);
     return true; // must be last stmt
   default:

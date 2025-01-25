@@ -610,7 +610,7 @@ static void addinfo(lua_State *L, const char *msg) {
     int line = currentline(L, ci);
     char buff[LUA_IDSIZE]; /* add file:line information */
     Lexer_chunkID(buff, STRING_CONTENT(getluaproto(ci)->source), LUA_IDSIZE);
-    luaO_pushfstring(L, "%s:%d: %s", buff, line, msg);
+    Object_sprintf(L, "%s:%d: %s", buff, line, msg);
   }
 }
 
@@ -631,7 +631,7 @@ static void addinfo(lua_State *L, const char *msg) {
 void luaG_runerror(lua_State *L, const char *fmt, ...) {
   va_list argp;
   va_start(argp, fmt);
-  addinfo(L, luaO_pushvfstring(L, fmt, argp));
+  addinfo(L, Object_vsprintf(L, fmt, argp));
   va_end(argp);
   luaG_errormsg(L);
 }

@@ -52,8 +52,8 @@ void Lexer_init(lua_State *L) {
 const char *Lex_tokenText(LexState *ls, int token) {
   if (token < FIRST_RESERVED) {
     assert(token == (uint8_t)token);
-    return iscntrl(token) ? luaO_pushfstring(ls->L, "char(%d)", token)
-                          : luaO_pushfstring(ls->L, "%c", token);
+    return iscntrl(token) ? Object_sprintf(ls->L, "char(%d)", token)
+                          : Object_sprintf(ls->L, "%c", token);
   }
   return TOKENS[token - FIRST_RESERVED];
 }
@@ -73,9 +73,9 @@ static const char *txtToken(LexState *ls, int token) {
 void Lex_throwWith(LexState *ls, const char *msg, int token) {
   char buff[80];
   Lexer_chunkID(buff, STRING_CONTENT(ls->source), sizeof(buff));
-  msg = luaO_pushfstring(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
+  msg = Object_sprintf(ls->L, "%s:%d: %s", buff, ls->linenumber, msg);
   if (token) {
-    luaO_pushfstring(ls->L, "%s near '%s'", msg, txtToken(ls, token));
+    Object_sprintf(ls->L, "%s near '%s'", msg, txtToken(ls, token));
   }
   luaD_throw(ls->L, LUA_ERRSYNTAX);
 }
@@ -238,6 +238,7 @@ static void readLongString(LexState *ls, Literal *lit, int sep) {
       }
     }
   }
+
 endloop:
   if (lit) {
     lit->str = luaX_newstring(ls, StringBuilder_get(ls->tokens) + (2 + sep),
@@ -442,17 +443,17 @@ static int doLex(LexState *ls, Literal *lit) {
   }
 }
 
-void luaX_next(LexState *ls) {
+void Lexer_next(LexState *ls) {
   ls->lastline = ls->linenumber;
-  if (ls->lookahead.token != TK_EOS) { /* is there a look-ahead token? */
-    ls->t = ls->lookahead;             /* use this one */
-    ls->lookahead.token = TK_EOS;      /* and discharge it */
+  if (ls->lookahead.token != TK_EOS) {
+    ls->t = ls->lookahead;
+    ls->lookahead.token = TK_EOS;
   } else {
-    ls->t.token = doLex(ls, &ls->t.literal); /* read next token */
+    ls->t.token = doLex(ls, &ls->t.literal);
   }
 }
 
-void luaX_lookahead(LexState *ls) {
+void Lexer_lookahead(LexState *ls) {
   assert(ls->lookahead.token == TK_EOS);
   ls->lookahead.token = doLex(ls, &ls->lookahead.literal);
 }
