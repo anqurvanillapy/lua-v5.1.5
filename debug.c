@@ -616,16 +616,16 @@ static void addinfo(lua_State *L, const char *msg) {
 
 [[noreturn]] void luaG_errormsg(lua_State *L) {
   if (L->errFunc != 0) { /* is there an error handling function? */
-    StackIndex errfunc = restorestack(L, L->errFunc);
+    StackIndex errfunc = RESTORE_STACK(L, L->errFunc);
     if (!IS_TYPE_FUNCTION(errfunc)) {
-      luaD_throw(L, LUA_ERRERR);
+      Stack_throw(L, LUA_ERRERR);
     }
     SET_OBJECT_TO_SAME_STACK(L, L->top, L->top - 1);  /* move argument */
     SET_OBJECT_TO_SAME_STACK(L, L->top - 1, errfunc); /* push function */
     incr_top(L);
     luaD_call(L, L->top - 2, 1); /* call it */
   }
-  luaD_throw(L, LUA_ERRRUN);
+  Stack_throw(L, LUA_ERRRUN);
 }
 
 [[noreturn]] void luaG_runerror(lua_State *L, const char *fmt, ...) {

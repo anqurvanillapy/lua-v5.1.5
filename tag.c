@@ -1,16 +1,20 @@
-#include <string.h>
-
+#include "tag.h"
 #include "intern.h"
 #include "object.h"
 #include "state.h"
 #include "table.h"
-#include "tag.h"
 
 void luaT_init(lua_State *L) {
   static const char *const events[] = {
-      "__index", "__newindex", "__gc",  "__mode",   "__eq",   "__add",
-      "__sub",   "__mul",      "__div", "__mod",    "__pow",  "__unm",
-      "__len",   "__lt",       "__le",  "__concat", "__call",
+      [TM_INDEX] = "__index", [TM_NEWINDEX] = "__newindex",
+      [TM_GC] = "__gc",       [TM_MODE] = "__mode",
+      [TM_EQ] = "__eq",       [TM_ADD] = "__add",
+      [TM_SUB] = "__sub",     [TM_MUL] = "__mul",
+      [TM_DIV] = "__div",     [TM_MOD] = "__mod",
+      [TM_POW] = "__pow",     [TM_UNM] = "__unm",
+      [TM_LEN] = "__len",     [TM_LT] = "__lt",
+      [TM_LE] = "__le",       [TM_CONCAT] = "__concat",
+      [TM_CALL] = "__call",
   };
   for (size_t i = 0; i < TM_N; i++) {
     G(L)->tmname[i] = String_create(L, events[i]);

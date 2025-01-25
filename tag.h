@@ -22,7 +22,9 @@ typedef enum {
   TM_LE,
   TM_CONCAT,
   TM_CALL,
-  TM_N /* number of elements in the enum */
+
+  // Number of tag methods.
+  TM_N,
 } TMS;
 
 #define GLOBAL_FAST_TM(g, et, e)                                               \

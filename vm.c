@@ -44,7 +44,7 @@ static void traceexec(lua_State *L, const Instruction *pc) {
   L->savedPC = pc;
   if ((mask & LUA_MASKCOUNT) && L->hookCount == 0) {
     RESET_HOOK_COUNT(L);
-    luaD_callhook(L, LUA_HOOKCOUNT, -1);
+    Stack_callHook(L, LUA_HOOKCOUNT, -1);
   }
   if (mask & LUA_MASKLINE) {
     Prototype *p = ci_func(L->ci)->l.p;
@@ -53,21 +53,21 @@ static void traceexec(lua_State *L, const Instruction *pc) {
     /* call linehook when enter a new function, when jump back (loop),
        or when enter a new line */
     if (npc == 0 || pc <= oldpc || newline != getline(p, pcRel(oldpc, p))) {
-      luaD_callhook(L, LUA_HOOKLINE, newline);
+      Stack_callHook(L, LUA_HOOKLINE, newline);
     }
   }
 }
 
 static void callTMres(lua_State *L, StackIndex res, const Value *f,
                       const Value *p1, const Value *p2) {
-  ptrdiff_t result = savestack(L, res);
+  ptrdiff_t result = SAVE_STACK(L, res);
   SET_OBJECT_TO_STACK(L, L->top, f);      /* push function */
   SET_OBJECT_TO_STACK(L, L->top + 1, p1); /* 1st argument */
   SET_OBJECT_TO_STACK(L, L->top + 2, p2); /* 2nd argument */
   luaD_checkstack(L, 3);
   L->top += 3;
   luaD_call(L, L->top - 3, 1);
-  res = restorestack(L, result);
+  res = RESTORE_STACK(L, result);
   L->top--;
   SET_OBJECT_TO_SAME_STACK(L, res, L->top);
 }
@@ -634,7 +634,7 @@ reentry: /* entry point */
         L->top = ra + b; /* else previous instruction set top */
       }
       L->savedPC = pc;
-      switch (luaD_precall(L, ra, nresults)) {
+      switch (Stack_preCall(L, ra, nresults)) {
       case PCRLUA:
         nexeccalls++;
         goto reentry; /* restart luaV_execute over new Lua function */
@@ -656,7 +656,7 @@ reentry: /* entry point */
       }
       L->savedPC = pc;
       assert(GETARG_C(i) - 1 == LUA_MULTRET);
-      switch (luaD_precall(L, ra, LUA_MULTRET)) {
+      switch (Stack_preCall(L, ra, LUA_MULTRET)) {
       case PCRLUA: {
         /* tail call: put new frame in place of previous one */
         CallInfo *ci = L->ci - 1; /* previous frame */

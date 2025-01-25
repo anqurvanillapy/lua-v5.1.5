@@ -77,7 +77,7 @@ void Lex_throwWith(LexState *ls, const char *msg, int token) {
   if (token) {
     Object_sprintf(ls->L, "%s near '%s'", msg, txtToken(ls, token));
   }
-  luaD_throw(ls->L, LUA_ERRSYNTAX);
+  Stack_throw(ls->L, LUA_ERRSYNTAX);
 }
 
 void Lex_throw(LexState *ls, const char *errmsg) {

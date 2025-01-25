@@ -37,7 +37,7 @@ void *Mem_doRealloc(lua_State *L, void *block, size_t oldSize, size_t newSize) {
   assert((oldSize == 0) == (block == nullptr));
   block = g->alloc(g->allocData, block, oldSize, newSize);
   if (block == nullptr && newSize > 0) {
-    luaD_throw(L, LUA_ERRMEM);
+    Stack_throw(L, LUA_ERRMEM);
   }
   assert((newSize == 0) == (block == nullptr));
   g->totalbytes += newSize - oldSize;

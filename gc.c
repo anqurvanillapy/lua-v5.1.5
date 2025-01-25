@@ -467,16 +467,16 @@ static void GCTM(lua_State *L) {
   makewhite(g, o);
   tm = FAST_TM(L, udata->metatable, TM_GC);
   if (tm != nullptr) {
-    uint8_t oldah = L->allowHook;
+    bool allowHook = L->allowHook;
     size_t oldt = g->GCthreshold;
-    L->allowHook = 0; /* stop debug hooks during GC tag method */
+    L->allowHook = false;               // stop debug hooks during GC tag method
     g->GCthreshold = 2 * g->totalbytes; /* avoid GC steps */
     SET_OBJECT_TO_STACK(L, L->top, tm);
     SET_USERDATA(L, L->top + 1, udata);
     L->top += 2;
     luaD_call(L, L->top - 2, 0);
-    L->allowHook = oldah;  /* restore hooks */
-    g->GCthreshold = oldt; /* restore threshold */
+    L->allowHook = allowHook; /* restore hooks */
+    g->GCthreshold = oldt;    /* restore threshold */
   }
 }
 

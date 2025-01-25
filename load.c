@@ -16,7 +16,7 @@ typedef struct {
 
 static void error(LoadState *S, const char *why) {
   Object_sprintf(S->L, "%s: %s in precompiled chunk", S->name, why);
-  luaD_throw(S->L, LUA_ERRSYNTAX);
+  Stack_throw(S->L, LUA_ERRSYNTAX);
 }
 
 #define LoadMem(S, b, n, size) LoadBlock(S, b, (n) * (size))

@@ -102,7 +102,7 @@ struct lua_State {
   unsigned short nestedCCallsBaseNum;
 
   uint8_t hookMask;
-  uint8_t allowHook;
+  bool allowHook;
   int baseHookCount;
   int hookCount;
   lua_Hook hook;

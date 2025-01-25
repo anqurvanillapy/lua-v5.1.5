@@ -702,13 +702,13 @@ LUA_API int lua_pcall(lua_State *L, int nargs, int nresults, int errfunc) {
   if (errfunc != 0) {
     StackIndex o = indexToAddr(L, errfunc);
     api_checkvalidindex(L, o);
-    func = savestack(L, o);
+    func = SAVE_STACK(L, o);
   }
   LCall c = {
       .func = L->top - (nargs + 1), /* function to be called */
       .nresults = nresults,
   };
-  int status = luaD_pcall(L, f_call, &c, savestack(L, c.func), func);
+  int status = luaD_pcall(L, f_call, &c, SAVE_STACK(L, c.func), func);
   adjustresults(L, nresults);
   lua_unlock(L);
   return status;
@@ -733,7 +733,7 @@ static void f_Ccall(lua_State *L, void *ud) {
 LUA_API int lua_cpcall(lua_State *L, lua_CFunction func, void *ud) {
   lua_lock(L);
   CCall c = {.func = func, .ud = ud};
-  int status = luaD_pcall(L, f_Ccall, &c, savestack(L, L->top), 0);
+  int status = luaD_pcall(L, f_Ccall, &c, SAVE_STACK(L, L->top), 0);
   lua_unlock(L);
   return status;
 }

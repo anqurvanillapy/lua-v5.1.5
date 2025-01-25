@@ -67,7 +67,7 @@ static void initPartialState(lua_State *L, GlobalState *g) {
   L->hook = nullptr;
   L->hookMask = 0;
   L->baseHookCount = 0;
-  L->allowHook = 1;
+  L->allowHook = true;
   RESET_HOOK_COUNT(L);
   L->openUpval = nullptr;
   L->ciSize = 0;
@@ -161,7 +161,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
   for (size_t i = 0; i < NUM_TYPES; i++) {
     g->mt[i] = nullptr;
   }
-  if (luaD_rawrunprotected(L, initWithHeap, nullptr) != 0) {
+  if (Stack_rawrUnprotected(L, initWithHeap, nullptr) != 0) {
     /* memory allocation error: free partial state */
     closeState(L);
     L = nullptr;
@@ -185,7 +185,7 @@ LUA_API void lua_close(lua_State *L) {
     L->ci = L->baseCI;
     L->base = L->top = L->ci->base;
     L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
-  } while (luaD_rawrunprotected(L, callGcTm, nullptr) != 0);
+  } while (Stack_rawrUnprotected(L, callGcTm, nullptr) != 0);
   assert(G(L)->tmudata == nullptr);
   luai_userstateclose(L);
   closeState(L);
