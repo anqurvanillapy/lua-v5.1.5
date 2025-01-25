@@ -298,7 +298,7 @@ static void checkobject(GlobalState *g, GCObject *o) {
 }
 
 int lua_checkpc(lua_State *L, pCallInfo ci) {
-  if (ci == L->baseCI || !f_isLua(ci))
+  if (ci == L->baseCI || !IS_CI_LUA(ci))
     return 1;
   else {
     Prototype *p = ci_func(ci)->l.p;

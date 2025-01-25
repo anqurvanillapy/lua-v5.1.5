@@ -440,7 +440,7 @@ void luaV_execute(lua_State *L, int nexeccalls) {
   Value *k;
   const Instruction *pc;
 reentry: /* entry point */
-  assert(isLua(L->ci));
+  assert(IS_CU_LUA_STRICT(L->ci));
   pc = L->savedPC;
   cl = &CLOSURE_VALUE(L->ci->func)->l;
   base = L->base;
@@ -635,10 +635,10 @@ reentry: /* entry point */
       }
       L->savedPC = pc;
       switch (Stack_preCall(L, ra, nresults)) {
-      case PCRLUA:
+      case PCR_LUA_READY:
         nexeccalls++;
         goto reentry; /* restart luaV_execute over new Lua function */
-      case PCRC:
+      case PCR_C_DONE:
         /* it was a C function (`precall' called it); adjust results */
         if (nresults >= 0) {
           L->top = L->ci->top;
@@ -657,7 +657,7 @@ reentry: /* entry point */
       L->savedPC = pc;
       assert(GETARG_C(i) - 1 == LUA_MULTRET);
       switch (Stack_preCall(L, ra, LUA_MULTRET)) {
-      case PCRLUA: {
+      case PCR_LUA_READY: {
         /* tail call: put new frame in place of previous one */
         CallInfo *ci = L->ci - 1; /* previous frame */
         int aux;
@@ -676,7 +676,7 @@ reentry: /* entry point */
         L->ci--;         /* remove new frame */
         goto reentry;
       }
-      case PCRC: { /* it was a C function (`precall' called it) */
+      case PCR_C_DONE: { /* it was a C function (`precall' called it) */
         base = L->base;
         continue;
       }
@@ -694,14 +694,14 @@ reentry: /* entry point */
         luaF_close(L, base);
       }
       L->savedPC = pc;
-      b = luaD_poscall(L, ra);
+      b = Stack_postCall(L, ra);
       if (--nexeccalls == 0) { /* was previous function running `here'? */
         return;                /* no: return */
       } else {                 /* yes: continue its execution */
         if (b) {
           L->top = L->ci->top;
         }
-        assert(isLua(L->ci));
+        assert(IS_CU_LUA_STRICT(L->ci));
         assert(GET_OPCODE(*((L->ci)->savedpc - 1)) == OP_CALL);
         goto reentry;
       }

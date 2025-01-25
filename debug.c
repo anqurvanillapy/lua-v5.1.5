@@ -16,7 +16,7 @@
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name);
 
 static int currentpc(lua_State *L, CallInfo *ci) {
-  if (!isLua(ci)) {
+  if (!IS_CU_LUA_STRICT(ci)) {
     return -1; /* function is not a Lua function? */
   }
   if (ci == L->ci) {
@@ -60,7 +60,7 @@ LUA_API int lua_getstack(lua_State *L, int level, lua_Debug *ar) {
   lua_lock(L);
   for (ci = L->ci; level > 0 && ci > L->baseCI; ci--) {
     level--;
-    if (f_isLua(ci)) {        /* Lua function? */
+    if (IS_CI_LUA(ci)) {      /* Lua function? */
       level -= ci->tailcalls; /* skip lost tail calls */
     }
   }
@@ -78,7 +78,7 @@ LUA_API int lua_getstack(lua_State *L, int level, lua_Debug *ar) {
 }
 
 static Prototype *getluaproto(CallInfo *ci) {
-  return isLua(ci) ? ci_func(ci)->l.p : nullptr;
+  return IS_CU_LUA_STRICT(ci) ? ci_func(ci)->l.p : nullptr;
 }
 
 static const char *findlocal(lua_State *L, CallInfo *ci, int n) {
@@ -491,7 +491,7 @@ static const char *kname(Prototype *p, int c) {
 
 static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
                               const char **name) {
-  if (isLua(ci)) { /* a Lua function? */
+  if (IS_CU_LUA_STRICT(ci)) { /* a Lua function? */
     Prototype *p = ci_func(ci)->l.p;
     int pc = currentpc(L, ci);
     Instruction i;
@@ -540,7 +540,8 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
 
 static const char *getfuncname(lua_State *L, CallInfo *ci, const char **name) {
   Instruction i;
-  if ((isLua(ci) && ci->tailcalls > 0) || !isLua(ci - 1)) {
+  if ((IS_CU_LUA_STRICT(ci) && ci->tailcalls > 0) ||
+      !IS_CU_LUA_STRICT(ci - 1)) {
     return nullptr; /* calling function is not Lua (or is unknown) */
   }
   ci--; /* calling function */
@@ -606,7 +607,7 @@ void luaG_aritherror(lua_State *L, const Value *p1, const Value *p2) {
 
 static void addinfo(lua_State *L, const char *msg) {
   CallInfo *ci = L->ci;
-  if (isLua(ci)) { /* is Lua code? */
+  if (IS_CU_LUA_STRICT(ci)) { /* is Lua code? */
     int line = currentline(L, ci);
     char buff[LUA_IDSIZE]; /* add file:line information */
     Lexer_chunkID(buff, STRING_CONTENT(getluaproto(ci)->source), LUA_IDSIZE);
