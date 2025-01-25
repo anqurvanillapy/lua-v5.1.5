@@ -1,10 +1,6 @@
 /* Stack and Call structure of Lua. */
 
 #include <setjmp.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "lua.h"
 
 #include "buffer.h"
 #include "closure.h"
@@ -31,7 +27,7 @@
 /* chain list of long jump buffers */
 struct lua_longjmp {
   struct lua_longjmp *previous;
-  luai_jmpbuf b;
+  jmp_buf b;
   volatile int status; /* error code */
 };
 

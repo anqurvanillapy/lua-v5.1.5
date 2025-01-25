@@ -4,7 +4,7 @@ CFLAGS = -std=c23 \
 	-g -O2 \
 	-fsanitize=address \
 	-Werror -Wall -Wextra -Wpedantic \
-	-DLUA_USE_LINUX -DLUA_USER_H='"tests.h"'
+	-DLUA_USER_H='"tests.h"'
 AR = ar rcu
 RANLIB = ranlib
 RM = rm -f

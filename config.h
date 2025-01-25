@@ -12,11 +12,6 @@
 ** ===================================================================
 */
 
-#if defined(LUA_USE_LINUX)
-#define LUA_USE_POPEN
-#define LUA_USE_DLOPEN /* needs an extra library: -ldl */
-#endif
-
 /*
 @@ LUA_PATH and LUA_CPATH are the names of the environment variables that
 @* Lua check to set its paths.
@@ -209,7 +204,6 @@
   if (_setjmp((c)->b) == 0) {                                                  \
     a                                                                          \
   }
-#define luai_jmpbuf jmp_buf
 
 /*
 @@ LUA_MAXCAPTURES is the maximum number of captures that a pattern
@@ -223,36 +217,8 @@
 @* the file streams.
 ** CHANGE it if you have a way to implement it in your system.
 */
-#if defined(LUA_USE_POPEN)
-
-#define lua_popen(L, c, m) ((void)L, fflush(NULL), popen(c, m))
+#define lua_popen(L, c, m) ((void)L, fflush(nullptr), popen(c, m))
 #define lua_pclose(L, file) ((void)L, (pclose(file) != -1))
-
-#else
-
-#define lua_popen(L, c, m)                                                     \
-  ((void)((void)c, m), luaL_error(L, LUA_QUOTE("popen") " not supported"),     \
-   (FILE *)0)
-#define lua_pclose(L, file) ((void)((void)L, file), 0)
-
-#endif
-
-/*
-@@ LUA_DL_* define which dynamic-library system Lua should use.
-** CHANGE here if Lua has problems choosing the appropriate
-** dynamic-library system for your platform (either Windows' DLL, Mac's
-** dyld, or Unix's dlopen). If your system is some kind of Unix, there
-** is a good chance that it has dlopen, so LUA_DL_DLOPEN will work for
-** it.  To use dlopen you also need to adapt the src/Makefile (probably
-** adding -ldl to the linker options), so Lua does not select it
-** automatically.  (When you change the makefile to add -ldl, you must
-** also add -DLUA_USE_DLOPEN.)
-** If you do not want any kind of dynamic library, undefine all these
-** options.
-*/
-#if defined(LUA_USE_DLOPEN)
-#define LUA_DL_DLOPEN
-#endif
 
 /*
 @@ LUAI_EXTRASPACE allows you to add user-specific ud in a lua_State
