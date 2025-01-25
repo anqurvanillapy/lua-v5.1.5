@@ -1,17 +1,11 @@
-/* Auxiliary functions to manipulate prototypes and closures. */
-
-#include <stddef.h>
-
-#include "lua.h"
-
 #include "closure.h"
 #include "gc.h"
 #include "memory.h"
 #include "object.h"
 #include "state.h"
 
-Closure *luaF_newCclosure(lua_State *L, size_t nelems, Table *e) {
-  Closure *c = Mem_alloc(L, sizeCclosure(nelems));
+Closure *Closure_newC(lua_State *L, size_t nelems, Table *e) {
+  Closure *c = Mem_alloc(L, C_CLOSURE_SIZE(nelems));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->c.header.isC = true;
   c->c.header.env = e;
@@ -19,8 +13,8 @@ Closure *luaF_newCclosure(lua_State *L, size_t nelems, Table *e) {
   return c;
 }
 
-Closure *luaF_newLclosure(lua_State *L, size_t nelems, Table *e) {
-  Closure *c = Mem_alloc(L, sizeLclosure(nelems));
+Closure *Closure_newL(lua_State *L, size_t nelems, Table *e) {
+  Closure *c = Mem_alloc(L, L_CLOSURE_SIZE(nelems));
   luaC_link(L, LuaObjectToGCObject(c), LUA_TYPE_FUNCTION);
   c->l.header.isC = false;
   c->l.header.env = e;
@@ -31,7 +25,7 @@ Closure *luaF_newLclosure(lua_State *L, size_t nelems, Table *e) {
   return c;
 }
 
-Upvalue *luaF_newupval(lua_State *L) {
+Upvalue *Upvalue_new(lua_State *L) {
   Upvalue *uv = Mem_new(L, Upvalue);
   luaC_link(L, LuaObjectToGCObject(uv), LUA_TYPE_UPVALUE);
   uv->v = &uv->u.value;
@@ -39,28 +33,31 @@ Upvalue *luaF_newupval(lua_State *L) {
   return uv;
 }
 
-Upvalue *luaF_findupval(lua_State *L, StackIndex level) {
+Upvalue *Closure_findUpvalue(lua_State *L, StackIndex level) {
   GlobalState *g = G(L);
   GCObject **pp = &L->openUpval;
-  Upvalue *p;
-  Upvalue *uv;
-  while (*pp != nullptr && (p = ngcotouv(*pp))->v >= level) {
+  Upvalue *p = ngcotouv(*pp);
+  while (*pp != nullptr && p->v >= level) {
     assert(p->v != &p->u.value);
-    if (p->v == level) { /* found a corresponding upvalue? */
-      if (IS_DEAD(g, LuaObjectToGCObject(p))) { /* is it dead? */
-        changewhite(LuaObjectToGCObject(p));    /* ressurect it */
+    if (p->v == level) {
+      if (IS_DEAD(g, LuaObjectToGCObject(p))) {
+        // resurrect it if it's dead.
+        changewhite(LuaObjectToGCObject(p));
       }
       return p;
     }
     pp = &p->header.next;
+    p = ngcotouv(*pp);
   }
-  uv = Mem_new(L, Upvalue); /* not found: create a new one */
+
+  // Not found, create a new one.
+  Upvalue *uv = Mem_new(L, Upvalue);
   uv->header.tt = LUA_TYPE_UPVALUE;
   uv->header.marked = luaC_white(g);
-  uv->v = level;         /* current value lives in the stack */
-  uv->header.next = *pp; /* chain it in the proper position */
+  uv->v = level;         // current value lives in the stack
+  uv->header.next = *pp; // chain it in the proper position
   *pp = LuaObjectToGCObject(uv);
-  uv->u.l.prev = &g->uvhead; /* double link it in `uvhead' list */
+  uv->u.l.prev = &g->uvhead; // double link it in uvhead list.
   uv->u.l.next = g->uvhead.u.l.next;
   uv->u.l.next->u.l.prev = uv;
   g->uvhead.u.l.next = uv;
@@ -68,38 +65,39 @@ Upvalue *luaF_findupval(lua_State *L, StackIndex level) {
   return uv;
 }
 
-static void unlinkupval(Upvalue *uv) {
+static void unlinkUpvalue(Upvalue *uv) {
   assert(uv->u.l.next->u.l.prev == uv && uv->u.l.prev->u.l.next == uv);
-  uv->u.l.next->u.l.prev = uv->u.l.prev; /* remove from `uvhead' list */
+  uv->u.l.next->u.l.prev = uv->u.l.prev; // remove from uvhead list
   uv->u.l.prev->u.l.next = uv->u.l.next;
 }
 
-void luaF_freeupval(lua_State *L, Upvalue *uv) {
+void Upvalue_free(lua_State *L, Upvalue *uv) {
   if (uv->v != &uv->u.value) { /* is it open? */
-    unlinkupval(uv);           /* remove from open list */
+    unlinkUpvalue(uv);         /* remove from open list */
   }
   Mem_freePtr(L, uv); /* free upvalue */
 }
 
-void luaF_close(lua_State *L, StackIndex level) {
-  Upvalue *uv;
+void Closure_close(lua_State *L, StackIndex level) {
   GlobalState *g = G(L);
-  while (L->openUpval != nullptr && (uv = ngcotouv(L->openUpval))->v >= level) {
+  Upvalue *uv = ngcotouv(L->openUpval);
+  while (L->openUpval != nullptr && uv->v >= level) {
     GCObject *o = LuaObjectToGCObject(uv);
     assert(!isblack(o) && uv->v != &uv->u.value);
     L->openUpval = uv->header.next; /* remove from `open' list */
     if (IS_DEAD(g, o)) {
-      luaF_freeupval(L, uv); /* free upvalue */
+      Upvalue_free(L, uv); /* free upvalue */
     } else {
-      unlinkupval(uv);
+      unlinkUpvalue(uv);
       SET_OBJECT(L, &uv->u.value, uv->v);
-      uv->v = &uv->u.value;  /* now current value lives here */
-      luaC_linkupval(L, uv); /* link upvalue into `gcroot' list */
+      uv->v = &uv->u.value;  // now current value lives here
+      luaC_linkupval(L, uv); // link upvalue into gcroot list
     }
+    uv = ngcotouv(L->openUpval);
   }
 }
 
-Prototype *luaF_newproto(lua_State *L) {
+Prototype *Prototype_new(lua_State *L) {
   Prototype *f = Mem_new(L, Prototype);
   luaC_link(L, LuaObjectToGCObject(f), LUA_TYPE_PROTO);
   f->constants = nullptr;
@@ -124,7 +122,7 @@ Prototype *luaF_newproto(lua_State *L) {
   return f;
 }
 
-void luaF_freeproto(lua_State *L, Prototype *f) {
+void Prototype_free(lua_State *L, Prototype *f) {
   Mem_freeVec(L, f->code, f->codeSize, Instruction);
   Mem_freeVec(L, f->inners, f->innersSize, Prototype *);
   Mem_freeVec(L, f->constants, f->constantsSize, Value);
@@ -134,24 +132,23 @@ void luaF_freeproto(lua_State *L, Prototype *f) {
   Mem_freePtr(L, f);
 }
 
-void luaF_freeclosure(lua_State *L, Closure *c) {
-  int size = (c->c.header.isC) ? sizeCclosure(c->c.header.nupvalues)
-                               : sizeLclosure(c->l.header.nupvalues);
+void Closure_free(lua_State *L, Closure *c) {
+  size_t size = c->c.header.isC ? C_CLOSURE_SIZE(c->c.header.nupvalues)
+                                : L_CLOSURE_SIZE(c->l.header.nupvalues);
   Mem_free(L, c, size);
 }
 
-/*
-** Look for n-th local variable at line `line` in function `func`.
-** Returns nullptr if not found.
-*/
-const char *luaF_getlocalname(const Prototype *f, int local_number, int pc) {
+/// Look for n-th local variable at line `line` in function `func`. Returns
+/// nullptr if not found.
+const char *Prototype_getLocalName(const Prototype *f, int localNum, int pc) {
   for (size_t i = 0; i < f->locVarsSize && f->locVars[i].startPC <= pc; i++) {
-    if (pc < f->locVars[i].endPC) { /* is variable active? */
-      local_number--;
-      if (local_number == 0) {
+    if (pc < f->locVars[i].endPC) {
+      // Variable is active.
+      localNum--;
+      if (localNum == 0) {
         return STRING_CONTENT(f->locVars[i].name);
       }
     }
   }
-  return nullptr; /* not found */
+  return nullptr;
 }

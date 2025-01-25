@@ -61,7 +61,7 @@ static void resetStack(lua_State *L, lua_Status status) {
   L->ci = L->baseCI;
   L->base = L->ci->base;
   // Close eventual pending closures.
-  luaF_close(L, L->base);
+  Closure_close(L, L->base);
   Stack_setErrorObj(L, status, L->base);
   L->nestedCCallsNum = L->nestedCCallsBaseNum;
   L->allowHook = true;
@@ -450,7 +450,7 @@ lua_Status Stack_protectedCall(lua_State *L, ProtectedFunc func, void *u,
   if (status != LUA_RUNNING) {
     StackIndex oldTopFunc = RESTORE_STACK(L, oldTop);
     // Close eventual pending closures.
-    luaF_close(L, oldTopFunc);
+    Closure_close(L, oldTopFunc);
     Stack_setErrorObj(L, status, oldTopFunc);
     L->nestedCCallsNum = nestedCCallsNum;
     L->ci = RESTORE_CI(L, oldCI);
@@ -478,11 +478,11 @@ static void doParse(lua_State *L, void *ud) {
   luaC_checkGC(L);
   Prototype *tf = (c == LUA_SIGNATURE[0] ? luaU_undump : luaY_parser)(
       L, p->z, &p->buff, p->name);
-  Closure *cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
+  Closure *cl = Closure_newL(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
   cl->l.p = tf;
   for (size_t i = 0; i < tf->upvaluesNum; i++) {
     // Initialize eventual upvalues.
-    cl->l.upvalues[i] = luaF_newupval(L);
+    cl->l.upvalues[i] = Upvalue_new(L);
   }
   SET_CLOSURE(L, L->top, cl);
   incr_top(L);

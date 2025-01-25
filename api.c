@@ -416,7 +416,7 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction fn, int n) {
   lua_lock(L);
   luaC_checkGC(L);
   api_checknelems(L, n);
-  Closure *cl = luaF_newCclosure(L, n, getcurrenv(L));
+  Closure *cl = Closure_newC(L, n, getcurrenv(L));
   cl->c.f = fn;
   L->top -= n;
   while (n--) {
@@ -722,7 +722,7 @@ typedef struct CCall {
 
 static void f_Ccall(lua_State *L, void *ud) {
   CCall *c = ud;
-  Closure *cl = luaF_newCclosure(L, 0, getcurrenv(L));
+  Closure *cl = Closure_newC(L, 0, getcurrenv(L));
   cl->c.f = c->func;
   SET_CLOSURE(L, L->top, cl); /* push function */
   api_incr_top(L);

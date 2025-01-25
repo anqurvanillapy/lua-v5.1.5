@@ -405,7 +405,7 @@ static int listlocals(lua_State *L) {
   luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                 "Lua function expected");
   p = CLOSURE_VALUE(obj_at(L, 1))->l.p;
-  while ((name = luaF_getlocalname(p, ++i, pc)) != nullptr)
+  while ((name = Prototype_getLocalName(p, ++i, pc)) != nullptr)
     lua_pushstring(L, name);
   return i - 1;
 }

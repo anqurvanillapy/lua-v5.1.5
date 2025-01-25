@@ -290,8 +290,8 @@ static ptrdiff_t propagatemark(GlobalState *g) {
     Closure *cl = gco2cl(o);
     g->gray = cl->c.header.gclist;
     traverseclosure(g, cl);
-    return (cl->c.header.isC) ? sizeCclosure(cl->c.header.nupvalues)
-                              : sizeLclosure(cl->l.header.nupvalues);
+    return (cl->c.header.isC) ? C_CLOSURE_SIZE(cl->c.header.nupvalues)
+                              : L_CLOSURE_SIZE(cl->l.header.nupvalues);
   }
   case LUA_TYPE_THREAD: {
     lua_State *th = gco2th(o);
@@ -378,13 +378,13 @@ static void cleartable(GCObject *l) {
 static void freeobj(lua_State *L, GCObject *o) {
   switch (o->gch.tt) {
   case LUA_TYPE_PROTO:
-    luaF_freeproto(L, gco2p(o));
+    Prototype_free(L, gco2p(o));
     break;
   case LUA_TYPE_FUNCTION:
-    luaF_freeclosure(L, gco2cl(o));
+    Closure_free(L, gco2cl(o));
     break;
   case LUA_TYPE_UPVALUE:
-    luaF_freeupval(L, gco2uv(o));
+    Upvalue_free(L, gco2uv(o));
     break;
   case LUA_TYPE_TABLE:
     Table_free(L, gco2h(o));

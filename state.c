@@ -84,7 +84,7 @@ static void initPartialState(lua_State *L, GlobalState *g) {
 static void closeState(lua_State *L) {
   GlobalState *g = G(L);
   // Close all upvalues for this thread.
-  luaF_close(L, L->stack);
+  Closure_close(L, L->stack);
   // Collect all objects.
   luaC_freeall(L);
   assert(g->rootgc == LuaObjectToGCObject(L));
@@ -113,7 +113,7 @@ lua_State *State_newThread(lua_State *L) {
 
 void State_freeThread(lua_State *L, lua_State *L1) {
   // Close all upvalues for this thread.
-  luaF_close(L1, L1->stack);
+  Closure_close(L1, L1->stack);
   assert(L1->openUpval == nullptr);
   luai_userstatefree(L1);
   freeStack(L, L1);
@@ -178,10 +178,10 @@ static void callGcTm(lua_State *L, void *) {
 LUA_API void lua_close(lua_State *L) {
   L = G(L)->mainthread; /* only the main thread can be closed */
   lua_lock(L);
-  luaF_close(L, L->stack);  /* close all upvalues for this thread */
-  luaC_separateudata(L, 1); /* separate udata that have GC metamethods */
-  L->errFunc = 0;           /* no error function during GC metamethods */
-  do {                      /* repeat until no more errors */
+  Closure_close(L, L->stack); /* close all upvalues for this thread */
+  luaC_separateudata(L, 1);   /* separate udata that have GC metamethods */
+  L->errFunc = 0;             /* no error function during GC metamethods */
+  do {                        /* repeat until no more errors */
     L->ci = L->baseCI;
     L->base = L->top = L->ci->base;
     L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;

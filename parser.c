@@ -353,7 +353,7 @@ static void pushclosure(LexState *ls, FuncState *func, ExprInfo *v) {
 
 static void openFunc(LexState *ls, FuncState *fs) {
   lua_State *L = ls->L;
-  Prototype *f = luaF_newproto(L);
+  Prototype *f = Prototype_new(L);
   fs->f = f;
   fs->prev = ls->fs; /* linked list of funcstates */
   fs->ls = ls;

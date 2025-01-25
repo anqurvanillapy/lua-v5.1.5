@@ -84,7 +84,7 @@ static Prototype *getluaproto(CallInfo *ci) {
 static const char *findlocal(lua_State *L, CallInfo *ci, int n) {
   const char *name;
   Prototype *fp = getluaproto(ci);
-  if (fp && (name = luaF_getlocalname(fp, n, currentpc(L, ci))) != NULL) {
+  if (fp && (name = Prototype_getLocalName(fp, n, currentpc(L, ci))) != NULL) {
     return name; /* is a local variable in a Lua function */
   }
   StackIndex limit = (ci == L->ci) ? L->top : (ci + 1)->func;
@@ -495,7 +495,7 @@ static const char *getobjname(lua_State *L, CallInfo *ci, int stackpos,
     Prototype *p = ci_func(ci)->l.p;
     int pc = currentpc(L, ci);
     Instruction i;
-    *name = luaF_getlocalname(p, stackpos + 1, pc);
+    *name = Prototype_getLocalName(p, stackpos + 1, pc);
     if (*name) { /* is a local? */
       return "local";
     }

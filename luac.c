@@ -115,7 +115,7 @@ static const Prototype *combine(lua_State *L, int n) {
   if (n == 1) {
     return toproto(L, -1);
   }
-  Prototype *f = luaF_newproto(L);
+  Prototype *f = Prototype_new(L);
   SET_PROTO_TO_STACK(L, L->top, f);
   incr_top(L);
   f->source = String_createLiteral(L, "=(" PROGNAME ")");

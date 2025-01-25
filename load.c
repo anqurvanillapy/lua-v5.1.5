@@ -145,7 +145,7 @@ static Prototype *LoadFunction(LoadState *S, String *p) {
   if (++S->L->nestedCCallsNum > LUAI_MAX_C_CALLS) {
     error(S, "code too deep");
   }
-  f = luaF_newproto(S->L);
+  f = Prototype_new(S->L);
   SET_PROTO_TO_STACK(S->L, S->L->top, f);
   incr_top(S->L);
   f->source = LoadString(S);

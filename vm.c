@@ -664,7 +664,7 @@ reentry: /* entry point */
         StackIndex func = ci->func;
         StackIndex pfunc = (ci + 1)->func; /* previous function index */
         if (L->openUpval) {
-          luaF_close(L, ci->base);
+          Closure_close(L, ci->base);
         }
         L->base = ci->base = ci->func + ((ci + 1)->base - pfunc);
         for (aux = 0; pfunc + aux < L->top; aux++) /* move frame down */
@@ -691,7 +691,7 @@ reentry: /* entry point */
         L->top = ra + b - 1;
       }
       if (L->openUpval) {
-        luaF_close(L, base);
+        Closure_close(L, base);
       }
       L->savedPC = pc;
       b = Stack_postCall(L, ra);
@@ -775,7 +775,7 @@ reentry: /* entry point */
       continue;
     }
     case OP_CLOSE: {
-      luaF_close(L, ra);
+      Closure_close(L, ra);
       continue;
     }
     case OP_CLOSURE: {
@@ -784,14 +784,14 @@ reentry: /* entry point */
       int nup, j;
       p = cl->p->inners[GETARG_Bx(i)];
       nup = p->upvaluesNum;
-      ncl = luaF_newLclosure(L, nup, cl->header.env);
+      ncl = Closure_newL(L, nup, cl->header.env);
       ncl->l.p = p;
       for (j = 0; j < nup; j++, pc++) {
         if (GET_OPCODE(*pc) == OP_GETUPVAL) {
           ncl->l.upvalues[j] = cl->upvalues[GETARG_B(*pc)];
         } else {
           assert(GET_OPCODE(*pc) == OP_MOVE);
-          ncl->l.upvalues[j] = luaF_findupval(L, base + GETARG_B(*pc));
+          ncl->l.upvalues[j] = Closure_findUpvalue(L, base + GETARG_B(*pc));
         }
       }
       SET_CLOSURE(L, ra, ncl);
