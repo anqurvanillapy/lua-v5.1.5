@@ -244,7 +244,7 @@ LUA_API int lua_lessthan(lua_State *L, int index1, int index2) {
   lua_lock(L); /* may call tag method */
   StackIndex o1 = indexToAddr(L, index1);
   StackIndex o2 = indexToAddr(L, index2);
-  int i = o1 == &valueNil || o2 == &valueNil ? 0 : luaV_lessthan(L, o1, o2);
+  int i = o1 == &valueNil || o2 == &valueNil ? 0 : Object_lessThan(L, o1, o2);
   lua_unlock(L);
   return i;
 }

@@ -593,7 +593,8 @@ void luaG_aritherror(lua_State *L, const Value *p1, const Value *p2) {
   luaG_typeerror(L, p2, "perform arithmetic on");
 }
 
-int luaG_ordererror(lua_State *L, const Value *p1, const Value *p2) {
+[[noreturn]] void luaG_ordererror(lua_State *L, const Value *p1,
+                                  const Value *p2) {
   const char *t1 = Debug_typeNames[GET_TYPE(p1)];
   const char *t2 = Debug_typeNames[GET_TYPE(p2)];
   if (t1[2] == t2[2]) {
@@ -601,7 +602,6 @@ int luaG_ordererror(lua_State *L, const Value *p1, const Value *p2) {
   } else {
     luaG_runerror(L, "attempt to compare %s with %s", t1, t2);
   }
-  return 0;
 }
 
 static void addinfo(lua_State *L, const char *msg) {
@@ -628,7 +628,7 @@ static void addinfo(lua_State *L, const char *msg) {
   luaD_throw(L, LUA_ERRRUN);
 }
 
-void luaG_runerror(lua_State *L, const char *fmt, ...) {
+[[noreturn]] void luaG_runerror(lua_State *L, const char *fmt, ...) {
   va_list argp;
   va_start(argp, fmt);
   addinfo(L, Object_vsprintf(L, fmt, argp));

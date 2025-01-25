@@ -139,154 +139,156 @@ void luaV_settable(lua_State *L, const Value *t, Value *key, StackIndex val) {
   luaG_runerror(L, "loop in settable");
 }
 
-static int call_binTM(lua_State *L, const Value *p1, const Value *p2,
-                      StackIndex res, TMS event) {
-  const Value *tm = luaT_gettmbyobj(L, p1, event); /* try first operand */
+static bool callBinaryTM(lua_State *L, const Value *p1, const Value *p2,
+                         StackIndex res, TMS event) {
+  const Value *tm = luaT_gettmbyobj(L, p1, event);
   if (IS_TYPE_NIL(tm)) {
-    tm = luaT_gettmbyobj(L, p2, event); /* try second operand */
+    tm = luaT_gettmbyobj(L, p2, event);
   }
   if (IS_TYPE_NIL(tm)) {
-    return 0;
+    return false;
   }
   callTMres(L, res, tm, p1, p2);
-  return 1;
+  return true;
 }
 
-static const Value *get_compTM(lua_State *L, Table *mt1, Table *mt2,
+static const Value *getOrderTM(lua_State *L, Table *mt1, Table *mt2,
                                TMS event) {
   const Value *tm1 = FAST_TM(L, mt1, event);
-  const Value *tm2;
   if (tm1 == nullptr) {
-    return nullptr; /* no metamethod */
+    return nullptr;
   }
   if (mt1 == mt2) {
-    return tm1; /* same metatables => same metamethods */
-  }
-  tm2 = FAST_TM(L, mt2, event);
-  if (tm2 == nullptr) {
-    return nullptr; /* no metamethod */
-  }
-  if (Object_rawEqual(tm1, tm2)) { /* same metamethods? */
     return tm1;
   }
+
+  const Value *tm2 = FAST_TM(L, mt2, event);
+  if (tm2 == nullptr) {
+    return nullptr;
+  }
+  if (Object_rawEqual(tm1, tm2)) {
+    return tm1;
+  }
+
   return nullptr;
 }
 
-static int call_orderTM(lua_State *L, const Value *p1, const Value *p2,
-                        TMS event) {
+static int callOrderTM(lua_State *L, const Value *p1, const Value *p2,
+                       TMS event) {
   const Value *tm1 = luaT_gettmbyobj(L, p1, event);
-  const Value *tm2;
   if (IS_TYPE_NIL(tm1)) {
-    return -1; /* no metamethod? */
-  }
-  tm2 = luaT_gettmbyobj(L, p2, event);
-  if (!Object_rawEqual(tm1, tm2)) { /* different metamethods? */
     return -1;
   }
+
+  const Value *tm2 = luaT_gettmbyobj(L, p2, event);
+  if (!Object_rawEqual(tm1, tm2)) {
+    return -1;
+  }
+
   callTMres(L, L->top, tm1, p1, p2);
   return !IS_FALSE(L->top);
 }
 
-static int l_strcmp(const String *ls, const String *rs) {
+static int stringCompare(const String *ls, const String *rs) {
   const char *l = STRING_CONTENT(ls);
   size_t ll = ls->len;
   const char *r = STRING_CONTENT(rs);
   size_t lr = rs->len;
-  for (;;) {
-    int temp = strcoll(l, r);
-    if (temp != 0) {
-      return temp;
-    } else {                  /* strings are equal up to a `\0' */
-      size_t len = strlen(l); /* index of first `\0' in both strings */
-      if (len == lr) {        /* r is finished? */
-        return (len == ll) ? 0 : 1;
-      } else if (len == ll) { /* l is finished? */
-        return -1; /* l is smaller than r (because r is not finished) */
-      }
-      /* both strings longer than `len'; go on comparing (after the `\0') */
-      len++;
-      l += len;
-      ll -= len;
-      r += len;
-      lr -= len;
+  while (true) {
+    int ret = strcoll(l, r);
+    if (ret != 0) {
+      return ret;
     }
+    // String contents are equal.
+    size_t len = strlen(l);
+    if (len == lr) {
+      return len == ll ? 0 : 1;
+    }
+    if (len == ll) {
+      return -1;
+    }
+    // Both strings longer than `strlen`, go on comparing (after the `\0').
+    len++;
+    l += len;
+    ll -= len;
+    r += len;
+    lr -= len;
   }
 }
 
-int luaV_lessthan(lua_State *L, const Value *l, const Value *r) {
-
+bool Object_lessThan(lua_State *L, const Value *l, const Value *r) {
   if (GET_TYPE(l) != GET_TYPE(r)) {
-    return luaG_ordererror(L, l, r);
+    luaG_ordererror(L, l, r);
+    return false;
   }
   if (IS_TYPE_NUMBER(l)) {
     return NUMBER_VALUE(l) < NUMBER_VALUE(r);
   }
   if (IS_TYPE_STRING(l)) {
-    return l_strcmp(STRING_VALUE(l), STRING_VALUE(r)) < 0;
+    return stringCompare(STRING_VALUE(l), STRING_VALUE(r)) < 0;
   }
-  int res = call_orderTM(L, l, r, TM_LT);
+  int res = callOrderTM(L, l, r, TM_LT);
   if (res != -1) {
     return res;
   }
-  return luaG_ordererror(L, l, r);
+  luaG_ordererror(L, l, r);
 }
 
-static int lessequal(lua_State *L, const Value *l, const Value *r) {
+static bool lessEqual(lua_State *L, const Value *l, const Value *r) {
   if (GET_TYPE(l) != GET_TYPE(r)) {
-    return luaG_ordererror(L, l, r);
+    luaG_ordererror(L, l, r);
+    return false;
   }
   if (IS_TYPE_NUMBER(l)) {
     return NUMBER_VALUE(l) <= NUMBER_VALUE(r);
   }
   if (IS_TYPE_STRING(l)) {
-    return l_strcmp(STRING_VALUE(l), STRING_VALUE(r)) <= 0;
+    return stringCompare(STRING_VALUE(l), STRING_VALUE(r)) <= 0;
   }
-  int res = call_orderTM(L, l, r, TM_LE);
-  if (res != -1) { /* first try `le' */
+  int res = callOrderTM(L, l, r, TM_LE);
+  if (res != -1) {
     return res;
   }
-  res = call_orderTM(L, r, l, TM_LT);
-  if (res != -1) { /* else try `lt' */
+  res = callOrderTM(L, r, l, TM_LT);
+  if (res != -1) {
     return !res;
   }
-  return luaG_ordererror(L, l, r);
+  luaG_ordererror(L, l, r);
 }
 
-int luaV_equalval(lua_State *L, const Value *t1, const Value *t2) {
-  const Value *tm;
+bool Object_equal(lua_State *L, const Value *t1, const Value *t2) {
+  const Value *tm = nullptr;
   assert(GET_TYPE(t1) == GET_TYPE(t2));
   switch (GET_TYPE(t1)) {
   case LUA_TYPE_NIL:
-    return 1;
+    return true;
   case LUA_TYPE_NUMBER:
     return NUMBER_VALUE(t1) == NUMBER_VALUE(t2);
   case LUA_TYPE_BOOLEAN:
-    return BOOL_VALUE(t1) == BOOL_VALUE(t2); /* true must be 1 !! */
+    return BOOL_VALUE(t1) == BOOL_VALUE(t2);
   case LUA_TYPE_PTR:
     return PTR_VALUE(t1) == PTR_VALUE(t2);
-  case LUA_TYPE_USERDATA: {
+  case LUA_TYPE_USERDATA:
     if (USERDATA_VALUE(t1) == USERDATA_VALUE(t2)) {
-      return 1;
+      return true;
     }
-    tm = get_compTM(L, USERDATA_VALUE(t1)->metatable,
+    tm = getOrderTM(L, USERDATA_VALUE(t1)->metatable,
                     USERDATA_VALUE(t2)->metatable, TM_EQ);
-    break; /* will try TM */
-  }
-  case LUA_TYPE_TABLE: {
+    break;
+  case LUA_TYPE_TABLE:
     if (TABLE_VALUE(t1) == TABLE_VALUE(t2)) {
-      return 1;
+      return true;
     }
-    tm = get_compTM(L, TABLE_VALUE(t1)->metatable, TABLE_VALUE(t2)->metatable,
+    tm = getOrderTM(L, TABLE_VALUE(t1)->metatable, TABLE_VALUE(t2)->metatable,
                     TM_EQ);
-    break; /* will try TM */
-  }
+    break;
   default:
     return GC_VALUE(t1) == GC_VALUE(t2);
   }
   if (tm == nullptr) {
-    return 0; /* no TM? */
+    return false;
   }
-  callTMres(L, L->top, tm, t1, t2); /* call TM */
+  callTMres(L, L->top, tm, t1, t2);
   return !IS_FALSE(L->top);
 }
 
@@ -296,11 +298,11 @@ void luaV_concat(lua_State *L, int total, int last) {
     int n = 2; /* number of elements handled in this pass (at least 2) */
     if (!(IS_TYPE_STRING(top - 2) || IS_TYPE_NUMBER(top - 2)) ||
         !tostring(L, top - 1)) {
-      if (!call_binTM(L, top - 2, top - 1, top - 2, TM_CONCAT)) {
+      if (!callBinaryTM(L, top - 2, top - 1, top - 2, TM_CONCAT)) {
         luaG_concaterror(L, top - 2, top - 1);
       }
     } else if (STRING_VALUE(top - 1)->len == 0) { /* second op is empty? */
-      (void)tostring(L, top - 2); /* result is first op (as string) */
+      tostring(L, top - 2); /* result is first op (as string) */
     } else {
       /* at least two string values; get as many as possible */
       size_t tl = STRING_VALUE(top - 1)->len;
@@ -361,7 +363,7 @@ static void Arith(lua_State *L, StackIndex ra, const Value *rb, const Value *rc,
       assert(false);
       break;
     }
-  } else if (!call_binTM(L, rb, rc, ra, op)) {
+  } else if (!callBinaryTM(L, rb, rc, ra, op)) {
     luaG_aritherror(L, rb, rc);
   }
 }
@@ -576,7 +578,7 @@ reentry: /* entry point */
         break;
       }
       default: { /* try metamethod */
-        Protect(if (!call_binTM(L, rb, &valueNil, ra, TM_LEN))
+        Protect(if (!callBinaryTM(L, rb, &valueNil, ra, TM_LEN))
                     luaG_typeerror(L, rb, "get length of");)
       }
       }
@@ -601,12 +603,12 @@ reentry: /* entry point */
       continue;
     }
     case OP_LT: {
-      Protect(if (luaV_lessthan(L, RKB(i), RKC(i)) == GETARG_A(i))
+      Protect(if (Object_lessThan(L, RKB(i), RKC(i)) == GETARG_A(i))
                   dojump(L, pc, GETARG_sBx(*pc));) pc++;
       continue;
     }
     case OP_LE: {
-      Protect(if (lessequal(L, RKB(i), RKC(i)) == GETARG_A(i))
+      Protect(if (lessEqual(L, RKB(i), RKC(i)) == GETARG_A(i))
                   dojump(L, pc, GETARG_sBx(*pc));) pc++;
       continue;
     }
