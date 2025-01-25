@@ -7,16 +7,19 @@
 #include "state.h"
 
 #define luaD_checkstack(L, n)                                                  \
-  if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(Value))       \
-    luaD_growstack(L, n);                                                      \
-  else                                                                         \
-    condhardstacktests(luaD_reallocstack(L, L->stackSize - EXTRA_STACK - 1));
+  do {                                                                         \
+    if ((char *)L->stackLast - (char *)L->top <= (n) * (int)sizeof(Value)) {   \
+      luaD_growstack(L, n);                                                    \
+    } else {                                                                   \
+      condhardstacktests(Stack_resize(L, L->stackSize - EXTRA_STACK - 1));     \
+    }                                                                          \
+  } while (false)
 
 #define incr_top(L)                                                            \
-  {                                                                            \
+  do {                                                                         \
     luaD_checkstack(L, 1);                                                     \
     L->top++;                                                                  \
-  }
+  } while (false)
 
 #define savestack(L, p) ((char *)(p) - (char *)L->stack)
 #define restorestack(L, n) ((Value *)((char *)L->stack + (n)))
@@ -39,11 +42,11 @@ LUAI_FUNC void luaD_call(lua_State *L, StackIndex func, int nResults);
 LUAI_FUNC int luaD_pcall(lua_State *L, Pfunc func, void *u, ptrdiff_t oldtop,
                          ptrdiff_t ef);
 LUAI_FUNC int luaD_poscall(lua_State *L, StackIndex firstResult);
-LUAI_FUNC void luaD_reallocCI(lua_State *L, int newsize);
-LUAI_FUNC void luaD_reallocstack(lua_State *L, int newsize);
+LUAI_FUNC void Stack_resizeCI(lua_State *L, int newSize);
+LUAI_FUNC void Stack_resize(lua_State *L, int newsize);
 LUAI_FUNC void luaD_growstack(lua_State *L, int n);
 
-[[noreturn]] LUAI_FUNC void luaD_throw(lua_State *L, int errcode);
+[[noreturn]] LUAI_FUNC void luaD_throw(lua_State *L, lua_Status errcode);
 LUAI_FUNC int luaD_rawrunprotected(lua_State *L, Pfunc f, void *ud);
 
-LUAI_FUNC void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldtop);
+LUAI_FUNC void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldTop);

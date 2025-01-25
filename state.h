@@ -2,13 +2,9 @@
 
 #pragma once
 
-#include "lua.h"
-
 #include "buffer.h"
 #include "object.h"
 #include "tag.h"
-
-struct lua_longjmp;
 
 #define GLOBALS(L) (&L->l_gt)
 #define REGISTRY(L) (&G(L)->l_registry)
@@ -121,7 +117,7 @@ struct lua_State {
   GCObject *gcList;
 
   // Current error recover point.
-  struct lua_longjmp *errorJmp;
+  struct Ctx *errorJmp;
   // current error handling function (stack index).
   ptrdiff_t errFunc;
 };

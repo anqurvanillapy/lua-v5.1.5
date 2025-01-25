@@ -239,14 +239,14 @@ static void checkstacksizes(lua_State *L, StackIndex max) {
     return;                               /* do not touch the stacks */
   }
   if (4 * ci_used < L->ciSize && 2 * BASIC_CI_SIZE < L->ciSize) {
-    luaD_reallocCI(L, L->ciSize / 2); /* still big enough... */
+    Stack_resizeCI(L, L->ciSize / 2); /* still big enough... */
   }
-  condhardstacktests(luaD_reallocCI(L, ci_used + 1));
+  condhardstacktests(Stack_resizeCI(L, ci_used + 1));
   if (4 * s_used < L->stackSize &&
       2 * (BASIC_STACK_SIZE + EXTRA_STACK) < L->stackSize) {
-    luaD_reallocstack(L, L->stackSize / 2); /* still big enough... */
+    Stack_resize(L, L->stackSize / 2); /* still big enough... */
   }
-  condhardstacktests(luaD_reallocstack(L, s_used));
+  condhardstacktests(Stack_resize(L, s_used));
 }
 
 static void traversestack(GlobalState *g, lua_State *l) {

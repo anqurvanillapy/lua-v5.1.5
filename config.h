@@ -190,22 +190,6 @@
 /* }================================================================== */
 
 /*
-@@ LUAI_THROW/LUAI_TRY define how Lua does exception handling.
-** CHANGE them if you prefer to use longjmp/setjmp even with C++
-** or if want/don't to use _longjmp/_setjmp instead of regular
-** longjmp/setjmp. By default, Lua handles errors with exceptions when
-** compiling as C++ code, with _longjmp/_setjmp when asked to use them,
-** and with longjmp/setjmp otherwise.
-**
-** In Unix, _longjmp/_setjmp is more efficient.
-*/
-#define LUAI_THROW(L, c) _longjmp((c)->b, 1)
-#define LUAI_TRY(L, c, a)                                                      \
-  if (_setjmp((c)->b) == 0) {                                                  \
-    a                                                                          \
-  }
-
-/*
 @@ LUA_MAXCAPTURES is the maximum number of captures that a pattern
 @* can do during pattern-matching.
 ** CHANGE it if you need more captures. This limit is arbitrary.

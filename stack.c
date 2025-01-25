@@ -18,40 +18,31 @@
 #include "tag.h"
 #include "vm.h"
 
-/*
-** {======================================================
-** Error-recovery functions
-** =======================================================
-*/
-
-/* chain list of long jump buffers */
-struct lua_longjmp {
-  struct lua_longjmp *previous;
+// Chain list of long jump buffers.
+struct Ctx {
+  struct Ctx *previous;
   jmp_buf b;
-  volatile int status; /* error code */
+  volatile int status;
 };
 
-void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldtop) {
+void luaD_seterrorobj(lua_State *L, int errcode, StackIndex oldTop) {
   switch (errcode) {
-  case LUA_ERRMEM: {
-    SET_STRING_TO_STACK(L, oldtop, String_createLiteral(L, MEMERRMSG));
+  case LUA_ERRMEM:
+    SET_STRING_TO_STACK(L, oldTop, String_createLiteral(L, MEMERRMSG));
     break;
-  }
-  case LUA_ERRERR: {
-    SET_STRING_TO_STACK(L, oldtop,
+  case LUA_ERRERR:
+    SET_STRING_TO_STACK(L, oldTop,
                         String_createLiteral(L, "error in error handling"));
     break;
-  }
   case LUA_ERRSYNTAX:
-  case LUA_ERRRUN: {
-    SET_OBJECT_TO_SAME_STACK(L, oldtop,
-                             L->top - 1); /* error message on current top */
+  case LUA_ERRRUN:
+    // Error message on current top.
+    SET_OBJECT_TO_SAME_STACK(L, oldTop, L->top - 1);
     break;
-  }
   default:
     break;
   }
-  L->top = oldtop + 1;
+  L->top = oldTop + 1;
 }
 
 static void restore_stack_limit(lua_State *L) {
@@ -59,7 +50,7 @@ static void restore_stack_limit(lua_State *L) {
   if (L->ciSize > LUAI_MAXCALLS) { /* there was an overflow? */
     int inuse = (int)(L->ci - L->baseCI);
     if (inuse + 1 < LUAI_MAXCALLS) { /* can `undo' overflow? */
-      luaD_reallocCI(L, LUAI_MAXCALLS);
+      Stack_resizeCI(L, LUAI_MAXCALLS);
     }
   }
 }
@@ -76,12 +67,12 @@ static void resetstack(lua_State *L, int status) {
   L->errorJmp = nullptr;
 }
 
-[[noreturn]] void luaD_throw(lua_State *L, int errcode) {
+[[noreturn]] void luaD_throw(lua_State *L, lua_Status errcode) {
   if (L->errorJmp) {
     L->errorJmp->status = errcode;
-    LUAI_THROW(L, L->errorJmp);
+    _longjmp(L->errorJmp->b, 1);
   } else {
-    L->status = (uint8_t)errcode;
+    L->status = errcode;
     if (G(L)->panic) {
       resetstack(L, errcode);
       lua_unlock(L);
@@ -92,16 +83,15 @@ static void resetstack(lua_State *L, int status) {
 }
 
 int luaD_rawrunprotected(lua_State *L, Pfunc f, void *ud) {
-  struct lua_longjmp lj;
-  lj.status = 0;
-  lj.previous = L->errorJmp; /* chain new error handler */
+  // Chain new error handler.
+  struct Ctx lj = {.previous = L->errorJmp, .status = 0};
   L->errorJmp = &lj;
-  LUAI_TRY(L, &lj, (*f)(L, ud););
+  if (_setjmp(lj.b) == 0) {
+    f(L, ud);
+  }
   L->errorJmp = lj.previous; /* restore old error handler */
   return lj.status;
 }
-
-/* }====================================================== */
 
 static void correctstack(lua_State *L, Value *oldstack) {
   CallInfo *ci;
@@ -118,37 +108,33 @@ static void correctstack(lua_State *L, Value *oldstack) {
   L->base = (L->base - oldstack) + L->stack;
 }
 
-void luaD_reallocstack(lua_State *L, int newsize) {
-  Value *oldstack = L->stack;
-  int realsize = newsize + 1 + EXTRA_STACK;
+void Stack_resize(lua_State *L, int newSize) {
+  Value *oldStack = L->stack;
+  int realSize = newSize + 1 + EXTRA_STACK;
   assert(L->stackLast - L->stack == L->stackSize - EXTRA_STACK - 1);
-  Mem_reallocVec(L, L->stack, L->stackSize, realsize, Value);
-  L->stackSize = realsize;
-  L->stackLast = L->stack + newsize;
-  correctstack(L, oldstack);
+  Mem_reallocVec(L, L->stack, L->stackSize, realSize, Value);
+  L->stackSize = realSize;
+  L->stackLast = L->stack + newSize;
+  correctstack(L, oldStack);
 }
 
-void luaD_reallocCI(lua_State *L, int newsize) {
-  CallInfo *oldci = L->baseCI;
-  Mem_reallocVec(L, L->baseCI, L->ciSize, newsize, CallInfo);
-  L->ciSize = newsize;
-  L->ci = (L->ci - oldci) + L->baseCI;
+void Stack_resizeCI(lua_State *L, int newSize) {
+  const CallInfo *oldCI = L->baseCI;
+  Mem_reallocVec(L, L->baseCI, L->ciSize, newSize, CallInfo);
+  L->ciSize = newSize;
+  L->ci += L->baseCI - oldCI;
   L->endCI = L->baseCI + L->ciSize - 1;
 }
 
 void luaD_growstack(lua_State *L, int n) {
-  if (n <= L->stackSize) { /* double size is enough? */
-    luaD_reallocstack(L, 2 * L->stackSize);
-  } else {
-    luaD_reallocstack(L, L->stackSize + n);
-  }
+  Stack_resize(L, n <= L->stackSize ? L->stackSize * 2 : L->stackSize + n);
 }
 
 static CallInfo *growCI(lua_State *L) {
   if (L->ciSize > LUAI_MAXCALLS) { /* overflow while handling overflow? */
     luaD_throw(L, LUA_ERRERR);
   } else {
-    luaD_reallocCI(L, 2 * L->ciSize);
+    Stack_resizeCI(L, 2 * L->ciSize);
     if (L->ciSize > LUAI_MAXCALLS) {
       luaG_runerror(L, "stack overflow");
     }
@@ -244,7 +230,7 @@ static StackIndex tryfuncTM(lua_State *L, StackIndex func) {
 #define inc_ci(L)                                                              \
   ((L->ci == L->endCI)                                                         \
        ? growCI(L)                                                             \
-       : (condhardstacktests(luaD_reallocCI(L, L->ciSize)), ++L->ci))
+       : (condhardstacktests(Stack_resizeCI(L, L->ciSize)), ++L->ci))
 
 int luaD_precall(lua_State *L, StackIndex func, int nresults) {
   LClosure *cl;
