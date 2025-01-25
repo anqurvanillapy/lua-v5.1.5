@@ -432,33 +432,34 @@ LUA_API int lua_yield(lua_State *L, int nresults) {
   if (L->nestedCCallsNum > L->nestedCCallsBaseNum) {
     luaG_runerror(L, "attempt to yield across metamethod/C-call boundary");
   }
-  L->base = L->top - nresults; /* protect stack slots below */
+  // Protect stack slots below.
+  L->base = L->top - nresults;
   L->status = LUA_YIELD;
   lua_unlock(L);
   return -1;
 }
 
-int luaD_pcall(lua_State *L, ProtectedFunc func, void *u, ptrdiff_t old_top,
-               ptrdiff_t ef) {
-  int status;
-  unsigned short oldnCcalls = L->nestedCCallsNum;
-  ptrdiff_t old_ci = SAVE_CI(L, L->ci);
+lua_Status Stack_protectedCall(lua_State *L, ProtectedFunc func, void *u,
+                               ptrdiff_t oldTop, ptrdiff_t ef) {
+  unsigned short nestedCCallsNum = L->nestedCCallsNum;
+  ptrdiff_t oldCI = SAVE_CI(L, L->ci);
   bool allowHook = L->allowHook;
-  ptrdiff_t old_errfunc = L->errFunc;
+  ptrdiff_t oldErrFunc = L->errFunc;
   L->errFunc = ef;
-  status = Stack_rawrUnprotected(L, func, u);
-  if (status != 0) { /* an error occurred? */
-    StackIndex oldtop = RESTORE_STACK(L, old_top);
-    luaF_close(L, oldtop); /* close eventual pending closures */
-    Stack_setErrorObj(L, status, oldtop);
-    L->nestedCCallsNum = oldnCcalls;
-    L->ci = RESTORE_CI(L, old_ci);
+  lua_Status status = Stack_rawrUnprotected(L, func, u);
+  if (status != LUA_RUNNING) {
+    StackIndex oldTopFunc = RESTORE_STACK(L, oldTop);
+    // Close eventual pending closures.
+    luaF_close(L, oldTopFunc);
+    Stack_setErrorObj(L, status, oldTopFunc);
+    L->nestedCCallsNum = nestedCCallsNum;
+    L->ci = RESTORE_CI(L, oldCI);
     L->base = L->ci->base;
     L->savedPC = L->ci->savedpc;
     L->allowHook = allowHook;
     restoreStackLimit(L);
   }
-  L->errFunc = old_errfunc;
+  L->errFunc = oldErrFunc;
   return status;
 }
 
@@ -471,15 +472,13 @@ struct SParser {
   const char *name;
 };
 
-static void f_parser(lua_State *L, void *ud) {
-  Prototype *tf; // "the function"
-  Closure *cl;
+static void doParse(lua_State *L, void *ud) {
   struct SParser *p = ud;
   int c = luaZ_lookahead(p->z);
   luaC_checkGC(L);
-  tf = (c == LUA_SIGNATURE[0] ? luaU_undump : luaY_parser)(L, p->z, &p->buff,
-                                                           p->name);
-  cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
+  Prototype *tf = (c == LUA_SIGNATURE[0] ? luaU_undump : luaY_parser)(
+      L, p->z, &p->buff, p->name);
+  Closure *cl = luaF_newLclosure(L, tf->upvaluesNum, TABLE_VALUE(GLOBALS(L)));
   cl->l.p = tf;
   for (size_t i = 0; i < tf->upvaluesNum; i++) {
     // Initialize eventual upvalues.
@@ -489,10 +488,11 @@ static void f_parser(lua_State *L, void *ud) {
   incr_top(L);
 }
 
-int luaD_protectedparser(lua_State *L, ZIO *z, const char *name) {
+lua_Status Stack_protectedParse(lua_State *L, ZIO *z, const char *name) {
   struct SParser p = {.z = z, .name = name};
   StringBuilder_init(L, &p.buff);
-  int status = luaD_pcall(L, f_parser, &p, SAVE_STACK(L, L->top), L->errFunc);
+  lua_Status status =
+      Stack_protectedCall(L, doParse, &p, SAVE_STACK(L, L->top), L->errFunc);
   StringBuilder_free(L, &p.buff);
   return status;
 }

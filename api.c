@@ -708,7 +708,8 @@ LUA_API int lua_pcall(lua_State *L, int nargs, int nresults, int errfunc) {
       .func = L->top - (nargs + 1), /* function to be called */
       .nresults = nresults,
   };
-  int status = luaD_pcall(L, f_call, &c, SAVE_STACK(L, c.func), func);
+  lua_Status status =
+      Stack_protectedCall(L, f_call, &c, SAVE_STACK(L, c.func), func);
   adjustresults(L, nresults);
   lua_unlock(L);
   return status;
@@ -733,7 +734,8 @@ static void f_Ccall(lua_State *L, void *ud) {
 LUA_API int lua_cpcall(lua_State *L, lua_CFunction func, void *ud) {
   lua_lock(L);
   CCall c = {.func = func, .ud = ud};
-  int status = luaD_pcall(L, f_Ccall, &c, SAVE_STACK(L, L->top), 0);
+  lua_Status status =
+      Stack_protectedCall(L, f_Ccall, &c, SAVE_STACK(L, L->top), 0);
   lua_unlock(L);
   return status;
 }
@@ -746,7 +748,7 @@ LUA_API int lua_load(lua_State *L, lua_Reader reader, void *data,
   }
   ZIO z;
   luaZ_init(L, &z, reader, data);
-  int status = luaD_protectedparser(L, &z, chunkname);
+  int status = Stack_protectedParse(L, &z, chunkname);
   lua_unlock(L);
   return status;
 }

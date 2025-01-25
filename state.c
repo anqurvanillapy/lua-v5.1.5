@@ -161,7 +161,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *allocData) {
   for (size_t i = 0; i < NUM_TYPES; i++) {
     g->mt[i] = nullptr;
   }
-  if (Stack_rawrUnprotected(L, initWithHeap, nullptr) != 0) {
+  if (Stack_rawrUnprotected(L, initWithHeap, nullptr) != LUA_RUNNING) {
     /* memory allocation error: free partial state */
     closeState(L);
     L = nullptr;
@@ -185,7 +185,7 @@ LUA_API void lua_close(lua_State *L) {
     L->ci = L->baseCI;
     L->base = L->top = L->ci->base;
     L->nestedCCallsNum = L->nestedCCallsBaseNum = 0;
-  } while (Stack_rawrUnprotected(L, callGcTm, nullptr) != 0);
+  } while (Stack_rawrUnprotected(L, callGcTm, nullptr) != LUA_RUNNING);
   assert(G(L)->tmudata == nullptr);
   luai_userstateclose(L);
   closeState(L);

@@ -40,13 +40,15 @@ typedef enum PreCallResult {
 // Exceptions thrown from this function will be caught.
 typedef void (*ProtectedFunc)(lua_State *L, void *ud);
 
-LUAI_FUNC int luaD_protectedparser(lua_State *L, ZIO *z, const char *name);
+LUAI_FUNC lua_Status Stack_protectedParse(lua_State *L, ZIO *z,
+                                          const char *name);
 LUAI_FUNC void Stack_callHook(lua_State *L, int event, int line);
 LUAI_FUNC PreCallResult Stack_preCall(lua_State *L, StackIndex func,
                                       int nresults);
 LUAI_FUNC void luaD_call(lua_State *L, StackIndex func, int nResults);
-LUAI_FUNC int luaD_pcall(lua_State *L, ProtectedFunc func, void *u,
-                         ptrdiff_t oldtop, ptrdiff_t ef);
+LUAI_FUNC lua_Status Stack_protectedCall(lua_State *L, ProtectedFunc func,
+                                         void *u, ptrdiff_t oldTop,
+                                         ptrdiff_t ef);
 LUAI_FUNC int Stack_postCall(lua_State *L, StackIndex firstResult);
 LUAI_FUNC void Stack_resizeCI(lua_State *L, int newSize);
 LUAI_FUNC void Stack_resize(lua_State *L, int newsize);
